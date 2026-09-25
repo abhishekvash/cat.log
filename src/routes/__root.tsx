@@ -1,5 +1,6 @@
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 
+import { CatEyes } from "#/components/mastermind/cat-eyes";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -28,6 +29,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
+				<CatEyes />
 				{children}
 				<Scripts />
 			</body>

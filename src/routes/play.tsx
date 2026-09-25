@@ -19,6 +19,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { CatEars } from "#/components/mastermind/cat-ears";
 import { KittenBurst } from "#/components/mastermind/kitten-burst";
 import {
 	type DragData,
@@ -343,8 +344,9 @@ function PlayersForm({
 		<main className="flex flex-1 items-center justify-center p-6">
 			<form
 				onSubmit={submit}
-				className="cat-ears flex w-full max-w-sm flex-col gap-5 rounded-3xl border bg-card p-6 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]"
+				className="relative flex w-full max-w-sm flex-col gap-5 rounded-3xl border bg-card p-6 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]"
 			>
+				<CatEars />
 				<div className="flex justify-center gap-2">
 					{CODE_COLORS.map((color) => (
 						<Pin key={color} color={color} kind="code" size="2.25rem" />
@@ -541,7 +543,8 @@ function Board({
 	const over = state.phase === "won" || state.phase === "lost";
 
 	return (
-		<div className="cat-ears mt-5 flex flex-col rounded-3xl border bg-card p-3 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]">
+		<div className="relative mt-8 flex flex-col rounded-3xl border bg-card p-3 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]">
+			<CatEars />
 			<BoardLine className="pb-1 text-[11px] font-medium text-muted-foreground">
 				<span />
 				<Cols kind="code">
