@@ -1,0 +1,233 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.21 0.006 285.885);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.871 0.006 286.286);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.21 0.006 285.885);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.871 0.006 286.286);
+}
+
+.dark {
+  /* Midnight plum with sakura-pink accents. */
+  --background: oklch(0.2 0.035 305);
+  --foreground: oklch(0.95 0.02 340);
+  --card: oklch(0.25 0.04 305);
+  --card-foreground: oklch(0.95 0.02 340);
+  --popover: oklch(0.25 0.04 305);
+  --popover-foreground: oklch(0.95 0.02 340);
+  --primary: oklch(0.8 0.12 350);
+  --primary-foreground: oklch(0.22 0.04 320);
+  --secondary: oklch(0.31 0.045 305);
+  --secondary-foreground: oklch(0.95 0.02 340);
+  --muted: oklch(0.31 0.045 305);
+  --muted-foreground: oklch(0.74 0.05 320);
+  --accent: oklch(0.34 0.05 310);
+  --accent-foreground: oklch(0.95 0.02 340);
+  --destructive: oklch(0.65 0.2 15);
+  --destructive-foreground: oklch(0.95 0.02 340);
+  --border: oklch(0.36 0.05 310);
+  --input: oklch(0.36 0.05 310);
+  --ring: oklch(0.8 0.12 350);
+  --radius: 1rem;
+}
+
+@theme inline {
+  --font-sans: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Varela Round', ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-image:
+    radial-gradient(900px 500px at 10% -10%, oklch(0.8 0.12 350 / 0.12), transparent 60%),
+    radial-gradient(800px 500px at 110% 110%, oklch(0.75 0.1 280 / 0.12), transparent 60%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  /* Kills double-tap zoom on iPad without disabling pinch zoom. */
+  touch-action: manipulation;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Two little ears perched on top of the game board. */
+.cat-ears {
+  position: relative;
+}
+.cat-ears::before,
+.cat-ears::after {
+  content: '';
+  position: absolute;
+  top: -1.1rem;
+  width: 2.6rem;
+  height: 2.4rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  z-index: -1;
+}
+.cat-ears::before {
+  left: 1.75rem;
+  transform: rotate(-14deg);
+}
+.cat-ears::after {
+  right: 1.75rem;
+  transform: rotate(14deg);
+}
+
+/*
+ * Pin size is derived from the space the board actually has, so all 10 rows plus
+ * the code row fit on screen. A row is ~1.35 pins tall and the board is ~9 pins
+ * wide; the rem reserves cover the header, paddings and (in portrait) the
+ * controls strip that sits above the board.
+ */
+.game {
+  --pin: clamp(1.75rem, calc((100dvh - 17rem) / 13.5), 3rem);
+  --key: calc(var(--pin) * 0.5);
+}
+@media (orientation: portrait) {
+  .game {
+    --pin: min(
+      clamp(1.75rem, calc((100dvh - 31rem) / 13.5), 3rem),
+      calc((100vw - 8rem) / 9)
+    );
+  }
+}
+
+/* Exploding kittens: fly out from the centre, then tumble down and fade. */
+@keyframes kitten-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  40% {
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1)
+      rotate(calc(var(--spin) * 0.4));
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx) * 1.3), calc(-50% + var(--dy) + 75vh))
+      scale(0.9) rotate(var(--spin));
+    opacity: 0;
+  }
+}
+.kitten-piece {
+  animation: kitten-burst var(--dur) cubic-bezier(0.15, 0.75, 0.35, 1) var(--delay) both;
+}
+
+/* A little parade of kittens hopping across the bottom of the screen. */
+@keyframes kitten-run {
+  from {
+    transform: translateX(-4rem);
+  }
+  to {
+    transform: translateX(calc(100vw + 4rem));
+  }
+}
+@keyframes kitten-hop {
+  from {
+    transform: translateY(0) rotate(-8deg);
+  }
+  to {
+    transform: translateY(-1.1rem) rotate(8deg);
+  }
+}
+.kitten-runner {
+  animation: kitten-run var(--dur) linear var(--delay) both;
+}
+.kitten-hop {
+  animation: kitten-hop 0.22s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kitten-burst {
+    display: none;
+  }
+}
