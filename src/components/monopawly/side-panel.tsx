@@ -50,7 +50,7 @@ export function SidePanel({
 	const isHost = state.hostId === game.me;
 	const me = state.players.find((p) => p.id === game.me);
 	return (
-		<aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+		<aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 landscape:max-w-sm">
 			<div className="flex items-center justify-between gap-2 text-sm">
 				<Breadcrumb>
 					<BreadcrumbList>

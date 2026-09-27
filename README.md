@@ -1,6 +1,6 @@
 # cat.log
 
-**cat.log** is a catalog of small, cozy, cat-themed games for two people sharing one screen, usually an iPad. The first game is **Meowstermind**, a two-player Mastermind with cats as code pins and paw prints as clues.
+**cat.log** is a catalog of small, cozy, cat-themed games to play together. **Meowstermind** is a two-player Mastermind with cats as code pins and paw prints as clues, played on one shared screen (usually an iPad). **Monopawly** is an online property game for 2 to 6 players in private rooms, each on their own tablet or computer.
 
 Built with TanStack Start (file-based routes), Tailwind v4, shadcn/ui and dnd-kit. It deploys to Cloudflare Workers.
 

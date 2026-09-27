@@ -30,7 +30,7 @@ export function seo({ title, description, path, noindex }: Page) {
 			{
 				property: "og:image:alt",
 				content:
-					"cat.log: cozy cat games for two, on one screen. Five sticker cats and paw prints.",
+					"cat.log: cozy cat games to play together. Five sticker cats and paw prints.",
 			},
 			{ name: "twitter:card", content: "summary_large_image" },
 			{ name: "twitter:title", content: title },

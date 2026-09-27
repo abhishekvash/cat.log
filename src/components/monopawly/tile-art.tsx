@@ -1,3 +1,4 @@
+import { FishSimpleIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { cn } from "#/lib/utils";
 
@@ -27,7 +28,6 @@ const line = {
 } as const;
 
 export type ArtName =
-	| "fish"
 	| "flap"
 	| "laser"
 	| "catnip"
@@ -43,14 +43,6 @@ export type ArtName =
 	| "catHouse";
 
 const ART: Record<ArtName, ReactNode> = {
-	fish: (
-		<>
-			<path d="M78 50 L96 34 L94 66 Z" fill={SKY} {...line} />
-			<ellipse cx="46" cy="50" rx="36" ry="24" fill={SKY} {...line} />
-			<path d="M30 36 Q38 50 30 64" fill="none" {...line} />
-			<circle cx="20" cy="46" r="4" fill={OUTLINE} />
-		</>
-	),
 	flap: (
 		<>
 			<rect
@@ -383,15 +375,13 @@ export function Art({
 	);
 }
 
-/** The fish currency, sized to sit in a line of text. */
+/** The fish currency: Phosphor's fish, sized to sit in a line of text. */
 export function FishIcon({ className }: { className?: string }) {
 	return (
-		<Art
-			name="fish"
-			plain
-			label="fish"
+		<FishSimpleIcon
+			aria-label="fish"
 			className={cn(
-				"ml-[0.2em] inline-block h-[0.95em] w-[1.3em] align-[-0.12em]",
+				"ml-[0.2em] inline-block size-[1.1em] align-[-0.18em]",
 				className,
 			)}
 		/>

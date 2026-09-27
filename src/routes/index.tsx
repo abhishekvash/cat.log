@@ -3,19 +3,23 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import type { CSSProperties, ReactNode } from "react";
 import { Wordmark } from "#/components/catalog/wordmark";
 import { CatEars } from "#/components/mastermind/cat-ears";
-import { Pin, SleepyCat } from "#/components/mastermind/pins";
+import { CatHead, Pin, SleepyCat } from "#/components/mastermind/pins";
+import { Fur } from "#/components/monopawly/fur";
+import { Art, FishIcon } from "#/components/monopawly/tile-art";
 import { Badge } from "#/components/ui/badge";
 import { Card } from "#/components/ui/card";
 import { CODE_COLORS } from "#/lib/mastermind";
+import { GAME_NAME, type GroupId, groupColor } from "#/lib/monopawly/board";
+import { CAT_TOKENS, type CatToken } from "#/lib/monopawly/types";
 import { jsonLd, SITE_NAME, SITE_URL, seo } from "#/lib/seo";
 
 const DESCRIPTION =
-	"cat.log is a little catalog of cozy cat games for two people sharing one screen. Free in your browser, made for iPad. First up: Meowstermind.";
+	"cat.log is a little catalog of cozy cat games to play together, free in your browser. Pass one iPad around in Meowstermind, or play Monopawly with up to six cats, each on their own device.";
 
 export const Route = createFileRoute("/")({
 	head: () => ({
 		...seo({
-			title: "cat.log · Cozy cat games for two, on one screen",
+			title: "cat.log · Cozy cat games to play together",
 			description: DESCRIPTION,
 			path: "/",
 		}),
@@ -51,6 +55,14 @@ const GAMES: Game[] = [
 		tags: ["2 players", "Pass & play", "~10 min"],
 		preview: <MeowstermindPreview />,
 	},
+	{
+		to: "/monopawly",
+		title: GAME_NAME,
+		blurb:
+			"Buy up a cat town, stack cardboard boxes into cat houses, and be the last cat with fish.",
+		tags: ["2–6 players", "Online rooms", "~60 min"],
+		preview: <MonopawlyPreview />,
+	},
 ];
 
 function Catalog() {
@@ -61,8 +73,8 @@ function Catalog() {
 					Welcome to <Wordmark />
 				</h1>
 				<p className="text-lg text-muted-foreground">
-					A little catalog of cozy games for playing together on one screen.
-					Pick one, grab a friend, pass the iPad. nya~
+					A little catalog of cozy games to play together. Pass one iPad around,
+					or bring a few friends and a device each. nya~
 				</p>
 			</section>
 
@@ -159,6 +171,56 @@ function MeowstermindPreview() {
 						/>
 					),
 				)}
+			</div>
+		</div>
+	);
+}
+
+const STREETS: {
+	group: GroupId;
+	price?: number;
+	owner?: CatToken;
+	boxes?: number;
+}[] = [
+	{ group: 2, price: 100 },
+	{ group: 3, owner: "ginger", boxes: 2 },
+	{ group: 3, owner: "ginger" },
+	{ group: 7, owner: "calico" },
+	{ group: 8, price: 400 },
+];
+
+/** A few streets off the board, some claimed in their owner's fur, and the cats. */
+function MonopawlyPreview() {
+	return (
+		<div className="flex flex-col items-center gap-3">
+			<div className="flex gap-px overflow-hidden rounded-md border bg-border">
+				{STREETS.map((street, i) => (
+					<div
+						// biome-ignore lint/suspicious/noArrayIndexKey: fixed decorative row
+						key={i}
+						className="flex h-14 w-11 flex-col items-center justify-end gap-1 p-1 text-xs text-muted-foreground"
+						style={{
+							background: `color-mix(in oklab, ${groupColor(street.group)} 26%, var(--card))`,
+						}}
+					>
+						{street.boxes ? <Art name="box" className="size-4" /> : null}
+						{street.owner ? (
+							<span className="h-3 w-full overflow-hidden rounded-full border border-[#fff4f8]/85">
+								<Fur cat={street.owner} />
+							</span>
+						) : (
+							<span className="whitespace-nowrap">
+								{street.price}
+								<FishIcon />
+							</span>
+						)}
+					</div>
+				))}
+			</div>
+			<div className="flex gap-1">
+				{CAT_TOKENS.map((cat) => (
+					<CatHead key={cat} coat={cat} size="1.6rem" />
+				))}
 			</div>
 		</div>
 	);

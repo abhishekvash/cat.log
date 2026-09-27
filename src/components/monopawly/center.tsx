@@ -1,4 +1,4 @@
-import { InfoIcon, MoonIcon, WarningIcon, XIcon } from "@phosphor-icons/react";
+import { InfoIcon, MoonIcon, WarningIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ConfirmAction } from "#/components/confirm-action";
@@ -16,7 +16,14 @@ import {
 } from "#/lib/monopawly/board";
 import type { GameState, Intent } from "#/lib/monopawly/types";
 import { cn } from "#/lib/utils";
-import { byId, Die, Fish, PlayerChip, useServerNow } from "./bits";
+import {
+	byId,
+	Fish,
+	lastRollId,
+	PlayerChip,
+	RollingDice,
+	useServerNow,
+} from "./bits";
 import { StreetActions } from "./streets-panel";
 import { FishIcon, withFish } from "./tile-art";
 import { TradeComposer, type TradeDraft } from "./trade-panel";
@@ -24,21 +31,17 @@ import type { GameConnection } from "./use-game";
 
 /**
  * The board's centre: the next move by default, or whatever needs the room
- * right now (results, an auction, a trade being drafted, a street's card).
+ * right now (results, an auction, a trade being drafted).
  */
 export function Center({
 	game,
 	state,
-	selected,
-	onCloseSpace,
 	draft,
 	onDraftChange,
 	onCloseDraft,
 }: {
 	game: GameConnection;
 	state: GameState;
-	selected: number | null;
-	onCloseSpace: () => void;
 	draft: TradeDraft | null;
 	onDraftChange: (draft: TradeDraft) => void;
 	onCloseDraft: () => void;
@@ -56,15 +59,6 @@ export function Center({
 				draft={draft}
 				onChange={onDraftChange}
 				onClose={onCloseDraft}
-			/>
-		);
-	if (selected !== null)
-		return (
-			<SpacePanel
-				game={game}
-				state={state}
-				index={selected}
-				onClose={onCloseSpace}
 			/>
 		);
 	return (
@@ -95,10 +89,7 @@ function TurnPanel({
 		<div className="flex min-h-full flex-col items-center text-center">
 			<div className="flex flex-1 flex-col items-center justify-center gap-4 py-2">
 				{turn.dice && (
-					<div className="flex gap-3">
-						<Die value={turn.dice[0]} />
-						<Die value={turn.dice[1]} />
-					</div>
+					<RollingDice dice={turn.dice} rollId={lastRollId(state)} />
 				)}
 				<div className="space-y-1.5">
 					<h2 className="flex items-center justify-center gap-2 font-display text-lg font-semibold">
@@ -409,16 +400,15 @@ function SpaceTitle({ index }: { index: number }) {
 	);
 }
 
-function SpacePanel({
+/** A space's card: owner, rent, and your build and mortgage controls. */
+export function SpaceCard({
 	game,
 	state,
 	index,
-	onClose,
 }: {
 	game: GameConnection;
 	state: GameState;
 	index: number;
-	onClose: () => void;
 }) {
 	const me = byId(state, game.me);
 	const space = BOARD[index];
@@ -446,20 +436,11 @@ function SpacePanel({
 				: [];
 
 	return (
-		<div className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto p-4 text-center">
-			<Button
-				variant="ghost"
-				size="compact-icon"
-				className="absolute top-2 right-2"
-				aria-label="Close"
-				onClick={onClose}
-			>
-				<XIcon />
-			</Button>
+		<div className="flex flex-col items-center gap-3 text-center text-sm">
 			<SpaceTitle index={index} />
 			{owner ? (
 				<p className="flex items-center gap-2 text-muted-foreground">
-					Owned by <PlayerChip player={owner} />
+					Owned by <PlayerChip player={owner} size="1.25rem" />
 					{holding?.mortgaged && " (mortgaged)"}
 				</p>
 			) : isOwnable(space) ? (
@@ -472,7 +453,7 @@ function SpacePanel({
 				<StreetActions game={game} state={state} me={me} index={index} />
 			)}
 			{rows.length > 0 && (
-				<div className="w-full max-w-xs">
+				<div className="w-full">
 					<Table>
 						<TableBody>
 							{rows.map(([label, value]) => (

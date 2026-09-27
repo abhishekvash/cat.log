@@ -4,12 +4,13 @@ import {
 	notFound,
 	useNavigate,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { WakingKitties } from "#/components/catalog/waking-kitties";
 import { SleepyCat } from "#/components/mastermind/pins";
+import { lastRollId, markRollSeen } from "#/components/monopawly/bits";
 import { Board } from "#/components/monopawly/board";
-import { Center } from "#/components/monopawly/center";
+import { Center, SpaceCard } from "#/components/monopawly/center";
 import { Lobby } from "#/components/monopawly/lobby";
 import { SidePanel } from "#/components/monopawly/side-panel";
 import { withFish } from "#/components/monopawly/tile-art";
@@ -70,6 +71,7 @@ function RoomView({ code }: { code: string }) {
 	const [selected, setSelected] = useState<number | null>(null);
 	useGameToasts(game);
 	const [draft, setDraft] = useState<TradeDraft | null>(null);
+	const primed = useRef(false);
 
 	// Once in, drop the one-shot flags so a refresh just reconnects.
 	useEffect(() => {
@@ -80,23 +82,27 @@ function RoomView({ code }: { code: string }) {
 	if (game.status === "gone") return <Gone />;
 	const state = game.state;
 	if (!state) return <WakingKitties />;
+	// Rolls from before this page loaded show still; only new ones tumble.
+	if (!primed.current) {
+		primed.current = true;
+		markRollSeen(lastRollId(state));
+	}
 	if (state.phase === "lobby")
 		return <Lobby game={game} state={state} code={code} />;
 
 	return (
-		<main className="flex h-dvh flex-col gap-3 overflow-hidden p-2 landscape:flex-row sm:p-3">
+		<main className="flex h-dvh flex-col gap-3 overflow-hidden p-2 landscape:flex-row landscape:justify-center sm:p-3">
 			{/* The board is always the biggest thing on screen: a square as large as fits. */}
 			<div className="aspect-square shrink-0 self-center m-5 [width:min(calc(100dvh-3.5rem),calc(100vw-21.5rem))] portrait:[width:min(calc(100vw-3.5rem),calc(100dvh-16rem))]">
 				<Board
 					state={state}
 					selected={selected}
-					onSelect={(i) => setSelected((s) => (s === i ? null : i))}
+					onSelect={setSelected}
+					card={(i) => <SpaceCard game={game} state={state} index={i} />}
 				>
 					<Center
 						game={game}
 						state={state}
-						selected={selected}
-						onCloseSpace={() => setSelected(null)}
 						draft={draft}
 						onDraftChange={setDraft}
 						onCloseDraft={() => setDraft(null)}
@@ -107,14 +113,8 @@ function RoomView({ code }: { code: string }) {
 				game={game}
 				state={state}
 				code={code}
-				onSelectSpace={(i) => {
-					setDraft(null);
-					setSelected(i);
-				}}
-				onCompose={(d) => {
-					setSelected(null);
-					setDraft(d);
-				}}
+				onSelectSpace={setSelected}
+				onCompose={setDraft}
 			/>
 		</main>
 	);

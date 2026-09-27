@@ -10,23 +10,71 @@ import { ScrollArea } from "#/components/ui/scroll-area";
 import { Separator } from "#/components/ui/separator";
 import { Slider } from "#/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "#/components/ui/toggle-group";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "#/components/ui/tooltip";
 import { BOARD, groupColor, isOwnable } from "#/lib/monopawly/board";
 import type { GameState, Offer, Player, Trade } from "#/lib/monopawly/types";
 import { byId, PlayerChip } from "./bits";
-import { FishIcon, withFish } from "./tile-art";
+import { FishIcon } from "./tile-art";
 import type { GameConnection } from "./use-game";
 
 const empty = (): Offer => ({ fish: 0, spaces: [], getOutCards: 0 });
 
-function describeOffer(offer: Offer) {
-	const parts = [
-		...offer.spaces.map((i) => BOARD[i].name),
-		...(offer.fish ? [`${offer.fish} 🐟`] : []),
-		...(offer.getOutCards
-			? [`${offer.getOutCards} free pass${offer.getOutCards > 1 ? "es" : ""}`]
-			: []),
-	];
-	return parts.length ? parts.join(", ") : "nothing";
+/** One side of a trade as small chips: streets with their colour, fish, passes. */
+function OfferItems({ offer }: { offer: Offer }) {
+	if (!offer.spaces.length && !offer.fish && !offer.getOutCards)
+		return <span className="text-muted-foreground">Nothing</span>;
+	return (
+		<span className="flex min-w-0 flex-wrap gap-1">
+			{offer.spaces.map((i) => {
+				const space = BOARD[i];
+				return (
+					<Badge key={i} variant="outline" className="font-normal">
+						<span
+							className="size-2 rounded-full"
+							style={{
+								background:
+									space.kind === "street"
+										? groupColor(space.group)
+										: "var(--muted-foreground)",
+							}}
+						/>
+						{space.name}
+					</Badge>
+				);
+			})}
+			{offer.fish > 0 && (
+				<Badge variant="outline" className="font-normal tabular-nums">
+					{offer.fish}
+					<FishIcon className="ml-0" />
+				</Badge>
+			)}
+			{offer.getOutCards > 0 && (
+				<Badge variant="outline" className="font-normal">
+					Free pass{offer.getOutCards > 1 ? ` ×${offer.getOutCards}` : ""}
+				</Badge>
+			)}
+		</span>
+	);
+}
+
+/** "You give" and "You get" lines, from your side of the table. */
+function TradeTerms({ give, get }: { give: Offer; get: Offer }) {
+	return (
+		<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-2 gap-y-1.5 text-xs">
+			<dt className="text-muted-foreground">You give</dt>
+			<dd>
+				<OfferItems offer={give} />
+			</dd>
+			<dt className="text-muted-foreground">You get</dt>
+			<dd>
+				<OfferItems offer={get} />
+			</dd>
+		</dl>
+	);
 }
 
 /** A trade being drafted in the board centre. */
@@ -71,14 +119,13 @@ export function TradeList({
 				if (!from) return null;
 				return (
 					<li key={trade.id}>
-						<Card className="gap-1.5 border-primary/50 bg-primary/10 p-2 text-sm shadow-none">
-							<p>
-								<span className="font-medium">{from.name}</span>
-								<span className="text-muted-foreground"> offers </span>
-								{withFish(describeOffer(trade.give))}
-								<span className="text-muted-foreground"> for </span>
-								{withFish(describeOffer(trade.get))}
+						<Card className="gap-2 border-primary/50 bg-primary/10 p-2.5 text-sm shadow-none">
+							<p className="flex items-center gap-1.5">
+								<PlayerChip player={from} size="1.25rem" />
+								<span className="text-muted-foreground">offers you</span>
 							</p>
+							{/* Their give is your get. */}
+							<TradeTerms give={trade.get} get={trade.give} />
 							<div className="flex gap-1">
 								<Button size="compact" onClick={() => respond(trade, true)}>
 									Accept
@@ -109,22 +156,39 @@ export function TradeList({
 					</li>
 				);
 			})}
-			{outgoing.map((trade) => (
-				<li key={trade.id} className="flex items-center gap-2 text-sm">
-					<p className="min-w-0 flex-1 text-muted-foreground">
-						Waiting on {byId(state, trade.to)?.name}:{" "}
-						{withFish(describeOffer(trade.give))} for{" "}
-						{withFish(describeOffer(trade.get))}
-					</p>
-					<Button
-						variant="ghost"
-						size="compact"
-						onClick={() => game.send({ type: "cancelTrade", id: trade.id })}
-					>
-						Withdraw
-					</Button>
-				</li>
-			))}
+			{outgoing.map((trade) => {
+				const to = byId(state, trade.to);
+				if (!to) return null;
+				return (
+					<li key={trade.id}>
+						<Card className="gap-2 p-2.5 text-sm shadow-none">
+							<div className="flex items-center gap-1.5">
+								<PlayerChip player={to} size="1.25rem" />
+								<span className="flex-1 text-muted-foreground">
+									is thinking…
+								</span>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="compact-icon"
+											className="-my-1.5 -mr-1.5"
+											aria-label={`Withdraw your offer to ${to.name}`}
+											onClick={() =>
+												game.send({ type: "cancelTrade", id: trade.id })
+											}
+										>
+											<XIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Withdraw</TooltipContent>
+								</Tooltip>
+							</div>
+							<TradeTerms give={trade.give} get={trade.get} />
+						</Card>
+					</li>
+				);
+			})}
 		</ul>
 	);
 }
