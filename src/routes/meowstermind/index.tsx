@@ -1,5 +1,5 @@
+import { ArrowLeftIcon } from "@phosphor-icons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { Wordmark } from "#/components/catalog/wordmark";
 import { Pin } from "#/components/mastermind/pins";
 import { Button } from "#/components/ui/button";
@@ -41,12 +41,16 @@ export const Route = createFileRoute("/meowstermind/")({
 function Home() {
 	return (
 		<main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 p-6">
-			<Link
-				to="/"
-				className="-my-3 flex items-center gap-1.5 self-start rounded-md py-3 text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
+			<Button
+				asChild
+				variant="ghost"
+				size="compact"
+				className="-ml-3 self-start text-muted-foreground"
 			>
-				<ArrowLeft className="size-4" /> Back to <Wordmark />
-			</Link>
+				<Link to="/">
+					<ArrowLeftIcon /> Back to <Wordmark />
+				</Link>
+			</Button>
 			<div className="flex gap-2">
 				{CODE_COLORS.map((color) => (
 					<Pin key={color} color={color} kind="code" size="2.75rem" />

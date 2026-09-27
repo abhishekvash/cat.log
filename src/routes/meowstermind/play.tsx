@@ -8,8 +8,14 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
+import {
+	ArrowCounterClockwiseIcon,
+	ArrowUUpLeftIcon,
+	CatIcon,
+	EyeIcon,
+	ShuffleIcon,
+} from "@phosphor-icons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Cat, Eye, RotateCcw, Shuffle, Undo2 } from "lucide-react";
 import {
 	type Dispatch,
 	type FormEvent,
@@ -20,6 +26,7 @@ import {
 	useState,
 } from "react";
 import { Wordmark } from "#/components/catalog/wordmark";
+import { ConfirmAction } from "#/components/confirm-action";
 import { CatEars } from "#/components/mastermind/cat-ears";
 import { KittenBurst } from "#/components/mastermind/kitten-burst";
 import {
@@ -31,8 +38,19 @@ import {
 	Slot,
 	TrayPin,
 } from "#/components/mastermind/pins";
+import { Badge } from "#/components/ui/badge";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbSeparator,
+} from "#/components/ui/breadcrumb";
 import { Button } from "#/components/ui/button";
+import { Card } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
+import { Separator } from "#/components/ui/separator";
 import {
 	type Action,
 	activeCodeTarget,
@@ -169,21 +187,28 @@ function Play() {
 		>
 			<div className="game flex min-h-dvh select-none flex-col [-webkit-touch-callout:none]">
 				<header className="flex flex-wrap items-center justify-between gap-y-2 border-b px-4 py-2">
-					<nav className="flex items-center gap-2 text-lg">
-						<Link
-							to="/"
-							className="rounded-md py-2 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 text-muted-foreground transition-colors hover:text-foreground max-sm:hidden"
-						>
-							<Wordmark />
-						</Link>
-						<span className="text-muted-foreground/50 max-sm:hidden">/</span>
-						<Link
-							to="/meowstermind"
-							className="flex items-center gap-2 rounded-md py-2 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 font-display font-semibold"
-						>
-							<Cat className="size-5 text-primary" /> Meowstermind
-						</Link>
-					</nav>
+					<Breadcrumb>
+						<BreadcrumbList className="text-lg">
+							<BreadcrumbItem className="max-sm:hidden">
+								<BreadcrumbLink asChild>
+									<Link to="/">
+										<Wordmark />
+									</Link>
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+							<BreadcrumbSeparator className="max-sm:hidden" />
+							<BreadcrumbItem>
+								<BreadcrumbLink
+									asChild
+									className="flex items-center gap-2 py-2 font-display font-semibold text-foreground"
+								>
+									<Link to="/meowstermind">
+										<CatIcon className="size-5 text-primary" /> Meowstermind
+									</Link>
+								</BreadcrumbLink>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
 					{state.match && <Scoreboard match={state.match} />}
 					<NewMatchButton
 						needsConfirm={state.match !== null}
@@ -308,10 +333,7 @@ function Status({ state }: { state: GameState }) {
 	);
 }
 
-/**
- * Resetting a match throws away both scores, so it asks for a second tap
- * (inline, no pop-up). The ask quietly times out if the second tap never comes.
- */
+/** Resetting a match throws away both scores, so it asks first once there are any. */
 function NewMatchButton({
 	needsConfirm,
 	onReset,
@@ -319,32 +341,26 @@ function NewMatchButton({
 	needsConfirm: boolean;
 	onReset: () => void;
 }) {
-	const [armed, setArmed] = useState(false);
-	useEffect(() => {
-		if (!armed) return;
-		const timer = setTimeout(() => setArmed(false), 3500);
-		return () => clearTimeout(timer);
-	}, [armed]);
-	return (
+	const button = (
 		<Button
-			variant={armed ? "outline" : "ghost"}
+			variant="ghost"
 			size="sm"
-			className={cn(
-				armed &&
-					"border-primary/60 text-primary dark:border-primary/60 dark:text-primary",
-			)}
-			onClick={() => {
-				if (!needsConfirm || armed) {
-					setArmed(false);
-					onReset();
-				} else setArmed(true);
-			}}
+			onClick={needsConfirm ? undefined : onReset}
 		>
-			<RotateCcw />
-			<span className={cn(!armed && "max-sm:sr-only")}>
-				{armed ? "Tap again to reset scores" : "New match"}
-			</span>
+			<ArrowCounterClockwiseIcon />
+			<span className="max-sm:sr-only">New match</span>
 		</Button>
+	);
+	if (!needsConfirm) return button;
+	return (
+		<ConfirmAction
+			title="Start a new match?"
+			description="Both players' scores go back to zero."
+			action="Reset scores"
+			onConfirm={onReset}
+		>
+			{button}
+		</ConfirmAction>
 	);
 }
 
@@ -353,11 +369,12 @@ function Scoreboard({ match }: { match: Match }) {
 	return (
 		<div className="flex items-center gap-2 text-sm max-sm:order-last max-sm:w-full max-sm:justify-center">
 			{match.players.map((name, i) => (
-				<div
+				<Badge
 					// biome-ignore lint/suspicious/noArrayIndexKey: always exactly two players
 					key={i}
+					variant="outline"
 					className={cn(
-						"flex items-center gap-2 rounded-full border px-3 py-1",
+						"gap-2 px-3 py-1 text-sm font-normal",
 						mastermindOf(match) === i && "border-primary/50 bg-primary/10",
 					)}
 				>
@@ -370,7 +387,7 @@ function Scoreboard({ match }: { match: Match }) {
 					<span className="text-xs text-muted-foreground max-sm:hidden">
 						{mastermindOf(match) === i ? "hides" : "guesses"}
 					</span>
-				</div>
+				</Badge>
 			))}
 		</div>
 	);
@@ -389,53 +406,49 @@ function PlayersForm({
 	};
 	return (
 		<main className="flex flex-1 items-center justify-center p-6">
-			<form
-				onSubmit={submit}
-				className="relative flex w-full max-w-sm flex-col gap-5 rounded-3xl border bg-card p-6 shadow-table"
-			>
-				<CatEars />
-				<div className="flex justify-center gap-2">
-					{CODE_COLORS.map((color) => (
-						<Pin key={color} color={color} kind="code" size="2.25rem" />
-					))}
-				</div>
-				<div className="space-y-1 text-center">
-					<h1 className="font-display text-2xl font-semibold">
-						Who's playing?
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						You take turns hiding the code. The codebreaker scores 11 minus the
-						tries they needed, so crack it fast!
-					</p>
-				</div>
-				{(["Player 1 (hides first)", "Player 2"] as const).map((label, i) => (
-					<div key={label} className="flex flex-col gap-2">
-						<label
-							htmlFor={`player-${i}`}
-							className="px-3 text-sm font-medium text-muted-foreground"
-						>
-							{label}
-						</label>
-						<Input
-							id={`player-${i}`}
-							value={names[i]}
-							maxLength={16}
-							autoComplete="off"
-							autoFocus={i === 0}
-							placeholder={i === 0 ? "Mochi" : "Biscuit"}
-							onChange={(event) => {
-								const next = [...names] as [string, string];
-								next[i] = event.target.value;
-								setNames(next);
-							}}
-							className="h-11 rounded-xl text-base"
-						/>
+			<Card className="relative w-full max-w-sm p-6">
+				<form onSubmit={submit} className="flex flex-col gap-5">
+					<CatEars />
+					<div className="flex justify-center gap-2">
+						{CODE_COLORS.map((color) => (
+							<Pin key={color} color={color} kind="code" size="2.25rem" />
+						))}
 					</div>
-				))}
-				<Button type="submit" size="lg" disabled={!ready}>
-					Start match
-				</Button>
-			</form>
+					<div className="space-y-1 text-center">
+						<h1 className="font-display text-2xl font-semibold">
+							Who's playing?
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							You take turns hiding the code. The codebreaker scores 11 minus
+							the tries they needed, so crack it fast!
+						</p>
+					</div>
+					{(["Player 1 (hides first)", "Player 2"] as const).map((label, i) => (
+						<div key={label} className="flex flex-col gap-2">
+							<Label htmlFor={`player-${i}`} className="text-muted-foreground">
+								{label}
+							</Label>
+							<Input
+								id={`player-${i}`}
+								value={names[i]}
+								maxLength={16}
+								autoComplete="off"
+								autoFocus={i === 0}
+								placeholder={i === 0 ? "Mochi" : "Biscuit"}
+								onChange={(event) => {
+									const next = [...names] as [string, string];
+									next[i] = event.target.value;
+									setNames(next);
+								}}
+								className="h-11 text-base"
+							/>
+						</div>
+					))}
+					<Button type="submit" size="lg" disabled={!ready}>
+						Start match
+					</Button>
+				</form>
+			</Card>
 		</main>
 	);
 }
@@ -450,9 +463,9 @@ function Tray({
 	return (
 		<div className="space-y-2">
 			<p className="text-overline">{label}</p>
-			<div className="flex flex-wrap justify-center gap-1 rounded-2xl border bg-card p-2">
+			<Card className="flex-row flex-wrap justify-center gap-1 p-2 shadow-none">
 				{children}
-			</div>
+			</Card>
 		</div>
 	);
 }
@@ -470,9 +483,9 @@ function PawBox({
 	onSelect: (selection: Selection) => void;
 }) {
 	return (
-		<div
+		<Card
 			className={cn(
-				"flex w-26 shrink-0 flex-col items-center gap-3 rounded-3xl border bg-card px-2 py-4 transition max-sm:w-auto max-sm:flex-row max-sm:px-4 max-sm:py-2",
+				"w-26 shrink-0 items-center gap-3 px-2 py-4 shadow-none transition max-sm:w-auto max-sm:flex-row max-sm:px-4 max-sm:py-2",
 				active && "border-primary/60 shadow-lamp",
 			)}
 		>
@@ -493,7 +506,7 @@ function PawBox({
 			<p className="text-center text-xs leading-snug text-balance text-muted-foreground">
 				{active ? "Drag onto the glowing row" : "Unlocks when scoring"}
 			</p>
-		</div>
+		</Card>
 	);
 }
 
@@ -522,7 +535,7 @@ function Actions({
 						variant="outline"
 						onClick={() => dispatch({ type: "randomSecret" })}
 					>
-						<Shuffle /> Random code
+						<ShuffleIcon /> Random code
 					</Button>
 				</div>
 			);
@@ -550,14 +563,14 @@ function Actions({
 						onPointerCancel={() => onPeek(false)}
 						onContextMenu={(e) => e.preventDefault()}
 					>
-						<Eye /> Hold to peek at code
+						<EyeIcon /> Hold to peek at code
 					</Button>
 					<Button
 						variant="ghost"
 						size="sm"
 						onClick={() => dispatch({ type: "editGuess" })}
 					>
-						<Undo2 /> Let codebreaker edit
+						<ArrowUUpLeftIcon /> Let codebreaker edit
 					</Button>
 				</div>
 			);
@@ -594,7 +607,7 @@ function Board({
 	const over = state.phase === "won" || state.phase === "lost";
 
 	return (
-		<div className="relative mt-8 flex flex-col rounded-3xl border bg-card p-3 shadow-table">
+		<Card className="relative mt-8 gap-0 p-3">
 			<CatEars />
 			<BoardLine className="pb-1 text-xs font-medium text-muted-foreground">
 				<span />
@@ -620,7 +633,7 @@ function Board({
 						// biome-ignore lint/suspicious/noArrayIndexKey: rows are fixed positions
 						key={r}
 						className={cn(
-							"rounded-xl py-[calc(var(--pin)*0.1)] transition-colors",
+							"rounded-lg py-[calc(var(--pin)*0.1)] transition-colors",
 							current && "bg-primary/10 ring-1 ring-primary/35",
 							!current && !past && "opacity-40",
 						)}
@@ -669,10 +682,10 @@ function Board({
 			})}
 
 			{/* The divider sits on its own so the code row pads evenly, like guess rows. */}
-			<div aria-hidden="true" className="mx-2 my-2 border-t" />
+			<Separator className="mx-2 my-2 w-auto!" />
 			<BoardLine
 				className={cn(
-					"rounded-xl py-[calc(var(--pin)*0.1)]",
+					"rounded-lg py-[calc(var(--pin)*0.1)]",
 					state.phase === "setup" && "bg-primary/10 ring-1 ring-primary/35",
 				)}
 			>
@@ -705,7 +718,7 @@ function Board({
 				</Cols>
 				<span />
 			</BoardLine>
-		</div>
+		</Card>
 	);
 }
 

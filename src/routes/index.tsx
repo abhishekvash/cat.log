@@ -1,9 +1,11 @@
+import { ArrowRightIcon } from "@phosphor-icons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { Wordmark } from "#/components/catalog/wordmark";
 import { CatEars } from "#/components/mastermind/cat-ears";
 import { Pin, SleepyCat } from "#/components/mastermind/pins";
+import { Badge } from "#/components/ui/badge";
+import { Card } from "#/components/ui/card";
 import { CODE_COLORS } from "#/lib/mastermind";
 import { jsonLd, SITE_NAME, SITE_URL, seo } from "#/lib/seo";
 
@@ -82,39 +84,42 @@ function GameTile({ game }: { game: Game }) {
 	return (
 		<Link
 			to={game.to}
-			className="group relative flex flex-col gap-4 rounded-3xl border bg-card p-5 shadow-table outline-none transition hover:-translate-y-1 hover:border-primary/50 motion-reduce:hover:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring"
+			className="group flex rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 		>
-			<CatEars />
-			<div className="flex h-32 items-center justify-center overflow-hidden rounded-2xl bg-well/60 px-3">
-				{game.preview}
-			</div>
-			<div className="space-y-1.5">
-				<div className="flex items-baseline justify-between gap-3">
-					<h3 className="font-display text-xl font-semibold">{game.title}</h3>
-					<span className="flex shrink-0 items-center gap-1 font-display text-sm font-medium text-primary">
-						Play
-						<ArrowRight className="size-4 self-center transition-transform group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0" />
-					</span>
+			<Card className="relative flex-1 gap-4 p-5 transition group-hover:-translate-y-1 group-hover:border-primary/50 motion-reduce:group-hover:translate-y-0">
+				<CatEars />
+				<div className="flex h-32 items-center justify-center overflow-hidden rounded-lg bg-well/60 px-3">
+					{game.preview}
 				</div>
-				<p className="text-sm text-muted-foreground">{game.blurb}</p>
-			</div>
-			<div className="mt-auto flex flex-wrap gap-1.5">
-				{game.tags.map((tag) => (
-					<span
-						key={tag}
-						className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground"
-					>
-						{tag}
-					</span>
-				))}
-			</div>
+				<div className="space-y-1.5">
+					<div className="flex items-baseline justify-between gap-3">
+						<h3 className="font-display text-xl font-semibold">{game.title}</h3>
+						<span className="flex shrink-0 items-center gap-1 font-display text-sm font-medium text-primary">
+							Play
+							<ArrowRightIcon className="size-4 self-center transition-transform group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0" />
+						</span>
+					</div>
+					<p className="text-sm text-muted-foreground">{game.blurb}</p>
+				</div>
+				<div className="mt-auto flex flex-wrap gap-1.5">
+					{game.tags.map((tag) => (
+						<Badge
+							key={tag}
+							variant="outline"
+							className="font-normal text-muted-foreground"
+						>
+							{tag}
+						</Badge>
+					))}
+				</div>
+			</Card>
 		</Link>
 	);
 }
 
 function ComingSoonTile() {
 	return (
-		<div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed bg-card/40 p-5 text-center sm:min-h-72">
+		<Card className="items-center justify-center gap-3 border-dashed bg-card/40 p-5 text-center shadow-none sm:min-h-72">
 			{/* SleepyCat sizes itself from --pin. */}
 			<div style={{ "--pin": "3.25rem" } as CSSProperties}>
 				<SleepyCat />
@@ -127,7 +132,7 @@ function ComingSoonTile() {
 					zzz… the next one is still napping.
 				</p>
 			</div>
-		</div>
+		</Card>
 	);
 }
 

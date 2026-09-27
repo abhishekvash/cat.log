@@ -63,7 +63,8 @@
   --border: oklch(0.36 0.05 310);
   --input: oklch(0.36 0.05 310);
   --ring: oklch(0.8 0.12 350);
-  --radius: 1rem;
+  /* sm 6px (rows), md 8px (buttons, inputs), lg 10px, xl 14px (cards). */
+  --radius: 0.625rem;
 }
 
 @theme inline {

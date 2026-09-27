@@ -1,13 +1,15 @@
+import { IconContext } from "@phosphor-icons/react";
 import {
 	createRootRoute,
 	HeadContent,
 	Link,
 	Scripts,
 } from "@tanstack/react-router";
-
 import { CatEyes } from "#/components/mastermind/cat-eyes";
 import { SleepyCat } from "#/components/mastermind/pins";
 import { Button } from "#/components/ui/button";
+import { Toaster } from "#/components/ui/sonner";
+import { TooltipProvider } from "#/components/ui/tooltip";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -71,8 +73,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				<CatEyes />
-				{children}
+				{/* Phosphor's bold weight sits best beside the chunky sticker cats. */}
+				<IconContext.Provider value={{ weight: "bold" }}>
+					<TooltipProvider delayDuration={300}>
+						<CatEyes />
+						{children}
+						<Toaster position="bottom-center" />
+					</TooltipProvider>
+				</IconContext.Provider>
 				<Scripts />
 			</body>
 		</html>

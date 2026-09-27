@@ -87,6 +87,24 @@ const COATS: Record<CodeColor, Coat> = {
 	},
 };
 
+/** Monopawly's sixth cat: white with a ginger and a black patch. */
+const CALICO: Coat = {
+	fur: "#fbf8f4",
+	iris: "#f2a93b",
+	leftEar: "#f4a259",
+	rightEar: "#2d2a31",
+	markings: (
+		<>
+			<ellipse cx="28" cy="40" rx="18" ry="13" fill="#f4a259" />
+			<ellipse cx="74" cy="42" rx="15" ry="11" fill="#2d2a31" />
+		</>
+	),
+};
+
+export type CoatName = CodeColor | "calico";
+
+const coatFor = (name: CoatName) => (name === "calico" ? CALICO : COATS[name]);
+
 export const PIN_SIZE: Record<PinKind, string> = {
 	code: "var(--pin)",
 	key: "var(--key)",
@@ -234,6 +252,33 @@ export function Pin({
 				) : (
 					<CatFace coat={COATS[color as CodeColor]} />
 				)}
+			</svg>
+		</span>
+	);
+}
+
+/** A single cat head, for tokens outside Meowstermind. */
+export function CatHead({
+	coat,
+	size,
+	className,
+}: {
+	coat: CoatName;
+	size: string;
+	className?: string;
+}) {
+	return (
+		<span
+			aria-hidden="true"
+			style={{ width: size, height: size }}
+			className={cn("block shrink-0", className)}
+		>
+			<svg
+				aria-hidden="true"
+				viewBox="0 0 100 100"
+				className="size-full overflow-visible drop-shadow-sticker"
+			>
+				<CatFace coat={coatFor(coat)} />
 			</svg>
 		</span>
 	);
