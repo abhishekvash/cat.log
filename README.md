@@ -15,11 +15,15 @@ pnpm dev
 
 ## Deploy
 
+Pushes to `main` deploy automatically through Cloudflare Workers Builds (the `cat-log` worker is connected to this repo). Cloudflare runs `pnpm run build`, then `npx wrangler deploy`.
+
+To deploy by hand from your machine, log in once with `pnpm wrangler login`, then run:
+
 ```bash
 pnpm run deploy   # builds, then runs wrangler deploy
 ```
 
-This deploys the `cat-log` worker defined in `wrangler.jsonc` (Cloudflare worker names can't contain dots). Log in once with `pnpm wrangler login`.
+Cloudflare worker names can't contain dots, so the worker is `cat-log`.
 
 ## Layout
 
