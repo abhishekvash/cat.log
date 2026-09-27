@@ -4,9 +4,37 @@ import { Wordmark } from "#/components/catalog/wordmark";
 import { Pin } from "#/components/mastermind/pins";
 import { Button } from "#/components/ui/button";
 import { CODE_COLORS } from "#/lib/mastermind";
+import { jsonLd, SITE_URL, seo } from "#/lib/seo";
+
+const DESCRIPTION =
+	"Meowstermind is a free two-player Mastermind with cats. Hide a secret row of kitties, then crack it with paw-print clues. Pass and play in your browser, made for iPad.";
 
 export const Route = createFileRoute("/meowstermind/")({
-	head: () => ({ meta: [{ title: "Meowstermind · cat.log" }] }),
+	head: () => ({
+		...seo({
+			title: "Meowstermind: a cozy two-player cat Mastermind · cat.log",
+			description: DESCRIPTION,
+			path: "/meowstermind",
+		}),
+		scripts: [
+			jsonLd({
+				"@type": "VideoGame",
+				name: "Meowstermind",
+				description: DESCRIPTION,
+				url: `${SITE_URL}/meowstermind`,
+				image: `${SITE_URL}/og.png`,
+				genre: ["Puzzle", "Board game", "Code-breaking"],
+				gamePlatform: "Web browser",
+				applicationCategory: "Game",
+				operatingSystem: "Any",
+				playMode: "MultiPlayer",
+				numberOfPlayers: { "@type": "QuantitativeValue", value: 2 },
+				isAccessibleForFree: true,
+				offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
+				isPartOf: { "@type": "WebSite", name: "cat.log", url: SITE_URL },
+			}),
+		],
+	}),
 	component: Home,
 });
 

@@ -48,11 +48,19 @@ import {
 	reducer,
 	saveGame,
 } from "#/lib/mastermind";
+import { seo } from "#/lib/seo";
 import { cn } from "#/lib/utils";
 
 // The game lives in localStorage, so there's nothing useful to render on the server.
 export const Route = createFileRoute("/meowstermind/play")({
-	head: () => ({ meta: [{ title: "Meowstermind · cat.log" }] }),
+	head: () =>
+		seo({
+			title: "Play Meowstermind · cat.log",
+			description:
+				"Two players, one screen: hide a row of kitties and crack the code with paw-print clues.",
+			path: "/meowstermind/play",
+			noindex: true,
+		}),
 	ssr: false,
 	component: Play,
 });

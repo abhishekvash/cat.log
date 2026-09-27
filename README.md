@@ -32,6 +32,8 @@ Cloudflare worker names can't contain dots, so the worker is `cat-log`.
 - `src/lib/mastermind.ts`: game rules and state (a pure reducer, saved to localStorage).
 - `src/components/mastermind/`: cat pins, paw pins, board ears, background eyes and the kitten burst.
 - `src/components/catalog/`: the wordmark and the loading screen.
+- `src/lib/seo.ts`: per-page title, description, canonical and share-card tags.
+- `public/`: icons, the share card (`og.png`), `robots.txt`, `sitemap.xml` and the web app manifest. List new games in `sitemap.xml`.
 
 ## Design
 

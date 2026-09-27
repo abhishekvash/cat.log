@@ -5,8 +5,30 @@ import { Wordmark } from "#/components/catalog/wordmark";
 import { CatEars } from "#/components/mastermind/cat-ears";
 import { Pin, SleepyCat } from "#/components/mastermind/pins";
 import { CODE_COLORS } from "#/lib/mastermind";
+import { jsonLd, SITE_NAME, SITE_URL, seo } from "#/lib/seo";
 
-export const Route = createFileRoute("/")({ component: Catalog });
+const DESCRIPTION =
+	"cat.log is a little catalog of cozy cat games for two people sharing one screen. Free in your browser, made for iPad. First up: Meowstermind.";
+
+export const Route = createFileRoute("/")({
+	head: () => ({
+		...seo({
+			title: "cat.log · Cozy cat games for two, on one screen",
+			description: DESCRIPTION,
+			path: "/",
+		}),
+		scripts: [
+			jsonLd({
+				"@type": "WebSite",
+				name: SITE_NAME,
+				alternateName: "catlog.party",
+				url: SITE_URL,
+				description: DESCRIPTION,
+			}),
+		],
+	}),
+	component: Catalog,
+});
 
 interface Game {
 	to: string;
@@ -16,7 +38,8 @@ interface Game {
 	preview: ReactNode;
 }
 
-// The catalog. Adding a game is one more entry here plus its routes.
+// The catalog. Adding a game is one more entry here, its routes, and a line in
+// public/sitemap.xml.
 const GAMES: Game[] = [
 	{
 		to: "/meowstermind",
