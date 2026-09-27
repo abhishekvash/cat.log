@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/fredoka';
+@import '@fontsource-variable/nunito';
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
@@ -65,7 +67,23 @@
 }
 
 @theme inline {
-  --font-sans: ui-rounded, 'SF Pro Rounded', 'Nunito', 'Varela Round', ui-sans-serif, system-ui, sans-serif;
+  /* Nunito for reading, Fredoka for the playful bits (titles, headings, buttons). */
+  --font-sans: 'Nunito Variable', ui-rounded, system-ui, sans-serif;
+  --font-display: 'Fredoka Variable', ui-rounded, system-ui, sans-serif;
+
+  /* The pressed-in dark of board holes and preview wells (never pure black). */
+  --color-well: oklch(0.14 0.03 305);
+
+  /* Elevation vocabulary (DESIGN.md §4): one shadow per surface. */
+  --shadow-table: 0 20px 50px -20px oklch(0.08 0.02 305 / 0.7);
+  --shadow-hole: inset 0 2px 4px oklch(0.08 0.02 305 / 0.55);
+  --shadow-lamp: 0 0 30px -8px oklch(0.8 0.12 350 / 0.5);
+  --drop-shadow-sticker: 0 2px 2px oklch(0.08 0.02 305 / 0.45);
+
+  /* Motion: quick exponential ease-outs for every state change. */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --default-transition-duration: 180ms;
+  --default-transition-timing-function: var(--ease-out-quart);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -125,6 +143,16 @@ body {
   touch-action: manipulation;
 }
 
+/* Quiet uppercase overline for section labels ("ROUND 1", "KITTIES", "PAW BOX"). */
+@utility text-overline {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -148,61 +176,8 @@ body {
   .game {
     --pin: min(
       clamp(1.75rem, calc((100dvh - 32rem) / 13.5), 3rem),
-      calc((100vw - 8rem) / 9)
+      calc((100vw - 9rem) / 9)
     );
-  }
-}
-
-/* Exploding kittens: fly out from the centre, then tumble down and fade. */
-@keyframes kitten-burst {
-  0% {
-    transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
-    opacity: 0;
-  }
-  8% {
-    opacity: 1;
-  }
-  40% {
-    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1)
-      rotate(calc(var(--spin) * 0.4));
-  }
-  100% {
-    transform: translate(calc(-50% + var(--dx) * 1.3), calc(-50% + var(--dy) + 75vh))
-      scale(0.9) rotate(var(--spin));
-    opacity: 0;
-  }
-}
-.kitten-piece {
-  animation: kitten-burst var(--dur) cubic-bezier(0.15, 0.75, 0.35, 1) var(--delay) both;
-}
-
-/* A little parade of kittens hopping across the bottom of the screen. */
-@keyframes kitten-run {
-  from {
-    transform: translateX(-4rem);
-  }
-  to {
-    transform: translateX(calc(100vw + 4rem));
-  }
-}
-@keyframes kitten-hop {
-  from {
-    transform: translateY(0) rotate(-8deg);
-  }
-  to {
-    transform: translateY(-1.1rem) rotate(8deg);
-  }
-}
-.kitten-runner {
-  animation: kitten-run var(--dur) linear var(--delay) both;
-}
-.kitten-hop {
-  animation: kitten-hop 0.22s ease-in-out infinite alternate;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .kitten-burst {
-    display: none;
   }
 }
 

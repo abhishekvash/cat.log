@@ -19,6 +19,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { Wordmark } from "#/components/catalog/wordmark";
 import { CatEars } from "#/components/mastermind/cat-ears";
 import { KittenBurst } from "#/components/mastermind/kitten-burst";
 import {
@@ -50,7 +51,8 @@ import {
 import { cn } from "#/lib/utils";
 
 // The game lives in localStorage, so there's nothing useful to render on the server.
-export const Route = createFileRoute("/play")({
+export const Route = createFileRoute("/meowstermind/play")({
+	head: () => ({ meta: [{ title: "Meowstermind · cat.log" }] }),
 	ssr: false,
 	component: Play,
 });
@@ -159,31 +161,26 @@ function Play() {
 		>
 			<div className="game flex min-h-dvh select-none flex-col [-webkit-touch-callout:none]">
 				<header className="flex flex-wrap items-center justify-between gap-y-2 border-b px-4 py-2">
-					<Link
-						to="/"
-						className="flex items-center gap-2 font-semibold tracking-tight"
-					>
-						<Cat className="size-5 text-primary" /> Meowstermind
-						<span className="text-xs font-normal text-muted-foreground max-sm:hidden">
-							nya~
-						</span>
-					</Link>
+					<nav className="flex items-center gap-2 text-lg">
+						<Link
+							to="/"
+							className="rounded-md py-2 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 text-muted-foreground transition-colors hover:text-foreground max-sm:hidden"
+						>
+							<Wordmark />
+						</Link>
+						<span className="text-muted-foreground/50 max-sm:hidden">/</span>
+						<Link
+							to="/meowstermind"
+							className="flex items-center gap-2 rounded-md py-2 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 font-display font-semibold"
+						>
+							<Cat className="size-5 text-primary" /> Meowstermind
+						</Link>
+					</nav>
 					{state.match && <Scoreboard match={state.match} />}
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={() => {
-							if (
-								!state.match ||
-								window.confirm(
-									"End this match and reset the scores? The kitties will be sad.",
-								)
-							)
-								dispatch({ type: "reset" });
-						}}
-					>
-						<RotateCcw /> <span className="max-sm:sr-only">New match</span>
-					</Button>
+					<NewMatchButton
+						needsConfirm={state.match !== null}
+						onReset={() => dispatch({ type: "reset" })}
+					/>
 				</header>
 
 				{state.phase === "players" ? (
@@ -195,7 +192,7 @@ function Play() {
 						{/* Landscape: panel | board | paws. Portrait: panel strip above board | paws. */}
 						{/* "-safe" alignment: if space ever runs out, overflow scrolls instead of clipping the top. */}
 						<main className="flex flex-1 items-center-safe justify-center-safe gap-6 p-4 md:gap-10 portrait:flex-col portrait:gap-4">
-							<aside className="flex w-48 shrink-0 flex-col gap-5 portrait:w-auto portrait:flex-row portrait:flex-wrap portrait:items-center portrait:justify-center portrait:gap-6">
+							<aside className="flex w-52 shrink-0 flex-col gap-5 portrait:w-auto portrait:flex-row portrait:flex-wrap portrait:items-center portrait:justify-center portrait:gap-6">
 								<Status state={state} />
 
 								{target && (
@@ -257,7 +254,7 @@ function Play() {
 function Status({ state }: { state: GameState }) {
 	const { match } = state;
 	const mastermind = match ? match.players[mastermindOf(match)] : "Mastermind";
-	const breaker = match ? match.players[breakerOf(match)] : "Player";
+	const breaker = match ? match.players[breakerOf(match)] : "Codebreaker";
 	const tries = state.current + 1;
 	const points = match?.lastPoints ?? 0;
 	const status: Record<GameState["phase"], [string, string]> = {
@@ -283,17 +280,17 @@ function Status({ state }: { state: GameState }) {
 	const [who, what] = status[state.phase];
 	return (
 		<div className="space-y-1 portrait:w-52">
-			<p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+			<p className="text-overline">
 				{state.phase === "guessing" || state.phase === "scoring"
-					? `Attempt ${tries} of ${state.rows.length}`
+					? `Try ${tries} of ${state.rows.length}`
 					: match
 						? `Round ${match.round + 1}`
 						: " "}
 			</p>
 			<p
 				className={cn(
-					"text-lg font-semibold",
-					state.phase === "won" && "text-2xl text-primary",
+					"font-display text-xl font-semibold",
+					state.phase === "won" && "text-3xl text-primary",
 				)}
 			>
 				{who}
@@ -303,7 +300,47 @@ function Status({ state }: { state: GameState }) {
 	);
 }
 
-/** Both players' totals; the current mastermind wears the little crown. */
+/**
+ * Resetting a match throws away both scores, so it asks for a second tap
+ * (inline, no pop-up). The ask quietly times out if the second tap never comes.
+ */
+function NewMatchButton({
+	needsConfirm,
+	onReset,
+}: {
+	needsConfirm: boolean;
+	onReset: () => void;
+}) {
+	const [armed, setArmed] = useState(false);
+	useEffect(() => {
+		if (!armed) return;
+		const timer = setTimeout(() => setArmed(false), 3500);
+		return () => clearTimeout(timer);
+	}, [armed]);
+	return (
+		<Button
+			variant={armed ? "outline" : "ghost"}
+			size="sm"
+			className={cn(
+				armed &&
+					"border-primary/60 text-primary dark:border-primary/60 dark:text-primary",
+			)}
+			onClick={() => {
+				if (!needsConfirm || armed) {
+					setArmed(false);
+					onReset();
+				} else setArmed(true);
+			}}
+		>
+			<RotateCcw />
+			<span className={cn(!armed && "max-sm:sr-only")}>
+				{armed ? "Tap again to reset scores" : "New match"}
+			</span>
+		</Button>
+	);
+}
+
+/** Both players' totals; the current mastermind is highlighted. */
 function Scoreboard({ match }: { match: Match }) {
 	return (
 		<div className="flex items-center gap-2 text-sm max-sm:order-last max-sm:w-full max-sm:justify-center">
@@ -316,11 +353,13 @@ function Scoreboard({ match }: { match: Match }) {
 						mastermindOf(match) === i && "border-primary/50 bg-primary/10",
 					)}
 				>
-					<span className="max-w-24 truncate">{name}</span>
-					<span className="font-semibold tabular-nums text-primary">
+					<span className="max-w-24 truncate font-display font-medium">
+						{name}
+					</span>
+					<span className="font-display font-semibold tabular-nums text-primary">
 						{match.scores[i]}
 					</span>
-					<span className="text-[10px] text-muted-foreground max-sm:hidden">
+					<span className="text-xs text-muted-foreground max-sm:hidden">
 						{mastermindOf(match) === i ? "hides" : "guesses"}
 					</span>
 				</div>
@@ -344,7 +383,7 @@ function PlayersForm({
 		<main className="flex flex-1 items-center justify-center p-6">
 			<form
 				onSubmit={submit}
-				className="relative flex w-full max-w-sm flex-col gap-5 rounded-3xl border bg-card p-6 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]"
+				className="relative flex w-full max-w-sm flex-col gap-5 rounded-3xl border bg-card p-6 shadow-table"
 			>
 				<CatEars />
 				<div className="flex justify-center gap-2">
@@ -353,15 +392,20 @@ function PlayersForm({
 					))}
 				</div>
 				<div className="space-y-1 text-center">
-					<h1 className="text-xl font-semibold">Who's playing?</h1>
+					<h1 className="font-display text-2xl font-semibold">
+						Who's playing?
+					</h1>
 					<p className="text-sm text-muted-foreground">
 						You take turns hiding the code. The codebreaker scores 11 minus the
 						tries they needed, so crack it fast!
 					</p>
 				</div>
 				{(["Player 1 (hides first)", "Player 2"] as const).map((label, i) => (
-					<div key={label} className="space-y-1.5 text-sm">
-						<label htmlFor={`player-${i}`} className="text-muted-foreground">
+					<div key={label} className="flex flex-col gap-2">
+						<label
+							htmlFor={`player-${i}`}
+							className="px-3 text-sm font-medium text-muted-foreground"
+						>
 							{label}
 						</label>
 						<Input
@@ -397,8 +441,8 @@ function Tray({
 }) {
 	return (
 		<div className="space-y-2">
-			<p className="text-xs font-medium text-muted-foreground">{label}</p>
-			<div className="flex flex-wrap gap-1 rounded-2xl border bg-card p-2">
+			<p className="text-overline">{label}</p>
+			<div className="flex flex-wrap justify-center gap-1 rounded-2xl border bg-card p-2">
 				{children}
 			</div>
 		</div>
@@ -420,13 +464,11 @@ function PawBox({
 	return (
 		<div
 			className={cn(
-				"flex w-22 shrink-0 flex-col items-center gap-3 rounded-3xl border bg-card px-2 py-4 transition max-sm:w-auto max-sm:flex-row max-sm:px-4 max-sm:py-2",
-				active && "border-primary/60 shadow-[0_0_30px_-8px] shadow-primary/50",
+				"flex w-26 shrink-0 flex-col items-center gap-3 rounded-3xl border bg-card px-2 py-4 transition max-sm:w-auto max-sm:flex-row max-sm:px-4 max-sm:py-2",
+				active && "border-primary/60 shadow-lamp",
 			)}
 		>
-			<p className="text-center text-xs font-medium text-muted-foreground">
-				Paw box
-			</p>
+			<p className="text-overline text-center">Paw box</p>
 			{KEY_COLORS.map((color) => (
 				<div key={color} className="flex flex-col items-center gap-0.5">
 					<TrayPin
@@ -435,12 +477,12 @@ function PawBox({
 						disabled={!active}
 						onSelect={() => onSelect({ kind: "key", color })}
 					/>
-					<span className="text-center text-[10px] leading-tight text-muted-foreground">
+					<span className="text-center text-xs leading-tight text-muted-foreground">
 						{PAW_HINTS[color]}
 					</span>
 				</div>
 			))}
-			<p className="text-center text-[10px] leading-tight text-muted-foreground">
+			<p className="text-center text-xs leading-snug text-balance text-muted-foreground">
 				{active ? "Drag onto the glowing row" : "Unlocks when scoring"}
 			</p>
 		</div>
@@ -507,7 +549,7 @@ function Actions({
 						size="sm"
 						onClick={() => dispatch({ type: "editGuess" })}
 					>
-						<Undo2 /> Let player edit guess
+						<Undo2 /> Let codebreaker edit
 					</Button>
 				</div>
 			);
@@ -517,6 +559,7 @@ function Actions({
 			return (
 				<Button
 					size="lg"
+					className="h-auto min-h-12 py-2 whitespace-normal text-balance"
 					onClick={() =>
 						dispatch({ type: state.match ? "nextRound" : "reset" })
 					}
@@ -543,9 +586,9 @@ function Board({
 	const over = state.phase === "won" || state.phase === "lost";
 
 	return (
-		<div className="relative mt-8 flex flex-col rounded-3xl border bg-card p-3 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)]">
+		<div className="relative mt-8 flex flex-col rounded-3xl border bg-card p-3 shadow-table">
 			<CatEars />
-			<BoardLine className="pb-1 text-[11px] font-medium text-muted-foreground">
+			<BoardLine className="pb-1 text-xs font-medium text-muted-foreground">
 				<span />
 				<Cols kind="code">
 					{positions.map((i) => (
@@ -587,7 +630,7 @@ function Board({
 									index={i}
 									color={color}
 									enabled={guessing}
-									label={`Attempt ${r + 1}, position ${i + 1}: ${color ?? "empty"}`}
+									label={`Try ${r + 1}, position ${i + 1}: ${color ?? "empty"}`}
 									onTap={() => onTapCode(i, color)}
 								/>
 							))}
@@ -608,7 +651,7 @@ function Board({
 									index={i}
 									color={color}
 									enabled={scoring}
-									label={`Score for attempt ${r + 1}, position ${i + 1}: ${color ?? "empty"}`}
+									label={`Score for try ${r + 1}, position ${i + 1}: ${color ?? "empty"}`}
 									onTap={() => onTapKey(i, color)}
 								/>
 							))}
@@ -617,19 +660,21 @@ function Board({
 				);
 			})}
 
+			{/* The divider sits on its own so the code row pads evenly, like guess rows. */}
+			<div aria-hidden="true" className="mx-2 my-2 border-t" />
 			<BoardLine
 				className={cn(
-					"mt-2 border-t pt-2",
-					state.phase === "setup" &&
-						"rounded-xl bg-primary/10 ring-1 ring-primary/35",
+					"rounded-xl py-[calc(var(--pin)*0.1)]",
+					state.phase === "setup" && "bg-primary/10 ring-1 ring-primary/35",
 				)}
 			>
-				<span className="text-right text-[10px] font-medium uppercase text-muted-foreground">
-					Code
-				</span>
+				<span className="text-overline text-right tracking-wider">Code</span>
 				<Cols
 					kind="code"
-					className={cn(over && "animate-in zoom-in-50 fade-in duration-700")}
+					className={cn(
+						over &&
+							"animate-in zoom-in-50 fade-in duration-700 motion-reduce:animate-none",
+					)}
 				>
 					{state.secret.map((color, i) =>
 						revealed ? (
@@ -666,7 +711,7 @@ function BoardLine({
 	return (
 		<div
 			className={cn(
-				"grid grid-cols-[1.75rem_auto_auto] items-center gap-x-3 px-2",
+				"grid grid-cols-[2.5rem_auto_auto] items-center gap-x-3 px-2",
 				className,
 			)}
 		>

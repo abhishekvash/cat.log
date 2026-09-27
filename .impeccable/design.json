@@ -1,0 +1,482 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-26T12:19:36.139133+00:00",
+  "title": "Design System: cat.log",
+  "extensions": {
+    "colorMeta": {
+      "velvet-dusk": {
+        "role": "neutral",
+        "displayName": "Velvet Dusk",
+        "canonical": "oklch(0.2 0.035 305)",
+        "tonalRamp": [
+          "oklch(0.15 0.035 305)",
+          "oklch(0.25 0.035 305)",
+          "oklch(0.35 0.035 305)",
+          "oklch(0.45 0.035 305)",
+          "oklch(0.58 0.035 305)",
+          "oklch(0.7 0.035 305)",
+          "oklch(0.82 0.035 305)",
+          "oklch(0.95 0.035 305)"
+        ]
+      },
+      "velvet-dusk-raised": {
+        "role": "neutral",
+        "displayName": "Velvet Dusk Raised",
+        "canonical": "oklch(0.25 0.04 305)",
+        "tonalRamp": [
+          "oklch(0.15 0.04 305)",
+          "oklch(0.25 0.04 305)",
+          "oklch(0.35 0.04 305)",
+          "oklch(0.45 0.04 305)",
+          "oklch(0.58 0.04 305)",
+          "oklch(0.7 0.04 305)",
+          "oklch(0.82 0.04 305)",
+          "oklch(0.95 0.04 305)"
+        ]
+      },
+      "velvet-dusk-muted": {
+        "role": "neutral",
+        "displayName": "Velvet Dusk Muted",
+        "canonical": "oklch(0.31 0.045 305)",
+        "tonalRamp": [
+          "oklch(0.15 0.045 305)",
+          "oklch(0.25 0.045 305)",
+          "oklch(0.35 0.045 305)",
+          "oklch(0.45 0.045 305)",
+          "oklch(0.58 0.045 305)",
+          "oklch(0.7 0.045 305)",
+          "oklch(0.82 0.045 305)",
+          "oklch(0.95 0.045 305)"
+        ]
+      },
+      "velvet-dusk-hover": {
+        "role": "neutral",
+        "displayName": "Velvet Dusk Hover",
+        "canonical": "oklch(0.34 0.05 310)",
+        "tonalRamp": [
+          "oklch(0.15 0.05 310)",
+          "oklch(0.25 0.05 310)",
+          "oklch(0.35 0.05 310)",
+          "oklch(0.45 0.05 310)",
+          "oklch(0.58 0.05 310)",
+          "oklch(0.7 0.05 310)",
+          "oklch(0.82 0.05 310)",
+          "oklch(0.95 0.05 310)"
+        ]
+      },
+      "dusk-seam": {
+        "role": "neutral",
+        "displayName": "Dusk Seam",
+        "canonical": "oklch(0.36 0.05 310)",
+        "tonalRamp": [
+          "oklch(0.15 0.05 310)",
+          "oklch(0.25 0.05 310)",
+          "oklch(0.35 0.05 310)",
+          "oklch(0.45 0.05 310)",
+          "oklch(0.58 0.05 310)",
+          "oklch(0.7 0.05 310)",
+          "oklch(0.82 0.05 310)",
+          "oklch(0.95 0.05 310)"
+        ]
+      },
+      "strawberry-milk": {
+        "role": "primary",
+        "displayName": "Strawberry Milk",
+        "canonical": "oklch(0.8 0.12 350)",
+        "tonalRamp": [
+          "oklch(0.15 0.12 350)",
+          "oklch(0.25 0.12 350)",
+          "oklch(0.35 0.12 350)",
+          "oklch(0.45 0.12 350)",
+          "oklch(0.58 0.12 350)",
+          "oklch(0.7 0.12 350)",
+          "oklch(0.82 0.12 350)",
+          "oklch(0.95 0.12 350)"
+        ]
+      },
+      "strawberry-milk-ink": {
+        "role": "primary",
+        "displayName": "Strawberry Milk Ink",
+        "canonical": "oklch(0.22 0.04 320)",
+        "tonalRamp": [
+          "oklch(0.15 0.04 320)",
+          "oklch(0.25 0.04 320)",
+          "oklch(0.35 0.04 320)",
+          "oklch(0.45 0.04 320)",
+          "oklch(0.58 0.04 320)",
+          "oklch(0.7 0.04 320)",
+          "oklch(0.82 0.04 320)",
+          "oklch(0.95 0.04 320)"
+        ]
+      },
+      "moon-milk": {
+        "role": "neutral",
+        "displayName": "Moon Milk",
+        "canonical": "oklch(0.95 0.02 340)",
+        "tonalRamp": [
+          "oklch(0.15 0.02 340)",
+          "oklch(0.25 0.02 340)",
+          "oklch(0.35 0.02 340)",
+          "oklch(0.45 0.02 340)",
+          "oklch(0.58 0.02 340)",
+          "oklch(0.7 0.02 340)",
+          "oklch(0.82 0.02 340)",
+          "oklch(0.95 0.02 340)"
+        ]
+      },
+      "lavender-whisper": {
+        "role": "neutral",
+        "displayName": "Lavender Whisper",
+        "canonical": "oklch(0.74 0.05 320)",
+        "tonalRamp": [
+          "oklch(0.15 0.05 320)",
+          "oklch(0.25 0.05 320)",
+          "oklch(0.35 0.05 320)",
+          "oklch(0.45 0.05 320)",
+          "oklch(0.58 0.05 320)",
+          "oklch(0.7 0.05 320)",
+          "oklch(0.82 0.05 320)",
+          "oklch(0.95 0.05 320)"
+        ]
+      },
+      "paw-pink": {
+        "role": "secondary",
+        "displayName": "Paw Pink",
+        "canonical": "#ff7eb0",
+        "tonalRamp": [
+          "oklch(0.15 0.17 355)",
+          "oklch(0.25 0.17 355)",
+          "oklch(0.35 0.17 355)",
+          "oklch(0.45 0.17 355)",
+          "oklch(0.58 0.17 355)",
+          "oklch(0.7 0.17 355)",
+          "oklch(0.82 0.17 355)",
+          "oklch(0.95 0.17 355)"
+        ]
+      },
+      "paw-white": {
+        "role": "secondary",
+        "displayName": "Paw White",
+        "canonical": "#fff4f8",
+        "tonalRamp": [
+          "oklch(0.15 0.015 350)",
+          "oklch(0.25 0.015 350)",
+          "oklch(0.35 0.015 350)",
+          "oklch(0.45 0.015 350)",
+          "oklch(0.58 0.015 350)",
+          "oklch(0.7 0.015 350)",
+          "oklch(0.82 0.015 350)",
+          "oklch(0.95 0.015 350)"
+        ]
+      },
+      "lurking-green": {
+        "role": "tertiary",
+        "displayName": "Lurking Green",
+        "canonical": "#8fdc4f",
+        "tonalRamp": [
+          "oklch(0.15 0.18 135)",
+          "oklch(0.25 0.18 135)",
+          "oklch(0.35 0.18 135)",
+          "oklch(0.45 0.18 135)",
+          "oklch(0.58 0.18 135)",
+          "oklch(0.7 0.18 135)",
+          "oklch(0.82 0.18 135)",
+          "oklch(0.95 0.18 135)"
+        ]
+      },
+      "hiss-red": {
+        "role": "tertiary",
+        "displayName": "Hiss Red",
+        "canonical": "oklch(0.65 0.2 15)",
+        "tonalRamp": [
+          "oklch(0.15 0.2 15)",
+          "oklch(0.25 0.2 15)",
+          "oklch(0.35 0.2 15)",
+          "oklch(0.45 0.2 15)",
+          "oklch(0.58 0.2 15)",
+          "oklch(0.7 0.2 15)",
+          "oklch(0.82 0.2 15)",
+          "oklch(0.95 0.2 15)"
+        ]
+      },
+      "well": {
+        "role": "neutral",
+        "displayName": "Well",
+        "canonical": "oklch(0.14 0.03 305)",
+        "tonalRamp": [
+          "oklch(0.1 0.03 305)",
+          "oklch(0.14 0.03 305)",
+          "oklch(0.2 0.03 305)",
+          "oklch(0.3 0.03 305)",
+          "oklch(0.45 0.03 305)",
+          "oklch(0.6 0.03 305)",
+          "oklch(0.8 0.03 305)",
+          "oklch(0.95 0.03 305)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The landing welcome only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "A game's own title page."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Tile names, turn prompts, Who's playing?; Purrfect! steps up in Strawberry Milk."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Instructions and descriptions, capped at 65-75ch."
+      },
+      "body-small": {
+        "displayName": "Body Small",
+        "purpose": "Hints, card blurbs, button labels."
+      },
+      "label": {
+        "displayName": "Label / Overline",
+        "purpose": "Shared text-overline utility: ROUND 1, TRY 3 OF 10, KITTIES, PAW BOX, CODE."
+      },
+      "log": {
+        "displayName": "Log",
+        "purpose": "The .log in the cat.log wordmark only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "table",
+        "value": "0 20px 50px -20px oklch(0.08 0.02 305 / 0.7)",
+        "purpose": "Board, names card, game tiles. One per surface."
+      },
+      {
+        "name": "sticker",
+        "value": "drop-shadow(0 2px 2px oklch(0.08 0.02 305 / 0.45))",
+        "purpose": "Cat and paw pieces (filter)."
+      },
+      {
+        "name": "pressed-hole",
+        "value": "inset 0 2px 4px oklch(0.08 0.02 305 / 0.55)",
+        "purpose": "Empty board slots and legend holes, over Well."
+      },
+      {
+        "name": "lamp-glow",
+        "value": "0 0 30px -8px oklch(0.8 0.12 350 / 0.5)",
+        "purpose": "Paw box while scoring. The only glowing surface."
+      },
+      {
+        "name": "eye-glow",
+        "value": "drop-shadow(0 0 6px rgb(143 220 79 / 0.55))",
+        "purpose": "Background cat eyes (filter)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "default",
+        "value": "180ms cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Default for every transition utility (ease-out-quart)."
+      },
+      {
+        "name": "state",
+        "value": "150ms ease-out",
+        "purpose": "Hover and focus color changes."
+      },
+      {
+        "name": "lift",
+        "value": "200ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Tile hover lift (-4px)."
+      },
+      {
+        "name": "reveal",
+        "value": "700ms zoom-in-50 + fade-in",
+        "purpose": "Secret code popping into view at round end."
+      },
+      {
+        "name": "kitten-burst",
+        "value": "per-frame physics: gravity 700px/s², drag 3.2-4.6/s, sway 18-42px, ~7s",
+        "purpose": "Confetti-like celebration when a code is cracked."
+      },
+      {
+        "name": "eye-blink",
+        "value": "scaleY 1 -> 0.08, cycles 7.3-12.7s, some double-blink",
+        "purpose": "Background eyes blinking out of sync."
+      },
+      {
+        "name": "ear-twitch",
+        "value": "6.5s cycle, rotate -9deg/+3deg/-4deg in the last 12%",
+        "purpose": "Left card ear flick."
+      },
+      {
+        "name": "tap-press",
+        "value": "scale 0.97 on :active",
+        "purpose": "Touch feedback on buttons; off under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "orientation",
+        "value": "portrait / landscape (board layout switches)"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action per screen: start, confirm, next round.",
+      "html": "<button class=\"ds-btn-primary\">Start match</button>",
+      "css": ".ds-btn-primary { background: oklch(0.8 0.12 350); color: oklch(0.22 0.04 320); font-family: 'Fredoka Variable', ui-rounded, system-ui, sans-serif; font-weight: 500; font-size: 14px; letter-spacing: 0.025em; height: 48px; padding: 0 24px; border: none; border-radius: 9999px; cursor: pointer; transition: background-color 150ms, box-shadow 150ms; } .ds-btn-primary:hover { background: oklch(0.8 0.12 350 / 0.9); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.8 0.12 350 / 0.5); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; } .ds-btn-primary:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary actions like Random code or Hold to peek.",
+      "html": "<button class=\"ds-btn-outline\">Random code</button>",
+      "css": ".ds-btn-outline { background: oklch(0.2 0.035 305); color: oklch(0.95 0.02 340); font-family: 'Fredoka Variable', ui-rounded, system-ui, sans-serif; font-weight: 500; font-size: 14px; letter-spacing: 0.025em; height: 44px; padding: 0 20px; border: 1px solid oklch(0.36 0.05 310); border-radius: 9999px; cursor: pointer; transition: background-color 150ms; } .ds-btn-outline:hover { background: oklch(0.34 0.05 310); } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.8 0.12 350 / 0.5); } .ds-btn-outline:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Tertiary actions like New match.",
+      "html": "<button class=\"ds-btn-ghost\">New match</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: oklch(0.95 0.02 340); font-family: 'Fredoka Variable', ui-rounded, system-ui, sans-serif; font-weight: 500; font-size: 14px; height: 44px; padding: 0 16px; border: none; border-radius: 9999px; cursor: pointer; transition: background-color 150ms; } .ds-btn-ghost:hover { background: oklch(0.34 0.05 310); } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.8 0.12 350 / 0.5); } .ds-btn-ghost:active { transform: scale(0.97); }"
+    },
+    {
+      "name": "Name Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Labelled text field; label inset to align with typed text.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-p1\">Player 1 (hides first)</label><input class=\"ds-field-input\" id=\"ds-p1\" placeholder=\"Mochi\"></div>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; width: 280px; } .ds-field-label { padding: 0 12px; font-family: 'Nunito Variable', ui-rounded, system-ui, sans-serif; font-weight: 500; font-size: 14px; color: oklch(0.74 0.05 320); } .ds-field-input { height: 44px; padding: 0 12px; border-radius: 20px; border: 1px solid oklch(0.36 0.05 310); background: oklch(0.31 0.045 305); color: oklch(0.95 0.02 340); font-family: 'Nunito Variable', ui-rounded, system-ui, sans-serif; font-size: 16px; outline: none; transition: border-color 150ms, box-shadow 150ms; } .ds-field-input::placeholder { color: oklch(0.74 0.05 320); } .ds-field-input:focus-visible { border-color: oklch(0.8 0.12 350); box-shadow: 0 0 0 3px oklch(0.8 0.12 350 / 0.5); }"
+    },
+    {
+      "name": "Tag Chip",
+      "kind": "chip",
+      "refersTo": "tag-chip",
+      "description": "Quiet metadata on game tiles.",
+      "html": "<span class=\"ds-chip\">2 players</span>",
+      "css": ".ds-chip { display: inline-block; padding: 2px 10px; border: 1px solid oklch(0.36 0.05 310); border-radius: 9999px; font-family: 'Nunito Variable', ui-rounded, system-ui, sans-serif; font-size: 12px; color: oklch(0.74 0.05 320); }"
+    },
+    {
+      "name": "Breadcrumb Nav",
+      "kind": "nav",
+      "description": "cat.log / game name, in the game header.",
+      "html": "<nav class=\"ds-crumbs\"><a class=\"ds-crumb-home\" href=\"#\">cat<span class=\"ds-crumb-log\">.log</span></a><span class=\"ds-crumb-sep\">/</span><a class=\"ds-crumb-game\" href=\"#\">Meowstermind</a></nav>",
+      "css": ".ds-crumbs { display: flex; align-items: center; gap: 8px; font-size: 18px; } .ds-crumb-home { color: oklch(0.74 0.05 320); font-family: 'Fredoka Variable', ui-rounded, system-ui, sans-serif; font-weight: 600; text-decoration: none; transition: color 150ms; } .ds-crumb-home:hover { color: oklch(0.95 0.02 340); } .ds-crumb-log { color: oklch(0.8 0.12 350); font-family: ui-monospace, Menlo, monospace; } .ds-crumb-sep { color: oklch(0.74 0.05 320 / 0.5); } .ds-crumb-game { color: oklch(0.95 0.02 340); font-family: 'Fredoka Variable', ui-rounded, system-ui, sans-serif; font-weight: 600; text-decoration: none; }"
+    },
+    {
+      "name": "Game Tile",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Catalog entry with preview well, title, blurb, tags and play affordance.",
+      "html": "<a class=\"ds-tile\" href=\"#\"><div class=\"ds-tile-well\"><svg viewBox=\"0 0 100 100\" width=\"48\" height=\"48\" aria-hidden=\"true\"><g fill=\"#fff4f8\" stroke=\"#fff4f8\" stroke-width=\"11\" stroke-linejoin=\"round\"><path d=\"M15 50 L19 11 Q20 6 25 8 L48 28 Z\"/><path d=\"M85 50 L81 11 Q80 6 75 8 L52 28 Z\"/><ellipse cx=\"50\" cy=\"60\" rx=\"40\" ry=\"33\"/></g><path d=\"M15 50 L19 11 Q20 6 25 8 L48 28 Z\" fill=\"#f4a259\" stroke=\"#2a1f26\" stroke-width=\"3.5\" stroke-linejoin=\"round\"/><path d=\"M85 50 L81 11 Q80 6 75 8 L52 28 Z\" fill=\"#f4a259\" stroke=\"#2a1f26\" stroke-width=\"3.5\" stroke-linejoin=\"round\"/><path d=\"M23 38 L25 17 L39 28 Z\" fill=\"#f7a8b8\"/><path d=\"M77 38 L75 17 L61 28 Z\" fill=\"#f7a8b8\"/><ellipse cx=\"50\" cy=\"60\" rx=\"40\" ry=\"33\" fill=\"#f4a259\" stroke=\"#2a1f26\" stroke-width=\"3.5\"/><circle cx=\"34\" cy=\"60\" r=\"8.5\" fill=\"#8cc751\" stroke=\"#2a1f26\" stroke-width=\"2.5\"/><ellipse cx=\"34\" cy=\"60\" rx=\"3.5\" ry=\"6\" fill=\"#2a1f26\"/><circle cx=\"36.5\" cy=\"56.5\" r=\"2.5\" fill=\"#fff\"/><circle cx=\"66\" cy=\"60\" r=\"8.5\" fill=\"#8cc751\" stroke=\"#2a1f26\" stroke-width=\"2.5\"/><ellipse cx=\"66\" cy=\"60\" rx=\"3.5\" ry=\"6\" fill=\"#2a1f26\"/><circle cx=\"68.5\" cy=\"56.5\" r=\"2.5\" fill=\"#fff\"/><ellipse cx=\"22\" cy=\"72\" rx=\"6\" ry=\"3.5\" fill=\"#ff8fb1\" opacity=\".6\"/><ellipse cx=\"78\" cy=\"72\" rx=\"6\" ry=\"3.5\" fill=\"#ff8fb1\" opacity=\".6\"/><path d=\"M46.5 70 L53.5 70 L50 74 Z\" fill=\"#f28aa0\" stroke=\"#2a1f26\" stroke-width=\"1.5\"/><path d=\"M43 77 Q46.5 81 50 77 Q53.5 81 57 77\" stroke=\"#2a1f26\" stroke-width=\"2.5\" stroke-linecap=\"round\" fill=\"none\"/></svg></div><h3 class=\"ds-tile-title\">Meowstermind</h3><p class=\"ds-tile-blurb\">Hide a secret row of kitties and let your friend crack it with paw-print clues.</p><span class=\"ds-tile-play\">Play →</span></a>",
+      "css": ".ds-tile { display: flex; flex-direction: column; gap: 12px; width: 300px; padding: 20px; border-radius: 24px; border: 1px solid oklch(0.36 0.05 310); background: oklch(0.25 0.04 305); color: oklch(0.95 0.02 340); text-decoration: none; box-shadow: 0 20px 50px -24px rgba(0,0,0,0.7); transition: transform 200ms cubic-bezier(0.22,1,0.36,1), border-color 200ms; } .ds-tile:hover { transform: translateY(-4px); border-color: oklch(0.8 0.12 350 / 0.5); } .ds-tile:focus-visible { outline: none; box-shadow: 0 0 0 3px oklch(0.8 0.12 350 / 0.5); } .ds-tile-well { display: flex; align-items: center; justify-content: center; height: 112px; border-radius: 16px; background: oklch(0.14 0.03 305 / 0.6); } .ds-tile-title { margin: 0; font-family: 'Fredoka Variable', ui-rounded, system-ui, sans-serif; font-weight: 600; font-size: 24px; } .ds-tile-blurb { margin: 0; font-family: 'Nunito Variable', ui-rounded, system-ui, sans-serif; font-size: 14px; color: oklch(0.74 0.05 320); } .ds-tile-play { align-self: flex-end; font-family: 'Fredoka Variable', ui-rounded, system-ui, sans-serif; font-weight: 500; font-size: 14px; color: oklch(0.8 0.12 350); }"
+    },
+    {
+      "name": "Cat Piece",
+      "kind": "custom",
+      "description": "Sticker-style cat head used as a code pin (ginger shown).",
+      "html": "<span class=\"ds-cat\"><svg viewBox=\"0 0 100 100\" width=\"48\" height=\"48\" aria-hidden=\"true\"><g fill=\"#fff4f8\" stroke=\"#fff4f8\" stroke-width=\"11\" stroke-linejoin=\"round\"><path d=\"M15 50 L19 11 Q20 6 25 8 L48 28 Z\"/><path d=\"M85 50 L81 11 Q80 6 75 8 L52 28 Z\"/><ellipse cx=\"50\" cy=\"60\" rx=\"40\" ry=\"33\"/></g><path d=\"M15 50 L19 11 Q20 6 25 8 L48 28 Z\" fill=\"#f4a259\" stroke=\"#2a1f26\" stroke-width=\"3.5\" stroke-linejoin=\"round\"/><path d=\"M85 50 L81 11 Q80 6 75 8 L52 28 Z\" fill=\"#f4a259\" stroke=\"#2a1f26\" stroke-width=\"3.5\" stroke-linejoin=\"round\"/><path d=\"M23 38 L25 17 L39 28 Z\" fill=\"#f7a8b8\"/><path d=\"M77 38 L75 17 L61 28 Z\" fill=\"#f7a8b8\"/><ellipse cx=\"50\" cy=\"60\" rx=\"40\" ry=\"33\" fill=\"#f4a259\" stroke=\"#2a1f26\" stroke-width=\"3.5\"/><circle cx=\"34\" cy=\"60\" r=\"8.5\" fill=\"#8cc751\" stroke=\"#2a1f26\" stroke-width=\"2.5\"/><ellipse cx=\"34\" cy=\"60\" rx=\"3.5\" ry=\"6\" fill=\"#2a1f26\"/><circle cx=\"36.5\" cy=\"56.5\" r=\"2.5\" fill=\"#fff\"/><circle cx=\"66\" cy=\"60\" r=\"8.5\" fill=\"#8cc751\" stroke=\"#2a1f26\" stroke-width=\"2.5\"/><ellipse cx=\"66\" cy=\"60\" rx=\"3.5\" ry=\"6\" fill=\"#2a1f26\"/><circle cx=\"68.5\" cy=\"56.5\" r=\"2.5\" fill=\"#fff\"/><ellipse cx=\"22\" cy=\"72\" rx=\"6\" ry=\"3.5\" fill=\"#ff8fb1\" opacity=\".6\"/><ellipse cx=\"78\" cy=\"72\" rx=\"6\" ry=\"3.5\" fill=\"#ff8fb1\" opacity=\".6\"/><path d=\"M46.5 70 L53.5 70 L50 74 Z\" fill=\"#f28aa0\" stroke=\"#2a1f26\" stroke-width=\"1.5\"/><path d=\"M43 77 Q46.5 81 50 77 Q53.5 81 57 77\" stroke=\"#2a1f26\" stroke-width=\"2.5\" stroke-linecap=\"round\" fill=\"none\"/></svg></span>",
+      "css": ".ds-cat { display: inline-block; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35)); }"
+    },
+    {
+      "name": "Paw Scores",
+      "kind": "custom",
+      "description": "Pink = right cat, right spot. White = right cat, wrong spot. Empty = not in the code.",
+      "html": "<div class=\"ds-paws\"><svg viewBox=\"0 0 100 100\" width=\"24\" height=\"24\" aria-hidden=\"true\"><circle cx=\"50\" cy=\"50\" r=\"46\" fill=\"#ff7eb0\"/><g fill=\"#d6457f\" opacity=\".6\"><ellipse cx=\"50\" cy=\"64\" rx=\"17\" ry=\"14\"/><ellipse cx=\"29\" cy=\"45\" rx=\"7\" ry=\"9\"/><ellipse cx=\"43\" cy=\"34\" rx=\"7\" ry=\"9\"/><ellipse cx=\"57\" cy=\"34\" rx=\"7\" ry=\"9\"/><ellipse cx=\"71\" cy=\"45\" rx=\"7\" ry=\"9\"/></g></svg><svg viewBox=\"0 0 100 100\" width=\"24\" height=\"24\" aria-hidden=\"true\"><circle cx=\"50\" cy=\"50\" r=\"46\" fill=\"#fff4f8\"/><g fill=\"#d9c3cf\" opacity=\".6\"><ellipse cx=\"50\" cy=\"64\" rx=\"17\" ry=\"14\"/><ellipse cx=\"29\" cy=\"45\" rx=\"7\" ry=\"9\"/><ellipse cx=\"43\" cy=\"34\" rx=\"7\" ry=\"9\"/><ellipse cx=\"57\" cy=\"34\" rx=\"7\" ry=\"9\"/><ellipse cx=\"71\" cy=\"45\" rx=\"7\" ry=\"9\"/></g></svg><span class=\"ds-hole\"></span></div>",
+      "css": ".ds-paws { display: flex; align-items: center; gap: 8px; } .ds-paws svg { filter: drop-shadow(0 2px 2px rgba(0,0,0,0.35)); } .ds-hole { width: 24px; height: 24px; border-radius: 9999px; background: oklch(0.14 0.03 305 / 0.7); box-shadow: inset 0 2px 4px oklch(0.08 0.02 305 / 0.55); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Midnight Cat Café",
+    "overview": "cat.log is a warm, dim room after closing time. The lights are low, the chairs are soft, a few cats are asleep on the counter and a couple more are watching from the dark corners. Two people sit across one iPad and play something quiet together. Everything on screen should feel like it belongs in that room: velvety dusk surfaces, soft lamplight pink for the things you touch, and cats that are the unmistakable stars of every screen.\n\nThe system is **dark by conviction, not by fashion**. The scene is an evening on a couch with the lights down, where a bright white page would glare. Density is low and pace is unhurried: large pieces, generous spacing, one clear thing to do per moment. Personality lives in small, discoverable details (glowing eyes that blink out of sync, a sleepy cat guarding the code, an ear that flicks now and then, a burst of kittens that drifts down like confetti) rather than in loud decoration. As PRODUCT.md puts it: *delight should feel like a purr, not an alarm.*\n\nThis system explicitly rejects the **mobile-game casino** (flashing rewards, coins, pushy \"play again!\"), the **loud neon gamer** (RGB glows, aggressive angles), anything **childish or babyish** (primary colors, clip art), and **generic SaaS / AI slop** (gradient blobs, glassy cards, stock icons, templated landing pages).",
+    "keyCharacteristics": [
+      "Velvet Dusk plum surfaces with a single Strawberry Milk accent for interaction.",
+      "Sticker-style SVG cats with a light sticker border, so even the black cat pops on the dark board.",
+      "Round but quiet UI: pills and soft corners, restrained so the cats stay the stars.",
+      "Soft lift: raised surfaces one shade lighter plus one deep, diffuse shadow.",
+      "Touch-first geometry: nothing interactive smaller than a comfortable fingertip.",
+      "Ambient life at the edges: blinking cat eyes live in the empty background, never over play. Each pair picks the first free spot from a few candidates and stays hidden if every spot would overlap content."
+    ],
+    "rules": [
+      {
+        "name": "The One Lamp Rule",
+        "body": "Strawberry Milk is the only lamp in the room. It marks interaction and celebration and covers well under 10% of any game screen. If two pink things compete for attention, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Cats Bring the Color Rule",
+        "body": "Chrome stays in plum and milk tones so the five coats and two paws are the most colorful things on screen. Never introduce a new saturated hue for UI.",
+        "section": "colors"
+      },
+      {
+        "name": "The 12px Floor Rule",
+        "body": "No text below 12px, anywhere, including board numbers and hints. If a label doesn't fit at 12px, the layout gives it room.",
+        "section": "typography"
+      },
+      {
+        "name": "The Chalkboard and Menu Rule",
+        "body": "Fredoka for anything you'd write on the café's chalkboard (titles, names, scores, buttons); Nunito for anything you'd read at the table (sentences). Never set a full sentence of instructions in Fredoka.",
+        "section": "typography"
+      },
+      {
+        "name": "The Wordmark-Only Mono Rule",
+        "body": "Monospace appears only as the \".log\" in the cat.log wordmark. No terminal prompts, status lines or mono labels; the pun lands once.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Shadow Rule",
+        "body": "A surface gets exactly one shadow. If depth needs a second shadow to read, the tonal step is wrong.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Only Things That Glow Rule",
+        "body": "Glow is reserved for the active paw box and the lurking eyes. Nothing else glows; a glowing button is a neon-gamer tell.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep every screen in Velvet Dusk (`oklch(0.2 0.035 305)`) with Moon Milk text; the room is always dim.",
+      "Do reserve Strawberry Milk for interaction and celebration, under 10% of any game screen (The One Lamp Rule).",
+      "Do make cats the most colorful, most detailed things on screen; UI chrome stays in plum and milk tones.",
+      "Do give every touch target at least 44px (buttons: 44px floor, 48px for the main action), and give small drop targets a larger hit area than their visual.",
+      "Do use the shared tokens (`bg-well`, `shadow-table`, `shadow-hole`, `shadow-lamp`, `drop-shadow-sticker`, `text-overline`) instead of one-off values.",
+      "Do put personality in small ambient details (blinking eyes, a sleepy cat, a flicking ear) placed in empty space, away from the board. Background eyes check the page and keep 20px clear of any text, control, piece or card.",
+      "Do balance wrapped groups: trays of pieces center their rows (3 + 2, not 2 + 2 + 1), and cards keep chips on one line by moving the primary affordance (\"Play →\") beside the title.",
+      "Do make celebrations physical and soft: kittens burst out, slow against the air and drift down like confetti over about 7 seconds.",
+      "Do honor `prefers-reduced-motion` for every decorative animation: no burst, no blinking, no twitch.",
+      "Do use exponential ease-outs for UI transitions; keep state changes at 150–200ms."
+    ],
+    "donts": [
+      "Don't drift toward a mobile-game casino: no flashing rewards, coins, streak counters, ads, badges, or pushy \"play again!\" prompts.",
+      "Don't look like a loud neon gamer: no RGB glows, no aggressive angles, no esports energy. Only the paw box and the lurking eyes glow.",
+      "Don't go childish or babyish: no primary red/blue/yellow, no clip art, no toddler-toy shapes. Cute, but made for grown-ups.",
+      "Don't produce generic SaaS / AI slop: no gradient blobs, no glassy or blurred cards, no stock icon grids, no templated hero-plus-feature-grid pages.",
+      "Don't use pure black (#000) or pure white (#fff); every neutral is tinted toward plum.",
+      "Don't use gradient text, or colored side-stripe borders thicker than 1px.",
+      "Don't stack shadows or add glow to buttons (The One Shadow Rule).",
+      "Don't put decoration, confetti rules or background eyes on top of the board or the controls during a turn; play comes before chrome.",
+      "Don't set sentences in Fredoka, and don't use monospace outside the wordmark.",
+      "Don't add a new saturated hue for UI; the cats already bring the color.",
+      "Don't reach for a modal or `window.confirm`; confirm in place (see Buttons).",
+      "Don't set any text below 12px (The 12px Floor Rule)."
+    ]
+  }
+}

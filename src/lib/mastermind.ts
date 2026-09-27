@@ -240,21 +240,12 @@ export function reducer(state: GameState, action: Action): GameState {
 	}
 }
 
-// Bumped when pin values change so old saves don't load unknown pins.
-const STORAGE_KEY = "mastermind:game:v4";
+const STORAGE_KEY = "catlog:meowstermind";
 
 export function loadGame(): GameState {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
-		if (raw) {
-			const parsed = JSON.parse(raw) as GameState;
-			if (
-				"match" in parsed &&
-				parsed.rows?.length === ROWS &&
-				parsed.secret?.length === PEGS
-			)
-				return parsed;
-		}
+		if (raw) return JSON.parse(raw) as GameState;
 	} catch {
 		// Corrupt or unavailable storage: fall through to a fresh game.
 	}

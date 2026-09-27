@@ -1,63 +1,137 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Pin } from "#/components/mastermind/pins";
-import { Button } from "#/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import type { CSSProperties, ReactNode } from "react";
+import { Wordmark } from "#/components/catalog/wordmark";
+import { CatEars } from "#/components/mastermind/cat-ears";
+import { Pin, SleepyCat } from "#/components/mastermind/pins";
 import { CODE_COLORS } from "#/lib/mastermind";
 
-export const Route = createFileRoute("/")({ component: Home });
+export const Route = createFileRoute("/")({ component: Catalog });
 
-function Home() {
+interface Game {
+	to: string;
+	title: string;
+	blurb: string;
+	tags: string[];
+	preview: ReactNode;
+}
+
+// The catalog. Adding a game is one more entry here plus its routes.
+const GAMES: Game[] = [
+	{
+		to: "/meowstermind",
+		title: "Meowstermind",
+		blurb:
+			"Hide a secret row of kitties and let your friend crack it with paw-print clues.",
+		tags: ["2 players", "Pass & play", "~10 min"],
+		preview: <MeowstermindPreview />,
+	},
+];
+
+function Catalog() {
 	return (
-		<main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 p-6">
-			<div className="flex gap-2">
-				{CODE_COLORS.map((color) => (
-					<Pin key={color} color={color} kind="code" size="2.75rem" />
+		<main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-14 px-6 py-12 md:py-20">
+			<section className="max-w-2xl space-y-5">
+				<h1 className="font-display text-5xl font-semibold leading-tight md:text-6xl">
+					Welcome to <Wordmark />
+				</h1>
+				<p className="text-lg text-muted-foreground">
+					A little catalog of cozy games for playing together on one screen.
+					Pick one, grab a friend, pass the iPad. nya~
+				</p>
+			</section>
+
+			<section className="space-y-4">
+				<h2 className="font-display text-2xl font-semibold">Games</h2>
+				{/* Top padding leaves room for the ears poking above each tile. */}
+				<div className="grid gap-x-6 gap-y-12 pt-8 sm:grid-cols-2 lg:grid-cols-3">
+					{GAMES.map((game) => (
+						<GameTile key={game.to} game={game} />
+					))}
+					<ComingSoonTile />
+				</div>
+			</section>
+		</main>
+	);
+}
+
+function GameTile({ game }: { game: Game }) {
+	return (
+		<Link
+			to={game.to}
+			className="group relative flex flex-col gap-4 rounded-3xl border bg-card p-5 shadow-table outline-none transition hover:-translate-y-1 hover:border-primary/50 motion-reduce:hover:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring"
+		>
+			<CatEars />
+			<div className="flex h-32 items-center justify-center overflow-hidden rounded-2xl bg-well/60 px-3">
+				{game.preview}
+			</div>
+			<div className="space-y-1.5">
+				<div className="flex items-baseline justify-between gap-3">
+					<h3 className="font-display text-xl font-semibold">{game.title}</h3>
+					<span className="flex shrink-0 items-center gap-1 font-display text-sm font-medium text-primary">
+						Play
+						<ArrowRight className="size-4 self-center transition-transform group-hover:translate-x-0.5 motion-reduce:group-hover:translate-x-0" />
+					</span>
+				</div>
+				<p className="text-sm text-muted-foreground">{game.blurb}</p>
+			</div>
+			<div className="mt-auto flex flex-wrap gap-1.5">
+				{game.tags.map((tag) => (
+					<span
+						key={tag}
+						className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground"
+					>
+						{tag}
+					</span>
 				))}
 			</div>
-			<div className="space-y-2">
-				<h1 className="text-3xl font-semibold tracking-tight">
-					Meow<span className="text-primary">stermind</span>
-				</h1>
-				<p className="text-muted-foreground">
-					A cozy two-player code-breaking game for one screen.
+		</Link>
+	);
+}
+
+function ComingSoonTile() {
+	return (
+		<div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed bg-card/40 p-5 text-center sm:min-h-72">
+			{/* SleepyCat sizes itself from --pin. */}
+			<div style={{ "--pin": "3.25rem" } as CSSProperties}>
+				<SleepyCat />
+			</div>
+			<div className="space-y-1">
+				<h3 className="font-display text-xl font-semibold">
+					More games coming soon
+				</h3>
+				<p className="text-sm text-muted-foreground">
+					zzz… the next one is still napping.
 				</p>
 			</div>
-			<ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-				<li>
-					The mastermind hides a code of 5 kitties: grey, white, black, orange
-					and siamese.
-				</li>
-				<li>
-					The player has 10 tries, dragging kitties from the tray into each row.
-				</li>
-				<li>
-					After each try the mastermind paw-scores every spot in order:
-					<span className="mt-2 flex flex-col gap-1.5">
-						<span className="flex items-center gap-2">
-							<Pin color="pink" kind="key" size="1rem" /> pink: right cat, right
-							spot
-						</span>
-						<span className="flex items-center gap-2">
-							<Pin color="white" kind="key" size="1rem" /> white: right cat,
-							wrong spot
-						</span>
-						<span className="flex items-center gap-2">
-							<span className="size-4 rounded-full bg-black/25 shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]" />
-							not in the code
-						</span>
-					</span>
-				</li>
-				<li>
-					A perfect guess is spotted automatically, with exploding kittens.
-					Purrfect!
-				</li>
-				<li>
-					Swap roles every round. The codebreaker scores 11 minus the tries they
-					needed; highest score wins the match.
-				</li>
-			</ol>
-			<Button asChild size="lg" className="self-start">
-				<Link to="/play">Let’s play</Link>
-			</Button>
-		</main>
+		</div>
+	);
+}
+
+/** A tiny slice of the board: one guess and its paw scores. */
+function MeowstermindPreview() {
+	const keys = ["pink", "pink", "white", null, "white"] as const;
+	return (
+		<div className="flex items-center gap-3">
+			<div className="flex gap-1">
+				{CODE_COLORS.map((color) => (
+					<Pin key={color} color={color} kind="code" size="1.85rem" />
+				))}
+			</div>
+			<div className="flex gap-0.5">
+				{keys.map((key, i) =>
+					key ? (
+						// biome-ignore lint/suspicious/noArrayIndexKey: fixed decorative row
+						<Pin key={i} color={key} kind="key" size="0.85rem" />
+					) : (
+						<span
+							// biome-ignore lint/suspicious/noArrayIndexKey: fixed decorative row
+							key={i}
+							className="size-[0.85rem] rounded-full bg-well/70 shadow-hole"
+						/>
+					),
+				)}
+			</div>
+		</div>
 	);
 }

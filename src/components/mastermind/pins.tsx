@@ -27,7 +27,7 @@ const BLUSH = "#ff8fb1";
 // [highlight, base, shade] for the glossy score paws.
 const KEY_SHADES: Record<KeyColor, [string, string, string]> = {
 	pink: ["#ffd6e5", "#ff7eb0", "#d6457f"],
-	white: ["#ffffff", "#fff4f8", "#d9c3cf"],
+	white: ["#fffafc", "#fff4f8", "#d9c3cf"],
 };
 
 interface Coat {
@@ -151,7 +151,7 @@ function CatFace({ coat, asleep = false }: { coat: Coat; asleep?: boolean }) {
 							strokeWidth={2.5}
 						/>
 						<ellipse cx={cx} cy="60" rx="3.5" ry="6" fill={OUTLINE} />
-						<circle cx={cx + 2.5} cy="56.5" r="2.5" fill="#fff" />
+						<circle cx={cx + 2.5} cy="56.5" r="2.5" fill={STICKER} />
 					</g>
 				))
 			)}
@@ -226,7 +226,7 @@ export function Pin({
 			<svg
 				aria-hidden="true"
 				viewBox="0 0 100 100"
-				className="size-full overflow-visible drop-shadow-[0_2px_2px_rgba(0,0,0,0.35)]"
+				className="size-full overflow-visible drop-shadow-sticker"
 			>
 				{/* Cat and paw names overlap ("white"), so the kind decides what to draw. */}
 				{kind === "key" ? (
@@ -255,7 +255,7 @@ export function SleepyCat() {
 			>
 				<CatFace coat={{ fur: "#6e5a78", iris: OUTLINE }} asleep />
 			</svg>
-			<span className="absolute -top-1 -right-1 text-[10px] font-bold text-primary">
+			<span className="absolute -top-1 -right-1 text-xs font-bold text-primary">
 				z
 			</span>
 		</span>
@@ -268,7 +268,7 @@ function Hole({ kind, over }: { kind: PinKind; over: boolean }) {
 			aria-hidden="true"
 			style={{ width: PIN_SIZE[kind], height: PIN_SIZE[kind] }}
 			className={cn(
-				"block rounded-full bg-black/25 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)] transition-colors",
+				"block rounded-full bg-well/70 shadow-hole transition-colors",
 				over && "bg-primary/25 ring-2 ring-primary/60",
 			)}
 		>
@@ -330,8 +330,11 @@ export function Slot({
 			onClick={enabled ? onTap : undefined}
 			className={cn(
 				"relative flex touch-none items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring",
-				// Score holes are small; pad the drop area out without moving the layout.
-				kind === "key" && "-m-1 p-1",
+				// Fingers first: the hit area reaches into the gaps around each hole
+				// (without moving the layout), so a slightly-off tap or drop still lands.
+				// Cat holes reach 44px+; paw holes grow mostly vertically, where rows
+				// have room, since their neighbours sit close together sideways.
+				kind === "code" ? "-m-[3px] p-[3px]" : "-mx-1 -my-3 px-1 py-3",
 				!enabled && "cursor-default",
 			)}
 		>

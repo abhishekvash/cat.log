@@ -1,6 +1,13 @@
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	HeadContent,
+	Link,
+	Scripts,
+} from "@tanstack/react-router";
 
 import { CatEyes } from "#/components/mastermind/cat-eyes";
+import { SleepyCat } from "#/components/mastermind/pins";
+import { Button } from "#/components/ui/button";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -13,14 +20,38 @@ export const Route = createRootRoute({
 			},
 			{ name: "apple-mobile-web-app-capable", content: "yes" },
 			{ name: "mobile-web-app-capable", content: "yes" },
-			{ name: "apple-mobile-web-app-title", content: "Meowstermind" },
-			{ name: "theme-color", content: "#2a1c33" },
-			{ title: "Meowstermind" },
+			{ name: "apple-mobile-web-app-title", content: "cat.log" },
+			// Velvet Dusk, so the iPad status bar blends into the page.
+			{ name: "theme-color", content: "#1a1223" },
+			{ title: "cat.log" },
 		],
 		links: [{ rel: "stylesheet", href: appCss }],
 	}),
 	shellComponent: RootDocument,
+	notFoundComponent: NotFound,
 });
+
+function NotFound() {
+	return (
+		<main
+			className="flex min-h-dvh flex-col items-center justify-center gap-5 p-6 text-center"
+			style={{ "--pin": "4rem" } as React.CSSProperties}
+		>
+			<SleepyCat />
+			<div className="space-y-1.5">
+				<h1 className="font-display text-2xl font-semibold">
+					This page wandered off
+				</h1>
+				<p className="text-muted-foreground">
+					It's probably napping somewhere warm.
+				</p>
+			</div>
+			<Button asChild size="lg">
+				<Link to="/">Back to cat.log</Link>
+			</Button>
+		</main>
+	);
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
