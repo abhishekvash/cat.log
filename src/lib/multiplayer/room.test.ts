@@ -181,14 +181,35 @@ describe("seats", () => {
 	});
 
 	it("moves a seat to a new device with a single-use rejoin link", () => {
-		const { room, tokens } = lobby(["Mochi", "Tux"]);
-		const issued = issueRejoin(room, 2);
+		const { room: fresh, tokens } = lobby(["Mochi", "Tux"]);
+		const room = refresh(game, fresh, online(1), 0);
+		const issued = issueRejoin(game, room, 1, 2);
+		if (!issued.ok) throw new Error(issued.error);
 		const redeemed = redeemRejoin(issued.room, issued.token);
 		if (!redeemed) throw new Error();
 		expect(redeemed.seat).toBe(2);
 		expect(seatFor(redeemed.room, redeemed.token)).toBe(2);
 		expect(seatFor(redeemed.room, tokens[1])).toBeNull();
 		expect(redeemRejoin(redeemed.room, issued.token)).toBeNull();
+	});
+
+	it("only issues rejoin links from the host for a disconnected player", () => {
+		const { room: fresh } = lobby(["Mochi", "Tux", "Pip"]);
+		const room = refresh(game, fresh, online(1, 2), 0);
+		expect(issueRejoin(game, room, 2, 3)).toMatchObject({ ok: false });
+		expect(issueRejoin(game, room, 1, 1)).toMatchObject({ ok: false });
+		expect(issueRejoin(game, room, 1, 2)).toMatchObject({ ok: false });
+		expect(issueRejoin(game, room, 1, 9)).toMatchObject({ ok: false });
+		expect(issueRejoin(game, room, 1, 3)).toMatchObject({ ok: true });
+	});
+
+	it("won't redeem a rejoin link once the player is back", () => {
+		const { room: fresh, tokens } = lobby(["Mochi", "Tux"]);
+		const issued = issueRejoin(game, refresh(game, fresh, online(1), 0), 1, 2);
+		if (!issued.ok) throw new Error(issued.error);
+		const back = refresh(game, issued.room, online(1, 2), 0);
+		expect(redeemRejoin(back, issued.token)).toBeNull();
+		expect(seatFor(back, tokens[1])).toBe(2);
 	});
 
 	it("forgets the token of a player who leaves the lobby", () => {

@@ -144,6 +144,8 @@ export function seatFor<S, R>(room: Room<S, R>, token: string | undefined) {
 export function redeemRejoin<S, R>(room: Room<S, R>, rejoin: string) {
 	const seat = room.rejoins[rejoin];
 	if (!seated(room.state, seat)) return null;
+	// Never bump a live device: the link is only for a seat left behind.
+	if (seatById(room.state, seat)?.connected) return null;
 	const token = newToken();
 	const tokens = Object.fromEntries(
 		Object.entries(room.tokens).filter(([, id]) => id !== seat),
@@ -154,9 +156,29 @@ export function redeemRejoin<S, R>(room: Room<S, R>, rejoin: string) {
 	return { room: { ...room, tokens, rejoins }, token, seat };
 }
 
-export function issueRejoin<S, R>(room: Room<S, R>, seat: SeatId) {
+/**
+ * Lets the host move a disconnected player's seat to a new device. Anything
+ * else would let the host take over someone who's still playing.
+ */
+export function issueRejoin<S, M, R>(
+	def: Game<S, M, R>,
+	room: Room<S, R>,
+	host: SeatId,
+	seat: SeatId,
+):
+	| { ok: true; room: Room<S, R>; token: string }
+	| { ok: false; error: string } {
+	const { state } = room;
+	if (state.hostId !== host)
+		return { ok: false, error: "Only the host can do that." };
+	const target = seatById(state, seat);
+	if (!target || seat === host || isOut(def, state, seat))
+		return { ok: false, error: "That player can't get a new device link." };
+	if (target.connected)
+		return { ok: false, error: `${target.name} is still here.` };
 	const token = newToken();
 	return {
+		ok: true,
 		room: { ...room, rejoins: { ...room.rejoins, [token]: seat } },
 		token,
 	};

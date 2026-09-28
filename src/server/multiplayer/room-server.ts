@@ -135,9 +135,13 @@ export function createRoomServer<S, M, R, V>(def: GameDefinition<S, M, R, V>) {
 				}
 				case "issueRejoin": {
 					const seat = connection.state?.seat;
-					if (!this.room || seat == null || this.room.state.hostId !== seat)
-						return;
-					const issued = issueRejoin(this.room, message.seat);
+					if (!this.room || seat == null) return;
+					const issued = issueRejoin(def, this.room, seat, message.seat);
+					if (!issued.ok)
+						return this.send(connection, {
+							type: "rejected",
+							reason: issued.error,
+						});
 					this.room = issued.room;
 					await this.save();
 					return this.send(connection, {
