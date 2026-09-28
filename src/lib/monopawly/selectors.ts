@@ -1,5 +1,5 @@
 import { type GroupId, groupSpaces } from "./board";
-import type { GameState, Holding } from "./types";
+import type { GameState, Holding, Player } from "./types";
 
 /**
  * Read-only questions about a game, shared by the engine and the UI so both
@@ -11,6 +11,17 @@ export const playerById = (state: GameState, id: number | null | undefined) =>
 
 export const activePlayers = (state: GameState) =>
 	state.players.filter((p) => !p.bankrupt);
+
+/**
+ * The one player a debtor owes everything to, who inherits their things on
+ * bankruptcy. Anyone else (the bank, or several creditors) and it goes to the bank.
+ */
+export function soleCreditor(state: GameState, debtor: Player) {
+	const ids = new Set(debtor.debts.map((d) => d.to));
+	if (ids.size !== 1) return undefined;
+	const creditor = playerById(state, debtor.debts[0].to);
+	return creditor && !creditor.bankrupt ? creditor : undefined;
+}
 
 /** A player's holdings in board order. */
 export function holdingsOf(

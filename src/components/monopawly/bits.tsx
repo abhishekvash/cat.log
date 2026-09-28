@@ -3,7 +3,7 @@ import { CatHead } from "#/components/cats/cat-face";
 import { ConfirmAction } from "#/components/confirm-action";
 import { Button } from "#/components/ui/button";
 import { type GroupId, groupColor, type Space } from "#/lib/monopawly/board";
-import { playerById } from "#/lib/monopawly/selectors";
+import { soleCreditor } from "#/lib/monopawly/selectors";
 import type { Player } from "#/lib/monopawly/types";
 import { cn } from "#/lib/utils";
 import { FishIcon } from "./tile-art";
@@ -90,7 +90,7 @@ export function BankruptButton({
 	className?: string;
 }) {
 	const { state, me, move } = useGame();
-	const creditor = me && me.fish < 0 ? playerById(state, me.owesTo) : undefined;
+	const creditor = me ? soleCreditor(state, me) : undefined;
 	return (
 		<ConfirmAction
 			title="Go bankrupt?"

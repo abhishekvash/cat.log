@@ -24,6 +24,8 @@ import { cryptoRng } from "#/lib/rng";
 
 interface Seat {
 	seat: SeatId | null;
+	/** The device token that earned the seat; the seat is dropped once it's revoked. */
+	token?: string;
 }
 
 const ROOM_KEY = "room";
@@ -52,7 +54,11 @@ export function createRoomServer<S, M, R, V>(def: GameDefinition<S, M, R, V>) {
 			const stored = await this.ctx.storage.get<GameRoom>(ROOM_KEY);
 			// A room saved by an incompatible build ends politely rather than crashing.
 			if (stored && stored.state?.version !== def.version) await this.wipe();
-			else this.room = stored ?? null;
+			else if (stored) this.room = stored;
+			// An empty room lives only in memory, so hibernating forgets it while its
+			// visitors stay connected. They got in, so it existed: bring it back.
+			else if ([...this.getConnections()].length > 0)
+				this.room = newRoom(def, Date.now());
 		}
 
 		onConnect(connection: Connection<Seat>) {
@@ -88,7 +94,7 @@ export function createRoomServer<S, M, R, V>(def: GameDefinition<S, M, R, V>) {
 							reason: result.error,
 						});
 					this.room = result.room;
-					connection.setState({ seat: result.seat });
+					connection.setState({ seat: result.seat, token: result.token });
 					this.send(connection, {
 						type: "welcome",
 						seat: result.seat,
@@ -176,7 +182,9 @@ export function createRoomServer<S, M, R, V>(def: GameDefinition<S, M, R, V>) {
 					return connection.close(4001, "full");
 				}
 			}
-			connection.setState({ seat });
+			connection.setState(
+				seat === null ? { seat } : { seat, token: token ?? message.token },
+			);
 			this.send(connection, { type: "welcome", seat, token });
 			// An empty, unsaved room: just show it.
 			if (this.room.state.seats.length === 0)
@@ -206,6 +214,7 @@ export function createRoomServer<S, M, R, V>(def: GameDefinition<S, M, R, V>) {
 		/** Re-checks presence, then either deletes the room or saves, sends and re-arms. */
 		private async commit(now: number, closing?: string) {
 			if (!this.room) return;
+			this.unseatRevoked(closing);
 			this.room = refresh(def, this.room, this.onlineIds(closing), now);
 			if (shouldDelete(this.room, now)) {
 				for (const c of this.getConnections()) {
@@ -221,6 +230,21 @@ export function createRoomServer<S, M, R, V>(def: GameDefinition<S, M, R, V>) {
 			else await this.ctx.storage.setAlarm(Math.max(wakeAt, now + 50));
 			for (const c of this.getConnections<Seat>()) {
 				if (c.id !== closing) this.sendState(c, now);
+			}
+		}
+
+		/**
+		 * Turns connections into spectators when their seat is gone (they left or
+		 * were removed) or their device token was replaced by a rejoin link.
+		 */
+		private unseatRevoked(closing?: string) {
+			if (!this.room) return;
+			for (const c of this.getConnections<Seat>()) {
+				const { seat, token } = c.state ?? { seat: null };
+				if (c.id === closing || seat == null) continue;
+				if (seatFor(this.room, token) === seat) continue;
+				c.setState({ seat: null });
+				this.send(c, { type: "welcome", seat: null });
 			}
 		}
 

@@ -41,6 +41,7 @@ import {
 	groupHasBuildings,
 	ownsGroup,
 	playerById,
+	soleCreditor,
 } from "./selectors";
 import {
 	AUCTION_CLOCK_MS,
@@ -107,18 +108,18 @@ function newPlayer(id: SeatId, name: string, cat: Cat): Player {
 		vetTries: 0,
 		getOutCards: [],
 		bankrupt: false,
-		owesTo: null,
+		debts: [],
 	};
 }
 
-/** Runs one change on a copy, then clears debts that have been paid off. */
+/** Runs one change on a copy, then passes any fish debtors raised to their creditors. */
 function change(
 	state: GameState,
 	fn: (s: GameState) => void,
 ): Result<GameState> {
 	return attempt(state, (s) => {
 		fn(s);
-		for (const p of s.players) if (p.fish >= 0) p.owesTo = null;
+		for (const p of s.players) collectDebts(s, p);
 	});
 }
 
@@ -153,7 +154,7 @@ export function removePlayer(state: GameState, id: SeatId): Result<GameState> {
 		playing(s);
 		const target = active(player(s, id));
 		log(s, `${target.name} was removed from the game.`);
-		goBankrupt(s, target, null);
+		goBankrupt(s, target, false);
 	});
 }
 
@@ -226,7 +227,7 @@ function apply(s: GameState, actor: SeatId, intent: Move, ctx: Context) {
 		case "declareBankruptcy": {
 			playing(s);
 			active(me);
-			return goBankrupt(s, me, me.fish < 0 ? me.owesTo : null);
+			return goBankrupt(s, me, true);
 		}
 		default:
 			intent satisfies never;
@@ -485,8 +486,9 @@ function rentFor(s: GameState, index: number, rng: Rng, opts: LandOptions) {
 }
 
 /**
- * Moves fish. The payer may go negative; they then owe `to` (or the bank) and
- * must raise fish or go bankrupt. Fees can feed the Nap Spot jackpot.
+ * Moves fish. The payer may go negative; `to` (or the bank) gets only what
+ * they had, and the rest becomes a debt they must raise or go bankrupt over.
+ * Fees can feed the Nap Spot jackpot.
  */
 function pay(
 	s: GameState,
@@ -495,10 +497,32 @@ function pay(
 	amount: number,
 	fee: boolean,
 ) {
+	const paid = Math.min(amount, Math.max(0, from.fish));
 	from.fish -= amount;
+	credit(s, to, paid, fee);
+	if (paid < amount)
+		from.debts.push({ to: to?.id ?? null, amount: amount - paid, fee });
+}
+
+function credit(s: GameState, to: Player | null, amount: number, fee: boolean) {
 	if (to) to.fish += amount;
 	else if (fee && s.rules.napSpotJackpot) s.jackpot += amount;
-	if (from.fish < 0) from.owesTo = to?.id ?? null;
+}
+
+/** Hands whatever a debtor has raised since going negative to their creditors, oldest first. */
+function collectDebts(s: GameState, p: Player) {
+	const owed = p.debts.reduce((sum, d) => sum + d.amount, 0);
+	let raised = owed - Math.max(0, -p.fish);
+	while (raised > 0 && p.debts.length > 0) {
+		const debt = p.debts[0];
+		const part = Math.min(raised, debt.amount);
+		const creditor = playerById(s, debt.to);
+		// A creditor who has since gone bust can't be paid; it goes to the bank.
+		credit(s, creditor && !creditor.bankrupt ? creditor : null, part, debt.fee);
+		debt.amount -= part;
+		raised -= part;
+		if (debt.amount === 0) p.debts.shift();
+	}
 }
 
 function drawCard(s: GameState, p: Player, deck: Deck, rng: Rng): void {
@@ -773,8 +797,13 @@ function respondTrade(s: GameState, me: Player, id: number, accept: boolean) {
 
 // ---------------------------------------------------------------- bankruptcy
 
-function goBankrupt(s: GameState, p: Player, creditorId: number | null) {
-	// Buildings go back to the bank at half price first.
+/**
+ * Takes a player out. With `toCreditor`, a player owed everything inherits
+ * their streets; otherwise (or when removed by the host) they go to the bank.
+ */
+function goBankrupt(s: GameState, p: Player, toCreditor: boolean) {
+	const creditor = toCreditor ? soleCreditor(s, p) : undefined;
+	// Buildings go back to the bank at half price first, paying down debts.
 	for (const [key, holding] of Object.entries(s.holdings)) {
 		if (holding.owner !== p.id || holding.buildings === 0) continue;
 		const space = BOARD[Number(key)] as StreetSpace;
@@ -783,11 +812,9 @@ function goBankrupt(s: GameState, p: Player, creditorId: number | null) {
 		else s.bank.boxes += holding.buildings;
 		holding.buildings = 0;
 	}
-	const found = playerById(s, creditorId);
-	const creditor = found && !found.bankrupt ? found : null;
+	collectDebts(s, p);
 	if (creditor) {
-		// The creditor was paid in full up front; take back what was never there.
-		creditor.fish += p.fish;
+		creditor.fish += Math.max(0, p.fish);
 		for (const holding of Object.values(s.holdings))
 			if (holding.owner === p.id) holding.owner = creditor.id;
 		creditor.getOutCards.push(...p.getOutCards);
@@ -802,7 +829,7 @@ function goBankrupt(s: GameState, p: Player, creditorId: number | null) {
 	p.getOutCards = [];
 	p.bankrupt = true;
 	p.atVet = false;
-	p.owesTo = null;
+	p.debts = [];
 	s.trades = s.trades.filter((t) => t.from !== p.id && t.to !== p.id);
 	if (s.auction?.highBidder === p.id) {
 		s.auction.highBid = 0;

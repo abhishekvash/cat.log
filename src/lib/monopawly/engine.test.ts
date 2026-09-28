@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { seededRng } from "#/lib/rng";
 import { BOARD, FOOD_BOWL_PAY, START_FISH, VET_INDEX } from "./board";
-import { DECKS } from "./cards";
+import { DECK_NAMES, DECKS } from "./cards";
 import { reduce, removePlayer, skipTurn, start, tick } from "./engine";
 import {
 	ctx,
@@ -156,12 +156,87 @@ describe("buying and rent", () => {
 		p(s, 1).position = 34;
 		s = run(s, 1, { type: "roll" }, ctx(dice(2, 3)));
 		expect(p(s, 1).fish).toBe(100 - 2000);
-		expect(p(s, 1).owesTo).toBe(2);
+		expect(p(s, 1).debts).toEqual([{ to: 2, amount: 1900, fee: false }]);
+		// The landlord only has what was actually paid.
+		expect(p(s, 2).fish).toBe(START_FISH + 100);
 		expect(reduce(s, 1, { type: "endTurn" }, ctx())).toMatchObject({
 			ok: false,
 		});
 		s = run(s, 1, { type: "mortgage", space: 1 });
 		expect(p(s, 1).fish).toBe(100 - 2000 + 30);
+		expect(p(s, 1).debts).toEqual([{ to: 2, amount: 1870, fee: false }]);
+		expect(p(s, 2).fish).toBe(START_FISH + 130);
+	});
+
+	it("never lets a landlord spend rent that wasn't paid", () => {
+		let s = game(3);
+		own(s, 2, 39);
+		s.holdings[39].buildings = 5;
+		own(s, 1, 1);
+		p(s, 1).fish = 100;
+		p(s, 1).position = 34;
+		s = run(s, 1, { type: "roll" }, ctx(dice(2, 3)));
+		const all = { fish: START_FISH + 100, spaces: [], getOutCards: 0 };
+		expect(
+			reduce(
+				s,
+				2,
+				{
+					type: "proposeTrade",
+					to: 3,
+					give: { ...all, fish: START_FISH + 101 },
+					get: { fish: 0, spaces: [], getOutCards: 0 },
+				},
+				ctx(),
+			),
+		).toMatchObject({ ok: false });
+		s = run(s, 2, {
+			type: "proposeTrade",
+			to: 3,
+			give: all,
+			get: { fish: 0, spaces: [], getOutCards: 0 },
+		});
+		s = run(s, 3, { type: "respondTrade", id: s.trades[0].id, accept: true });
+		s = run(s, 1, { type: "declareBankruptcy" });
+		expect(p(s, 2).fish).toBe(0);
+		expect(p(s, 3).fish).toBe(START_FISH * 2 + 100);
+		expect(s.holdings[1].owner).toBe(2);
+	});
+
+	it("sends a bankrupt's things to the bank when they owe several players", () => {
+		let s = game(4);
+		own(s, 1, 1);
+		p(s, 1).fish = 0;
+		p(s, 1).position = 4;
+		s.decks.zoomies = [
+			DECKS.zoomies.findIndex((c) => c.effect.type === "payEach"),
+		];
+		s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
+		expect(p(s, 1).fish).toBe(-150);
+		expect(p(s, 1).debts.map((d) => d.to)).toEqual([2, 3, 4]);
+		s = run(s, 1, { type: "declareBankruptcy" });
+		for (const id of [2, 3, 4]) expect(p(s, id).fish).toBe(START_FISH);
+		expect(s.holdings[1]).toBeUndefined();
+	});
+
+	it("pays creditors in order as the debtor raises fish", () => {
+		let s = game(4);
+		own(s, 1, 1, 3);
+		p(s, 1).fish = 20;
+		p(s, 1).position = 4;
+		s.decks.zoomies = [
+			DECKS.zoomies.findIndex((c) => c.effect.type === "payEach"),
+		];
+		s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
+		expect([2, 3, 4].map((id) => p(s, id).fish - START_FISH)).toEqual([
+			20, 0, 0,
+		]);
+		s = run(s, 1, { type: "mortgage", space: 1 });
+		s = run(s, 1, { type: "mortgage", space: 3 });
+		expect(p(s, 1).fish).toBe(-70);
+		expect([2, 3, 4].map((id) => p(s, id).fish - START_FISH)).toEqual([
+			50, 30, 0,
+		]);
 	});
 });
 
@@ -402,8 +477,11 @@ describe("cards", () => {
 				let s = game(3);
 				own(s, 2, 5, 12);
 				s.decks[deck] = [index, ...s.decks[deck].filter((i) => i !== index)];
-				p(s, 1).position = deck === "zoomies" ? 4 : 0;
+				// Three spaces short of a Zoomies (7) or Treat Jar (17) square.
+				p(s, 1).position = deck === "zoomies" ? 4 : 14;
 				s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
+				const drew = `drew ${DECK_NAMES[deck]}: “${DECKS[deck][index].text}”`;
+				expect(s.log.some((l) => l.text.includes(drew))).toBe(true);
 				expect(BOARD[p(s, 1).position]).toBeDefined();
 				const total = s.players.reduce((sum, x) => sum + x.fish, 0);
 				expect(Number.isFinite(total)).toBe(true);

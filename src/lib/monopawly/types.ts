@@ -3,7 +3,7 @@ import type { SeatId } from "#/lib/multiplayer/types";
 import type { Deck } from "./cards";
 
 /** Bump when `GameState` changes shape; rooms saved by another version end politely. */
-export const STATE_VERSION = 2;
+export const STATE_VERSION = 3;
 export const MAX_PLAYERS = 6;
 export const MIN_PLAYERS = 2;
 export const LOG_LIMIT = 200;
@@ -40,8 +40,17 @@ export interface Player {
 	vetTries: number;
 	getOutCards: Deck[];
 	bankrupt: boolean;
-	/** Who a negative balance is owed to (null = the bank). */
-	owesTo: number | null;
+	/** What a negative balance is owed, oldest first; adds up to `-fish`. */
+	debts: Debt[];
+}
+
+/** Fish a player couldn't pay yet. Creditors only get it once it's raised. */
+export interface Debt {
+	/** The player owed, or null for the bank. */
+	to: number | null;
+	amount: number;
+	/** Bank fees feed the Nap Spot jackpot once paid. */
+	fee: boolean;
 }
 
 export interface Holding {
