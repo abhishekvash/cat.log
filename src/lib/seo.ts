@@ -1,3 +1,5 @@
+import type { CatalogGame } from "./catalog";
+
 export const SITE_URL = "https://catlog.party";
 export const SITE_NAME = "cat.log";
 
@@ -30,7 +32,7 @@ export function seo({ title, description, path, noindex }: Page) {
 			{
 				property: "og:image:alt",
 				content:
-					"cat.log: cozy cat games for two, on one screen. Five sticker cats and paw prints.",
+					"cat.log: cozy cat games to play together. Five sticker cats and paw prints.",
 			},
 			{ name: "twitter:card", content: "summary_large_image" },
 			{ name: "twitter:title", content: title },
@@ -47,4 +49,39 @@ export function jsonLd(data: Record<string, unknown>) {
 		type: "application/ld+json",
 		children: JSON.stringify({ "@context": "https://schema.org", ...data }),
 	};
+}
+
+/** A game's intro page: its tags, plus VideoGame structured data. */
+export function gameHead(game: CatalogGame) {
+	return {
+		...seo({
+			title: game.pageTitle,
+			description: game.description,
+			path: game.path,
+		}),
+		scripts: [videoGameLd(game)],
+	};
+}
+
+function videoGameLd(game: CatalogGame) {
+	const { min, max } = game.players;
+	return jsonLd({
+		"@type": "VideoGame",
+		name: game.title,
+		description: game.description,
+		url: `${SITE_URL}${game.path}`,
+		image: `${SITE_URL}/og.png`,
+		genre: game.genre,
+		gamePlatform: "Web browser",
+		applicationCategory: "Game",
+		operatingSystem: "Any",
+		playMode: "MultiPlayer",
+		numberOfPlayers:
+			min === max
+				? { "@type": "QuantitativeValue", value: min }
+				: { "@type": "QuantitativeValue", minValue: min, maxValue: max },
+		isAccessibleForFree: true,
+		offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
+		isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_URL },
+	});
 }

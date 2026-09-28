@@ -1,5 +1,4 @@
-import type { CSSProperties } from "react";
-import { SleepyCat } from "#/components/mastermind/pins";
+import { SleepyCat } from "#/components/cats/cat-face";
 
 /**
  * The loading state for any route that's still arriving, e.g. a game that can
@@ -8,11 +7,8 @@ import { SleepyCat } from "#/components/mastermind/pins";
  */
 export function WakingKitties() {
 	return (
-		<div
-			className="flex min-h-dvh flex-col items-center justify-center gap-3"
-			style={{ "--pin": "3.5rem" } as CSSProperties}
-		>
-			<SleepyCat />
+		<div className="flex min-h-dvh flex-col items-center justify-center gap-3">
+			<SleepyCat size="3.5rem" />
 			<p className="text-sm text-muted-foreground">Waking the kitties…</p>
 		</div>
 	);

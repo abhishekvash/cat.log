@@ -6,11 +6,11 @@ product
 
 ## Users
 
-The public: anyone who finds cat.log, with no explanation from us. The typical session is two people sharing one screen, most often an iPad passed back and forth on a couch or at a table, in the evening, in no hurry. Players may be new to the game, so every screen must explain itself at a glance. The job to be done is a relaxed, low-stakes game together: set up quickly, play a round, laugh a little, play another.
+The public: anyone who finds cat.log, with no explanation from us. The typical session is a few friends in the same room, in the evening, in no hurry: two people passing one iPad back and forth, or a small group with a device each. Players may be new to the game, so every screen must explain itself at a glance. The job to be done is a relaxed, low-stakes game together: set up quickly, play a round, laugh a little, play another.
 
 ## Product Purpose
 
-cat.log is a catalog of small, cozy, cat-themed games for playing together on one screen (the name is a pun on "catalog" and a `.log` file). The landing page presents the catalog; each game lives at its own route. Meowstermind, a two-player Mastermind with cats for code pins and paw prints for clues, is the first game, and more will follow.
+cat.log is a catalog of small, cozy, cat-themed games for playing together (the name is a pun on "catalog" and a `.log` file). The landing page presents the catalog; each game lives at its own route. Meowstermind is a two-player Mastermind with cats for code pins and paw prints for clues, played on one shared screen. Monopawly is a cat-town property game for 2 to 6 players in private online rooms, each on their own device. More will follow.
 
 Success looks like: two strangers open a game and are playing within a minute, without reading instructions twice; they finish a match and start another; the site feels like a small, lovingly made thing rather than a product trying to hook them.
 

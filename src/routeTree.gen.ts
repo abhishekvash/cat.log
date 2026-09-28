@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MeowstermindIndexRouteImport } from './routes/meowstermind/index'
 import { Route as MeowstermindPlayRouteImport } from './routes/meowstermind/play'
+import { Route as MonopawlyIndexRouteImport } from './routes/monopawly/index'
+import { Route as MonopawlyCodeRouteImport } from './routes/monopawly/$code'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +30,69 @@ const MeowstermindPlayRoute = MeowstermindPlayRouteImport.update({
   path: '/meowstermind/play',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MonopawlyIndexRoute = MonopawlyIndexRouteImport.update({
+  id: '/monopawly/',
+  path: '/monopawly/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonopawlyCodeRoute = MonopawlyCodeRouteImport.update({
+  id: '/monopawly/$code',
+  path: '/monopawly/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/meowstermind/play': typeof MeowstermindPlayRoute
+  '/monopawly/$code': typeof MonopawlyCodeRoute
   '/meowstermind/': typeof MeowstermindIndexRoute
+  '/monopawly/': typeof MonopawlyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/meowstermind/play': typeof MeowstermindPlayRoute
+  '/monopawly/$code': typeof MonopawlyCodeRoute
   '/meowstermind': typeof MeowstermindIndexRoute
+  '/monopawly': typeof MonopawlyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/meowstermind/play': typeof MeowstermindPlayRoute
+  '/monopawly/$code': typeof MonopawlyCodeRoute
   '/meowstermind/': typeof MeowstermindIndexRoute
+  '/monopawly/': typeof MonopawlyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/meowstermind/play' | '/meowstermind/'
+  fullPaths:
+    | '/'
+    | '/meowstermind/play'
+    | '/monopawly/$code'
+    | '/meowstermind/'
+    | '/monopawly/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/meowstermind/play' | '/meowstermind'
-  id: '__root__' | '/' | '/meowstermind/play' | '/meowstermind/'
+  to:
+    | '/'
+    | '/meowstermind/play'
+    | '/monopawly/$code'
+    | '/meowstermind'
+    | '/monopawly'
+  id:
+    | '__root__'
+    | '/'
+    | '/meowstermind/play'
+    | '/monopawly/$code'
+    | '/meowstermind/'
+    | '/monopawly/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MeowstermindPlayRoute: typeof MeowstermindPlayRoute
+  MonopawlyCodeRoute: typeof MonopawlyCodeRoute
   MeowstermindIndexRoute: typeof MeowstermindIndexRoute
+  MonopawlyIndexRoute: typeof MonopawlyIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +118,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeowstermindPlayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/monopawly/': {
+      id: '/monopawly/'
+      path: '/monopawly'
+      fullPath: '/monopawly/'
+      preLoaderRoute: typeof MonopawlyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/monopawly/$code': {
+      id: '/monopawly/$code'
+      path: '/monopawly/$code'
+      fullPath: '/monopawly/$code'
+      preLoaderRoute: typeof MonopawlyCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MeowstermindPlayRoute: MeowstermindPlayRoute,
+  MonopawlyCodeRoute: MonopawlyCodeRoute,
   MeowstermindIndexRoute: MeowstermindIndexRoute,
+  MonopawlyIndexRoute: MonopawlyIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

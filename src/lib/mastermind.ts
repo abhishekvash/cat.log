@@ -1,32 +1,35 @@
+import { CORE_CATS, PAW_COLORS } from "#/lib/cats";
+import type { Rng } from "#/lib/rng";
+
+/**
+ * Meowstermind's rules: a pure reducer over one match, saved to localStorage.
+ */
+
 export const PEGS = 5;
 export const ROWS = 10;
 
 // Code pins are cats. The scoring paws are pink and white; a white *cat* is fine
 // because pins are always tagged with their kind.
-export const CODE_COLORS = [
-	"grey",
-	"white",
-	"black",
-	"ginger",
-	"siamese",
-] as const;
+export const CODE_COLORS = CORE_CATS;
 export type CodeColor = (typeof CODE_COLORS)[number];
 
 // pink = right cat in the right spot, white = right cat in the wrong spot.
-export const KEY_COLORS = ["pink", "white"] as const;
+export const KEY_COLORS = PAW_COLORS;
 export type KeyColor = (typeof KEY_COLORS)[number];
 
 export type PinColor = CodeColor | KeyColor;
 
 export type CodeTarget = "secret" | "guess";
 
-export type Phase =
-	| "players"
-	| "setup"
-	| "guessing"
-	| "scoring"
-	| "won"
-	| "lost";
+const PHASES = [
+	"players",
+	"setup",
+	"guessing",
+	"scoring",
+	"won",
+	"lost",
+] as const;
+export type Phase = (typeof PHASES)[number];
 
 export interface Row {
 	guess: (CodeColor | null)[];
@@ -58,7 +61,8 @@ export type Action =
 	| { type: "setKey"; index: number; color: KeyColor | null }
 	| { type: "moveKey"; from: number; to: number }
 	| { type: "cycleKey"; index: number }
-	| { type: "randomSecret" }
+	/** The code comes in the action (see `randomCode`), so the reducer stays pure. */
+	| { type: "randomSecret"; secret: CodeColor[] }
 	| { type: "startGame" }
 	| { type: "submitGuess" }
 	| { type: "editGuess" }
@@ -85,6 +89,10 @@ export function createGame(match: Match | null = null): GameState {
 export const isFull = (pins: readonly unknown[]) =>
 	pins.every((pin) => pin !== null);
 
+/** A random secret, for the mastermind who can't decide. */
+export const randomCode = (rng: Rng): CodeColor[] =>
+	Array.from({ length: PEGS }, () => CODE_COLORS[rng.int(CODE_COLORS.length)]);
+
 export const mastermindOf = (match: Match) => match.round % 2;
 export const breakerOf = (match: Match) => 1 - mastermindOf(match);
 
@@ -100,7 +108,7 @@ function finishRound(state: GameState, cracked: boolean): GameState {
 	const points = pointsFor(cracked ? state.current + 1 : null);
 	const match = state.match && {
 		...state.match,
-		scores: set(
+		scores: setAt(
 			state.match.scores,
 			breakerOf(state.match),
 			state.match.scores[breakerOf(state.match)] + points,
@@ -117,7 +125,7 @@ export function activeCodeTarget(state: GameState): CodeTarget | null {
 	return null;
 }
 
-function set<T>(pins: readonly T[], index: number, value: T): T[] {
+function setAt<T>(pins: readonly T[], index: number, value: T): T[] {
 	const next = [...pins];
 	next[index] = value;
 	return next;
@@ -155,7 +163,8 @@ function updateKeys(
 	return updateCurrentRow(state, { keys: fn(state.rows[state.current].keys) });
 }
 
-const nextKey: Record<string, KeyColor | null> = {
+/** Tapping a score hole cycles empty → pink → white → empty. */
+const nextKey: Record<KeyColor | "empty", KeyColor | null> = {
 	empty: "pink",
 	pink: "white",
 	white: null,
@@ -165,33 +174,30 @@ export function reducer(state: GameState, action: Action): GameState {
 	switch (action.type) {
 		case "placeCode":
 			return updateCode(state, action.target, (pins) =>
-				set(pins, action.index, action.color),
+				setAt(pins, action.index, action.color),
 			);
 		case "clearCode":
 			return updateCode(state, action.target, (pins) =>
-				set(pins, action.index, null),
+				setAt(pins, action.index, null),
 			);
 		case "moveCode":
 			return updateCode(state, action.target, (pins) =>
 				swap(pins, action.from, action.to),
 			);
 		case "setKey":
-			return updateKeys(state, (keys) => set(keys, action.index, action.color));
+			return updateKeys(state, (keys) =>
+				setAt(keys, action.index, action.color),
+			);
 		case "moveKey":
 			return updateKeys(state, (keys) => swap(keys, action.from, action.to));
 		case "cycleKey":
 			return updateKeys(state, (keys) =>
-				set(keys, action.index, nextKey[keys[action.index] ?? "empty"]),
+				setAt(keys, action.index, nextKey[keys[action.index] ?? "empty"]),
 			);
 		case "randomSecret":
-			if (state.phase !== "setup") return state;
-			return {
-				...state,
-				secret: Array.from(
-					{ length: PEGS },
-					() => CODE_COLORS[Math.floor(Math.random() * CODE_COLORS.length)],
-				),
-			};
+			if (state.phase !== "setup" || action.secret.length !== PEGS)
+				return state;
+			return { ...state, secret: [...action.secret] };
 		case "startGame":
 			if (state.phase !== "setup" || !isFull(state.secret)) return state;
 			return { ...state, phase: "guessing" };
@@ -241,11 +247,35 @@ export function reducer(state: GameState, action: Action): GameState {
 }
 
 const STORAGE_KEY = "catlog:meowstermind";
+/** Bump when `GameState` changes shape; older saves then start fresh. */
+const SAVE_VERSION = 1;
+
+/** A saved game can be anything (old builds, hand edits), so check its shape. */
+function isGameState(value: unknown): value is GameState {
+	const s = value as GameState | null;
+	return (
+		!!s &&
+		PHASES.includes(s.phase) &&
+		Array.isArray(s.secret) &&
+		s.secret.length === PEGS &&
+		Array.isArray(s.rows) &&
+		s.rows.length === ROWS &&
+		Number.isInteger(s.current) &&
+		s.current >= 0 &&
+		s.current < ROWS &&
+		(s.match === null || Array.isArray(s.match?.players))
+	);
+}
 
 export function loadGame(): GameState {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
-		if (raw) return JSON.parse(raw) as GameState;
+		if (raw) {
+			const saved = JSON.parse(raw);
+			// Saves from before versioning are the bare state.
+			const state = saved?.version === SAVE_VERSION ? saved.state : saved;
+			if (isGameState(state)) return state;
+		}
 	} catch {
 		// Corrupt or unavailable storage: fall through to a fresh game.
 	}
@@ -254,7 +284,10 @@ export function loadGame(): GameState {
 
 export function saveGame(state: GameState) {
 	try {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+		localStorage.setItem(
+			STORAGE_KEY,
+			JSON.stringify({ version: SAVE_VERSION, state }),
+		);
 	} catch {
 		// Private mode / quota: the game still works, it just won't survive a reload.
 	}

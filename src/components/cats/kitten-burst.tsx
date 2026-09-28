@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { CODE_COLORS, KEY_COLORS } from "#/lib/mastermind";
-import { Pin } from "./pins";
+import { CATS, type Cat, PAW_COLORS, type PawColor } from "#/lib/cats";
+import { CatHead, PawToken, Sticker } from "./cat-face";
 
 const PIECES = 44;
 const GRAVITY = 700; // px/s²
@@ -13,8 +13,8 @@ const between = (min: number, max: number) => min + Math.random() * (max - min);
 
 interface Piece {
 	id: number;
-	kind: "code" | "key";
-	color: (typeof CODE_COLORS)[number] | (typeof KEY_COLORS)[number];
+	/** A cat face, or (every sixth piece) a paw. */
+	look: { cat: Cat } | { paw: PawColor };
 	size: string;
 	// Physics state, in px and degrees relative to the burst origin.
 	x: number;
@@ -39,8 +39,7 @@ function makePieces(): Piece[] {
 		const paw = id % 6 === 5;
 		return {
 			id,
-			kind: paw ? "key" : "code",
-			color: paw ? pick(KEY_COLORS) : pick(CODE_COLORS),
+			look: paw ? { paw: pick(PAW_COLORS) } : { cat: pick(CATS) },
 			size: `${between(paw ? 1.25 : 1.75, paw ? 2 : 3.25).toFixed(2)}rem`,
 			x: 0,
 			y: 0,
@@ -135,7 +134,13 @@ export function KittenBurst({ onDone }: { onDone: () => void }) {
 					}}
 					className="absolute top-0 left-0 opacity-0 will-change-transform"
 				>
-					<Pin color={piece.color} kind={piece.kind} size={piece.size} />
+					{"cat" in piece.look ? (
+						<CatHead cat={piece.look.cat} size={piece.size} />
+					) : (
+						<Sticker size={piece.size} className="rounded-full">
+							<PawToken color={piece.look.paw} />
+						</Sticker>
+					)}
 				</span>
 			))}
 		</div>

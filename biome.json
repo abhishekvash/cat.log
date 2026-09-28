@@ -24,7 +24,17 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"style": {
+				"noRestrictedImports": {
+					"level": "error",
+					"options": {
+						"paths": {
+							"lucide-react": "Use Phosphor (@phosphor-icons/react) for every icon. shadcn components sometimes arrive with lucide; swap them."
+						}
+					}
+				}
+			}
 		}
 	},
 	"javascript": {

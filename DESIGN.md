@@ -54,9 +54,10 @@ typography:
     fontWeight: 400
     lineHeight: 1.33
 rounded:
-  tray: "16px"
-  field: "20px"
-  card: "24px"
+  row: "6px"
+  control: "8px"
+  panel: "10px"
+  card: "14px"
   pill: "9999px"
 spacing:
   xs: "4px"
@@ -69,14 +70,14 @@ components:
     backgroundColor: "{colors.strawberry-milk}"
     textColor: "{colors.strawberry-milk-ink}"
     typography: "{typography.body-small}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 24px"
     height: "48px"
   button-outline:
     backgroundColor: "{colors.velvet-dusk}"
     textColor: "{colors.moon-milk}"
     typography: "{typography.body-small}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 20px"
     height: "44px"
   button-outline-hover:
@@ -84,14 +85,14 @@ components:
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.moon-milk}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.control}"
     padding: "0 16px"
     height: "44px"
   input-field:
     backgroundColor: "{colors.velvet-dusk-muted}"
     textColor: "{colors.moon-milk}"
     typography: "{typography.body}"
-    rounded: "{rounded.field}"
+    rounded: "{rounded.control}"
     padding: "0 12px"
     height: "44px"
   card:
@@ -121,7 +122,7 @@ This system explicitly rejects the **mobile-game casino** (flashing rewards, coi
 **Key Characteristics:**
 - Velvet Dusk plum surfaces with a single Strawberry Milk accent for interaction.
 - Sticker-style SVG cats with a light sticker border, so even the black cat pops on the dark board.
-- Round but quiet UI: pills and soft corners, restrained so the cats stay the stars.
+- Soft but quiet UI: gently squared controls and cards, restrained so the cats stay the stars.
 - Soft lift: raised surfaces one shade lighter plus one deep, diffuse shadow.
 - Touch-first geometry: nothing interactive smaller than a comfortable fingertip.
 - Ambient life at the edges: blinking cat eyes live in the empty background, never over play. Each pair picks the first free spot from a few candidates and stays hidden if every spot would overlap content.
@@ -138,7 +139,7 @@ A restrained night palette: plum-tinted neutrals carry almost everything, one wa
 
 ### Tertiary
 - **Lurking Green** (#8fdc4f): the glowing irises of the black cats watching from the background. Ambient only, never on interactive elements.
-- **The five coats**: grey (#a7b0bb), white (#fbf8f4), black (#2d2a31), ginger (#f4a259) and siamese (#e9d3b1 with #2f2724 points). These are the code pieces; each also differs by eye color and markings so no two cats are told apart by fur alone.
+- **The coats**: grey (#a7b0bb), white (#fbf8f4), black (#2d2a31), ginger (#f4a259) and siamese (#e9d3b1 with #2f2724 points) are Meowstermind's code pieces; Monopawly adds calico (white with a ginger and a black patch) as its sixth cat. Each also differs by eye color and markings so no two cats are told apart by fur alone. All art colours live in one file, `components/cats/palette.ts`.
 
 ### Neutral
 - **Velvet Dusk** (`oklch(0.2 0.035 305)`): the page, the night. Lit by two very soft radial glows, pink at top-left and violet at bottom-right, at 12% opacity.
@@ -174,7 +175,7 @@ A restrained night palette: plum-tinted neutrals carry almost everything, one wa
 - **Log** (monospace): the ".log" in the cat.log wordmark, and nowhere else.
 
 ### Named Rules
-**The 12px Floor Rule.** No text below 12px, anywhere, including board numbers and hints. If a label doesn't fit at 12px, the layout gives it room.
+**The 12px Floor Rule.** No text below 12px, anywhere, including board numbers and hints. If a label doesn't fit at 12px, the layout gives it room. The one exception is the 40 tiles of the Monopawly board, whose names and prices sit at 11px (`text-tile`) so the ring of tiles stays airy; everything else on that screen keeps the floor.
 
 **The Chalkboard and Menu Rule.** Fredoka for anything you'd write on the café's chalkboard (titles, names, scores, buttons); Nunito for anything you'd read at the table (sentences). Never set a full sentence of instructions in Fredoka.
 
@@ -198,24 +199,27 @@ Soft lift. Surfaces rise from the night by being one shade lighter (Velvet Dusk 
 
 ## 5. Components
 
-Round but quiet: friendly, fully rounded shapes that step back so the cats stay the stars.
+Soft but quiet: gently squared shapes that step back so the cats stay the stars.
+
+**The shadcn First Rule.** If shadcn/ui has a component for it (Button, Card, Badge, Alert, AlertDialog, Table, Breadcrumb, Input, Label, Switch, Slider, Toggle, ToggleGroup, ScrollArea, Separator, Tooltip, Sonner), use it from `components/ui/` instead of hand-styling a div. Change the look once, in the theme or the component's variants, not per screen. Custom components are for game art only: boards, tiles, pieces, dice, fur. One radius token (`--radius`, 10px) drives every corner: `rounded-sm` 6px for list rows, `rounded-md` 8px for buttons and inputs, `rounded-lg` 10px for panels, `rounded-xl` 14px for cards and the board.
 
 ### Buttons
-- **Shape:** full pill (9999px) everywhere.
-- **Sizes:** 44px is the floor for every size (`sm` and `default` are both 44px); `lg` is 48px for the main action on each screen. Icon buttons are 44px square.
+- **Shape:** `rounded-md` (8px) everywhere.
+- **Sizes:** 44px is the floor for every size (`sm` and `default` are both 44px); `lg` is 48px for the main action on each screen. Icon buttons are 44px square. Monopawly's dense game screens use the `compact` sizes instead (36px, `compact-lg` 40px, `compact-icon` 36px square), since a board and a side panel have to share one tablet screen.
 - **Primary:** Strawberry Milk fill, Strawberry Milk Ink text, Fredoka 500 with slight tracking; 48px tall for main actions ("Start match", "Confirm score", "Next round: Biscuit hides"). Labels that include a player's name may wrap onto two balanced lines rather than overflow.
 - **Hover / Focus / Active:** fill dims to 90% on hover; focus shows a 3px Strawberry Milk ring at 50%; a tap presses the button to 97% scale (skipped under reduced motion), because iPads have no hover. Disabled drops to 50% opacity and ignores taps.
-- **Confirm-in-place:** destructive actions (resetting a match) never open a dialog. The first tap arms the button, which turns outline with Strawberry Milk text and border and reads "Tap again to reset scores"; a second tap confirms; it disarms by itself after 3.5s.
+- **Confirm:** actions that can't be undone (resetting scores, leaving a room, removing a player, going bankrupt) ask first in a shadcn AlertDialog (`components/confirm-action.tsx`): a title that asks the question, one line on what happens, Cancel, and a destructive button that names the outcome ("Go bankrupt", not "OK").
 - **Outline:** Velvet Dusk fill, 1px Dusk Seam border, Moon Milk text; hover moves to Velvet Dusk Hover. For secondary actions ("Random code", "Hold to peek at code").
 - **Ghost:** no fill, Moon Milk text, hover fill only. For tertiary actions ("New match", "Let player edit guess").
 - **Copy:** the button names the outcome, often with the person ("Next round: Biscuit hides"), never a generic "Continue".
 
 ### Chips
-- **Style:** transparent fill, 1px Dusk Seam border, Lavender Whisper text, pill shape, 2px 10px padding. Game tile tags ("2 players", "Pass & play").
+- **Style:** shadcn Badge (`outline`): transparent fill, 1px Dusk Seam border, Lavender Whisper text, pill shape. Game tile tags ("2 players", "Pass & play").
 - **Scoreboard chip:** same shape with the name in Fredoka and the score in Strawberry Milk; the current mastermind's chip gets a Strawberry Milk tint (10%) and border (50%).
 
 ### Cards / Containers
-- **Corner Style:** 24px on cards and the board; 16px on trays and inner preview wells.
+- **Component:** shadcn Card. Notices inside a game (you owe fish, a cat wandered off, a rejoin link) are shadcn Alerts.
+- **Corner Style:** 14px (`rounded-xl`) on cards and the board; 10px (`rounded-lg`) on inner preview wells.
 - **Background:** Velvet Dusk Raised; inner wells use black at 20% over it.
 - **Shadow Strategy:** Table shadow (see Elevation).
 - **Border:** 1px Dusk Seam. "Coming soon" placeholders use a dashed border over a 40% raised fill.
@@ -223,13 +227,13 @@ Round but quiet: friendly, fully rounded shapes that step back so the cats stay 
 - **Cat ears:** featured surfaces (the board, the names card, game tiles) wear two SVG ears that grow out of the top edge: Velvet Dusk Raised fill, Dusk Seam outline, pink inner ear at 75%. The left ear flicks every 6.5s.
 
 ### Inputs / Fields
-- **Style:** Velvet Dusk Muted fill, 1px Dusk Seam border, 20px radius, 44px tall, 16px text (prevents iOS zoom).
+- **Style:** shadcn Input: Velvet Dusk Muted fill, 1px Dusk Seam border, 8px radius, 16px text on touch screens (prevents iOS zoom).
 - **Focus:** Strawberry Milk border plus a 3px ring at 50%.
-- **Labels:** above the field, 8px gap, Nunito 500 in Lavender Whisper, inset 12px so the label's first letter aligns with the typed text.
+- **Labels:** shadcn Label above the field, 8px gap, Nunito 500 in Lavender Whisper.
 
 ### Navigation
 - **Targets:** header links and back links carry vertical padding so each is at least 44px tall, with the same 3px focus ring as buttons.
-- **Style:** a slim top bar with a breadcrumb, `cat.log / Meowstermind`: the wordmark in Lavender Whisper (Moon Milk on hover), a faint slash, then the game name in Fredoka with a cat icon in Strawberry Milk. On phones the `cat.log /` prefix hides and "New match" collapses to its icon. Back links on content pages read "← Back to cat.log".
+- **Style:** a slim top bar with a shadcn Breadcrumb, `cat.log › Meowstermind`: the wordmark in Lavender Whisper (Moon Milk on hover), a caret, then the game name in Fredoka with a cat icon in Strawberry Milk. On phones the `cat.log ›` prefix hides and "New match" collapses to its icon. Back links on content pages read "← Back to cat.log".
 
 ### Cat Pieces (signature component)
 Sticker-style SVG cat heads: pointy ears with pink insides, a wide round face, big glossy eyes with a white catch-light, blush cheeks, a tiny pink nose and an "ω" mouth, all outlined in near-black (#2a1f26) and wrapped in an 11px Paw White sticker border. Board slots size them from `--pin` (up to 48px); tray pieces are 44px. The hidden code shows as muted plum **sleepy cats** with closed eyes and a small pink "z".
@@ -239,6 +243,13 @@ Glossy round tokens (pink or white) with a paw print pressed into them, rendered
 
 ### Hit Areas
 Holes are sized by the board, not by fingers, so their tap and drop areas reach invisibly into the gaps around them without moving the layout: cat holes catch taps across 46px or more; paw holes, whose neighbours sit close together sideways, grow vertically to 44px tall.
+
+### Icons and Board Art
+- **UI icons** (back arrows, copy, crown, close) come from Phosphor at the **bold** weight, set once on the root with `IconContext`. Bold strokes sit comfortably beside the chunky sticker cats; never mix in another icon set. No lucide, even inside shadcn components: `components.json` asks for Phosphor, but some registry components still ship lucide, so swap them on install. Biome fails the lint on any `lucide-react` import.
+- **Game art** is never an icon font. Monopawly's board uses hand-drawn sticker SVGs (`components/monopawly/tile-art.tsx`): near-black outline, Paw White sticker border, coat colours. Small uses (boxes on a fur bar, property rows) drop the sticker border.
+- **Monopawly board orientation**: the Food Bowl (start) is the top-left corner and play runs clockwise, so the first row reads like a line of text. The corner says "Start →" in Strawberry Milk, the arrow pointing the way play goes. Every edge tile is the same card (name, art, then price or fur); the top and bottom rows stay upright, and the side lanes turn the card a quarter to face the centre like a printed board, so the left lane reads top to bottom and the right lane bottom to top. Clicking or tapping a tile opens its card (owner, rents, your build and mortgage buttons) in a shadcn Popover beside it, facing the middle of the board; clicking the tile again or anywhere else closes it. No hover: iPads don't have one. The board's centre is for the turn, auctions and trades only.
+- **Monopawly tiles**: one template for every tile. A street group shows as a faint tint of its colour over the whole tile (26% mixed into the card), so a neighbourhood reads at a glance. Once a street is bought, its price gives way to a band of the owner's fur (tabby stripes, ginger stripes, calico patches, Siamese points, white or black fluff) running edge to edge along the card's bottom, and any boxes or cat house ride on that band. Cats keep their Paw White sticker borders; ownership is fur, never a per-player colour. The player list shows each cat's fur swatch.
+- **Money is Phosphor's fish** (`FishSimpleIcon`, wrapped as `FishIcon` in `tile-art.tsx`), in the colour of the text around it. Never the 🐟 emoji in UI; engine text is passed through `withFish()`.
 
 ### Loading and Lost Pages
 - **Loading:** any route still arriving shows a sleepy cat and "Waking the kitties…" in Lavender Whisper, centred on the night background. It is registered once on the router so every game inherits it.
@@ -269,5 +280,19 @@ Holes are sized by the board, not by fingers, so their tap and drop areas reach 
 - **Don't** put decoration, confetti rules or background eyes on top of the board or the controls during a turn; play comes before chrome.
 - **Don't** set sentences in Fredoka, and don't use monospace outside the wordmark.
 - **Don't** add a new saturated hue for UI; the cats already bring the color.
-- **Don't** reach for a modal or `window.confirm`; confirm in place (see Buttons).
+- **Don't** use `window.confirm` or a home-made modal; irreversible actions use the shared AlertDialog (see Buttons).
+- **Don't** hand-style a card, pill, notice, table or link-button when shadcn has one (The shadcn First Rule).
 - **Don't** set any text below 12px (The 12px Floor Rule).
+
+## 7. Tokens in Code
+
+The design above lives in `src/styles.css` (UI tokens) and `src/components/cats/palette.ts` (art colours). Keep them the only places a colour or size is written down.
+
+- **No raw values in class names.** No hex colours (`border-[#fff4f8]`), no one-off pixel or `ch` sizes (`text-[13px]`, `max-w-[44ch]`). If a value is missing, add a token to `@theme` with a comment saying what it's for, then use the utility (`border-sticker`, `text-row`, `max-w-measure`).
+- **Prefer Tailwind's own utilities** over arbitrary properties: `hyphens-auto`, `wrap-break-word`, `mask-b-from-40%`, not `[hyphens:auto]` and friends. Layout maths too long for a class (the Monopawly board's size) gets a named, commented class in `styles.css`.
+- **Inline `style` only for values that come from data**: grid positions, a size prop, or `--group` for a street's colour (paired with `bg-group-tint` or `bg-(--group)`).
+- **Art colours stay in `palette.ts`.** SVG fills read its constants; the one it shares with the UI (`STICKER`) is also `--color-sticker`, and a test keeps them equal. Add a token for another art colour only when a class name needs it.
+- **Tokens with a narrow job say so in their name**: `text-tile` is for board tiles only (The 12px Floor Rule), `text-row` for the compact lists beside the board.
+- **New tokens go in `cn()` too.** `src/lib/utils.ts` tells tailwind-merge about our sizes, widths and radii; without that it mistakes `text-row` for a colour and silently drops it.
+- The remaining arbitrary values are deliberate and commented where they appear: hit-area padding on board holes, the activity trail's tapering widths, and shadcn's `ring-[3px]` focus ring.
+

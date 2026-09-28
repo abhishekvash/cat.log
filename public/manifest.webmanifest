@@ -1,7 +1,7 @@
 {
   "name": "cat.log",
   "short_name": "cat.log",
-  "description": "Cozy cat games for two, on one screen.",
+  "description": "Cozy cat games to play together.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1223",

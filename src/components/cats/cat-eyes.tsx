@@ -1,4 +1,5 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { LURKING_EYES } from "./palette";
 
 type Spot = readonly [left: number, top: number]; // viewport percentages
 
@@ -125,8 +126,14 @@ function Eye({ cx }: { cx: number }) {
 				d={`M${cx - 11} 12 Q${cx} 1 ${cx + 11} 12 Q${cx} 23 ${cx - 11} 12 Z`}
 				fill="url(#cat-eye-iris)"
 			/>
-			<ellipse cx={cx} cy="12" rx="1.8" ry="8" fill="#0d0a10" />
-			<circle cx={cx + 3} cy="8.5" r="1.4" fill="#f4ffe6" opacity={0.9} />
+			<ellipse cx={cx} cy="12" rx="1.8" ry="8" fill={LURKING_EYES.pupil} />
+			<circle
+				cx={cx + 3}
+				cy="8.5"
+				r="1.4"
+				fill={LURKING_EYES.glint}
+				opacity={0.9}
+			/>
 		</g>
 	);
 }
@@ -205,9 +212,9 @@ export function CatEyes() {
 			<svg className="absolute size-0" aria-hidden="true">
 				<defs>
 					<radialGradient id="cat-eye-iris" cx="50%" cy="50%" r="60%">
-						<stop offset="0%" stopColor="#e9ff8a" />
-						<stop offset="55%" stopColor="#8fdc4f" />
-						<stop offset="100%" stopColor="#3f8f2a" />
+						<stop offset="0%" stopColor={LURKING_EYES.light} />
+						<stop offset="55%" stopColor={LURKING_EYES.iris} />
+						<stop offset="100%" stopColor={LURKING_EYES.shade} />
 					</radialGradient>
 				</defs>
 			</svg>

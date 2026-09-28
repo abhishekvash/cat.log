@@ -1,4 +1,5 @@
 import { cn } from "#/lib/utils";
+import { INNER_EAR } from "./palette";
 
 function Ear({ side }: { side: "left" | "right" }) {
 	return (
@@ -26,7 +27,7 @@ function Ear({ side }: { side: "left" | "right" }) {
 			/>
 			<path
 				d="M12 40 L22 16 Q24 12 27 16 L40 40 Z"
-				fill="#f7a8b8"
+				fill={INNER_EAR}
 				opacity={0.75}
 			/>
 		</svg>
