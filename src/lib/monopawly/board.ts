@@ -6,6 +6,8 @@ export const FOOD_BOWL_PAY = 200;
 export const VET_FEE = 50;
 export const BANK_BOXES = 32;
 export const BANK_HOUSES = 12;
+/** A street's building count: 0 to 4 boxes, then this means a cat house. */
+export const CAT_HOUSE = 5;
 
 /** Street groups, cheapest first. Colors are soft pastels that sit on the dark board. */
 export const GROUPS = [
@@ -39,13 +41,14 @@ export interface UtilitySpace {
 	kind: "utility";
 	name: string;
 	price: number;
+	art: "laser" | "catnip";
 }
 export type Space =
 	| StreetSpace
 	| FlapSpace
 	| UtilitySpace
 	| { kind: "foodBowl"; name: string }
-	| { kind: "tax"; name: string; amount: number }
+	| { kind: "tax"; name: string; amount: number; art: "bill" | "comb" }
 	| { kind: "zoomies"; name: string }
 	| { kind: "treatJar"; name: string }
 	| { kind: "vet"; name: string }
@@ -71,7 +74,7 @@ export const BOARD: Space[] = [
 	street("Bin Lane", 1, 60, 50, [2, 10, 30, 90, 160, 250]),
 	treatJar,
 	street("Alley Cat Row", 1, 60, 50, [4, 20, 60, 180, 320, 450]),
-	{ kind: "tax", name: "Vet Bill", amount: 200 },
+	{ kind: "tax", name: "Vet Bill", amount: 200, art: "bill" },
 	flap("North Cat Flap"),
 	street("Whisker Street", 2, 100, 50, [6, 30, 90, 270, 400, 550]),
 	zoomies,
@@ -79,7 +82,7 @@ export const BOARD: Space[] = [
 	street("Mouse Hole Road", 2, 120, 50, [8, 40, 100, 300, 450, 600]),
 	{ kind: "vet", name: "The Vet" },
 	street("Yarn Market", 3, 140, 100, [10, 50, 150, 450, 625, 750]),
-	{ kind: "utility", name: "Laser Pointer Co.", price: 150 },
+	{ kind: "utility", name: "Laser Pointer Co.", price: 150, art: "laser" },
 	street("Scratchpost Lane", 3, 140, 100, [10, 50, 150, 450, 625, 750]),
 	street("Catnip Close", 3, 160, 100, [12, 60, 180, 500, 700, 900]),
 	flap("East Cat Flap"),
@@ -95,7 +98,7 @@ export const BOARD: Space[] = [
 	flap("South Cat Flap"),
 	street("Meow Mews", 6, 260, 150, [22, 110, 330, 800, 975, 1150]),
 	street("Calico Crescent", 6, 260, 150, [22, 110, 330, 800, 975, 1150]),
-	{ kind: "utility", name: "Catnip Works", price: 150 },
+	{ kind: "utility", name: "Catnip Works", price: 150, art: "catnip" },
 	street("Kitten Park", 6, 280, 150, [24, 120, 360, 850, 1025, 1200]),
 	{ kind: "caught", name: "Caught on the counter!" },
 	street("Siamese Heights", 7, 300, 200, [26, 130, 390, 900, 1100, 1275]),
@@ -105,15 +108,20 @@ export const BOARD: Space[] = [
 	flap("West Cat Flap"),
 	zoomies,
 	street("Persian Place", 8, 350, 200, [35, 175, 500, 1100, 1300, 1500]),
-	{ kind: "tax", name: "Groomer Fee", amount: 100 },
+	{ kind: "tax", name: "Groomer Fee", amount: 100, art: "comb" },
 	street("Velvet Paw Park", 8, 400, 200, [50, 200, 600, 1400, 1700, 2000]),
 ];
 
 export const VET_INDEX = 10;
-export const NAP_SPOT_INDEX = 20;
 
 export const isOwnable = (space: Space): space is OwnableSpace =>
 	space.kind === "street" || space.kind === "flap" || space.kind === "utility";
+
+const indexOfKind = (kind: Space["kind"]) =>
+	BOARD.flatMap((space, index) => (space.kind === kind ? [index] : []));
+
+export const FLAP_INDEXES = indexOfKind("flap");
+export const UTILITY_INDEXES = indexOfKind("utility");
 
 export const groupSpaces = (group: GroupId) =>
 	BOARD.flatMap((space, index) =>
@@ -123,10 +131,15 @@ export const groupSpaces = (group: GroupId) =>
 export const groupColor = (group: GroupId) =>
 	GROUPS.find((g) => g.id === group)?.color ?? "#ccc";
 
+/** Rent for landing on a cat flap when its owner holds `owned` of them. */
+export const flapRent = (owned: number) => 25 * 2 ** (owned - 1);
+
+/** Utility rent is the dice times this, depending on how many one cat owns. */
+export const UTILITY_MULTIPLIER = { one: 4, both: 10 } as const;
+
 export const mortgageValue = (space: OwnableSpace) => space.price / 2;
 /** Lifting a mortgage costs the loan plus 10%. */
 export const unmortgageCost = (space: OwnableSpace) =>
 	Math.ceil((space.price / 2) * 1.1);
-
-export const indexOfKind = (kind: Space["kind"]) =>
-	BOARD.flatMap((space, index) => (space.kind === kind ? [index] : []));
+/** What the bank pays back for one box or cat house. */
+export const buildingRefund = (space: StreetSpace) => space.buildCost / 2;

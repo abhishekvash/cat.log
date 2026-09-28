@@ -139,7 +139,7 @@ A restrained night palette: plum-tinted neutrals carry almost everything, one wa
 
 ### Tertiary
 - **Lurking Green** (#8fdc4f): the glowing irises of the black cats watching from the background. Ambient only, never on interactive elements.
-- **The five coats**: grey (#a7b0bb), white (#fbf8f4), black (#2d2a31), ginger (#f4a259) and siamese (#e9d3b1 with #2f2724 points). These are the code pieces; each also differs by eye color and markings so no two cats are told apart by fur alone.
+- **The coats**: grey (#a7b0bb), white (#fbf8f4), black (#2d2a31), ginger (#f4a259) and siamese (#e9d3b1 with #2f2724 points) are Meowstermind's code pieces; Monopawly adds calico (white with a ginger and a black patch) as its sixth cat. Each also differs by eye color and markings so no two cats are told apart by fur alone. All art colours live in one file, `components/cats/palette.ts`.
 
 ### Neutral
 - **Velvet Dusk** (`oklch(0.2 0.035 305)`): the page, the night. Lit by two very soft radial glows, pink at top-left and violet at bottom-right, at 12% opacity.
@@ -175,7 +175,7 @@ A restrained night palette: plum-tinted neutrals carry almost everything, one wa
 - **Log** (monospace): the ".log" in the cat.log wordmark, and nowhere else.
 
 ### Named Rules
-**The 12px Floor Rule.** No text below 12px, anywhere, including board numbers and hints. If a label doesn't fit at 12px, the layout gives it room. The one exception is the 40 tiles of the Monopawly board, whose names and prices sit at 11px so the ring of tiles stays airy; everything else on that screen keeps the floor.
+**The 12px Floor Rule.** No text below 12px, anywhere, including board numbers and hints. If a label doesn't fit at 12px, the layout gives it room. The one exception is the 40 tiles of the Monopawly board, whose names and prices sit at 11px (`text-tile`) so the ring of tiles stays airy; everything else on that screen keeps the floor.
 
 **The Chalkboard and Menu Rule.** Fredoka for anything you'd write on the café's chalkboard (titles, names, scores, buttons); Nunito for anything you'd read at the table (sentences). Never set a full sentence of instructions in Fredoka.
 
@@ -283,3 +283,16 @@ Holes are sized by the board, not by fingers, so their tap and drop areas reach 
 - **Don't** use `window.confirm` or a home-made modal; irreversible actions use the shared AlertDialog (see Buttons).
 - **Don't** hand-style a card, pill, notice, table or link-button when shadcn has one (The shadcn First Rule).
 - **Don't** set any text below 12px (The 12px Floor Rule).
+
+## 7. Tokens in Code
+
+The design above lives in `src/styles.css` (UI tokens) and `src/components/cats/palette.ts` (art colours). Keep them the only places a colour or size is written down.
+
+- **No raw values in class names.** No hex colours (`border-[#fff4f8]`), no one-off pixel or `ch` sizes (`text-[13px]`, `max-w-[44ch]`). If a value is missing, add a token to `@theme` with a comment saying what it's for, then use the utility (`border-sticker`, `text-row`, `max-w-measure`).
+- **Prefer Tailwind's own utilities** over arbitrary properties: `hyphens-auto`, `wrap-break-word`, `mask-b-from-40%`, not `[hyphens:auto]` and friends. Layout maths too long for a class (the Monopawly board's size) gets a named, commented class in `styles.css`.
+- **Inline `style` only for values that come from data**: grid positions, a size prop, or `--group` for a street's colour (paired with `bg-group-tint` or `bg-(--group)`).
+- **Art colours stay in `palette.ts`.** SVG fills read its constants; the one it shares with the UI (`STICKER`) is also `--color-sticker`, and a test keeps them equal. Add a token for another art colour only when a class name needs it.
+- **Tokens with a narrow job say so in their name**: `text-tile` is for board tiles only (The 12px Floor Rule), `text-row` for the compact lists beside the board.
+- **New tokens go in `cn()` too.** `src/lib/utils.ts` tells tailwind-merge about our sizes, widths and radii; without that it mistakes `text-row` for a colour and silently drops it.
+- The remaining arbitrary values are deliberate and commented where they appear: hit-area padding on board holes, the activity trail's tapering widths, and shadcn's `ring-[3px]` focus ring.
+

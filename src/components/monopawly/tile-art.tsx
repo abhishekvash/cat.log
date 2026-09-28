@@ -1,5 +1,6 @@
 import { FishSimpleIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
+import { COATS, CREAM, INK, PINK, STICKER } from "#/components/cats/palette";
 import { cn } from "#/lib/utils";
 
 /**
@@ -8,20 +9,17 @@ import { cn } from "#/lib/utils";
  * lives in a 100×100 box.
  */
 
-const OUTLINE = "#2a1f26";
-const STICKER = "#fff4f8";
-const PINK = "#ff7eb0";
-const CREAM = "#fde2c0";
-const GINGER = "#f4a259";
+const GINGER = COATS.ginger.fur;
 const CARDBOARD = "#d9a066";
 const CARDBOARD_DARK = "#b9824a";
 const LILAC = "#c9b6e4";
 const MINT = "#8fd3a4";
 const SKY = "#9fd3ea";
 const BUTTER = "#f0d67a";
+const ICE = "#d6ecf5";
 
 const line = {
-	stroke: OUTLINE,
+	stroke: INK,
 	strokeWidth: 4,
 	strokeLinejoin: "round",
 	strokeLinecap: "round",
@@ -154,15 +152,7 @@ const ART: Record<ArtName, ReactNode> = {
 	),
 	treatJar: (
 		<>
-			<rect
-				x="20"
-				y="30"
-				width="60"
-				height="60"
-				rx="14"
-				fill="#d6ecf5"
-				{...line}
-			/>
+			<rect x="20" y="30" width="60" height="60" rx="14" fill={ICE} {...line} />
 			<rect x="26" y="14" width="48" height="18" rx="6" fill={PINK} {...line} />
 			<path
 				d="M34 64 Q42 56 50 64 Q42 72 34 64 Z M50 64 L56 58 L56 70 Z"
@@ -230,7 +220,7 @@ const ART: Record<ArtName, ReactNode> = {
 				{...line}
 			/>
 			<g transform="rotate(-62 46 46)">
-				<path d="M30 14 H62 L56 78 H36 Z" fill="#d6ecf5" {...line} />
+				<path d="M30 14 H62 L56 78 H36 Z" fill={ICE} {...line} />
 				<path
 					d="M33 40 H59 L56 78 H36 Z"
 					fill={SKY}
@@ -366,7 +356,7 @@ export function Art({
 		>
 			{!plain && (
 				// The same drawing, fattened and flattened into a sticker border.
-				<g className="[&_*]:!fill-[#fff4f8] [&_*]:!stroke-[#fff4f8] [&_*]:![stroke-width:14px]">
+				<g className="[&_*]:!fill-sticker [&_*]:!stroke-sticker [&_*]:![stroke-width:14px]">
 					{ART[name]}
 				</g>
 			)}

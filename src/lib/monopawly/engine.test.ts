@@ -1,105 +1,31 @@
 import { describe, expect, it } from "vitest";
+import { seededRng } from "#/lib/rng";
 import { BOARD, FOOD_BOWL_PAY, START_FISH, VET_INDEX } from "./board";
 import { DECKS } from "./cards";
-import { addPlayer, createGame, reduce } from "./engine";
-import { type Rng, seededRng } from "./rng";
-import type { Context, GameState, Intent } from "./types";
+import { reduce, removePlayer, skipTurn, start, tick } from "./engine";
+import {
+	ctx,
+	dice,
+	game,
+	must,
+	own,
+	p,
+	run,
+	seats,
+	turn,
+} from "./test-fixtures";
+import { DEFAULT_HOUSE_RULES } from "./types";
 
-/** Dice come out in the order given; anything else falls back to a seed. */
-function dice(...rolls: number[]): Rng {
-	const fallback = seededRng(1);
-	const queue = [...rolls];
-	return {
-		int(max) {
-			if (max === 6 && queue.length) return (queue.shift() as number) - 1;
-			return fallback.int(max);
-		},
-	};
-}
-
-const ctx = (rng: Rng = seededRng(7), now = 1000): Context => ({ rng, now });
-
-/** A started game with players 1..n in seat order, everyone on the Food Bowl. */
-function game(n = 2): GameState {
-	let s = createGame();
-	for (let i = 0; i < n; i++) {
-		const r = addPlayer(s, ["Mochi", "Tux", "Biscuit", "Luna"][i]);
-		if (!r.ok) throw new Error(r.error);
-		s = r.state;
-	}
-	s = must(reduce(s, 1, { type: "start" }, ctx()));
-	// Undo the shuffle so tests read naturally: player 1 goes first.
-	s.players.sort((a, b) => a.id - b.id);
-	s.turn = {
-		playerId: 1,
-		phase: "awaitingRoll",
-		doubles: 0,
-		dice: null,
-		rollAgain: false,
-	};
-	return s;
-}
-
-function must(result: ReturnType<typeof reduce>) {
-	if (!result.ok) throw new Error(result.error);
-	return result.state;
-}
-
-function run(s: GameState, actor: number, intent: Intent, c = ctx()) {
-	return must(reduce(s, actor, intent, c));
-}
-
-const p = (s: GameState, id: number) => {
-	const found = s.players.find((x) => x.id === id);
-	if (!found) throw new Error(`no player ${id}`);
-	return found;
-};
-const turn = (s: GameState) => {
-	if (!s.turn) throw new Error("no turn");
-	return s.turn;
-};
-const own = (s: GameState, owner: number, ...spaces: number[]) => {
-	for (const i of spaces)
-		s.holdings[i] = { owner, buildings: 0, mortgaged: false };
-};
-
-describe("lobby", () => {
-	it("seats players with distinct cats and makes the first one host", () => {
-		let s = createGame();
-		for (const name of ["A", "B", "C"]) {
-			const r = addPlayer(s, name);
-			if (!r.ok) throw new Error();
-			s = r.state;
-		}
-		expect(s.hostId).toBe(1);
-		expect(new Set(s.players.map((x) => x.cat)).size).toBe(3);
-	});
-
-	it("needs two players and the host to start", () => {
-		const one = addPlayer(createGame(), "Solo");
-		if (!one.ok) throw new Error();
-		expect(reduce(one.state, 1, { type: "start" }, ctx())).toMatchObject({
-			ok: false,
-		});
-		const two = addPlayer(one.state, "Pal");
-		if (!two.ok) throw new Error();
-		expect(reduce(two.state, 2, { type: "start" }, ctx())).toMatchObject({
-			ok: false,
-			error: "Only the host can do that.",
-		});
-		const started = must(reduce(two.state, 1, { type: "start" }, ctx()));
-		expect(started.phase).toBe("playing");
-		expect(started.players.every((x) => x.fish === START_FISH)).toBe(true);
-	});
-
-	it("refuses a seventh player", () => {
-		let s = createGame();
-		for (let i = 0; i < 6; i++) {
-			const r = addPlayer(s, `P${i}`);
-			if (!r.ok) throw new Error();
-			s = r.state;
-		}
-		expect(addPlayer(s, "Late")).toMatchObject({ ok: false });
+describe("start", () => {
+	it("deals every seated cat in, with the starting fish and a shuffled order", () => {
+		const s = start(seats(4), DEFAULT_HOUSE_RULES, ctx(seededRng(2)));
+		expect(s.phase).toBe("playing");
+		expect(s.players.map((x) => x.id).sort()).toEqual([1, 2, 3, 4]);
+		expect(s.players.every((x) => x.fish === START_FISH)).toBe(true);
+		expect(s.turn?.playerId).toBe(s.players[0].id);
+		expect(s.log.at(-1)?.text).toBe(
+			`The game begins! ${s.players[0].name} goes first.`,
+		);
 	});
 });
 
@@ -252,14 +178,10 @@ describe("auctions", () => {
 		).toMatchObject({
 			ok: false,
 		});
-		expect(
-			reduce(s, "system", { type: "auctionClock" }, ctx(undefined, 5000)),
-		).toMatchObject({
+		expect(tick(s, ctx(undefined, 5000))).toMatchObject({
 			ok: false,
 		});
-		s = must(
-			reduce(s, "system", { type: "auctionClock" }, ctx(undefined, 9001)),
-		);
+		s = must(tick(s, ctx(undefined, 9001)));
 		expect(s.holdings[3].owner).toBe(3);
 		expect(p(s, 3).fish).toBe(START_FISH - 25);
 		expect(s.auction).toBeNull();
@@ -270,9 +192,7 @@ describe("auctions", () => {
 		let s = game();
 		s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
 		s = run(s, 1, { type: "decline" }, ctx(undefined, 0));
-		s = must(
-			reduce(s, "system", { type: "auctionClock" }, ctx(undefined, 60_000)),
-		);
+		s = must(tick(s, ctx(undefined, 60_000)));
 		expect(s.holdings[3]).toBeUndefined();
 	});
 });
@@ -504,23 +424,25 @@ describe("cards", () => {
 });
 
 describe("host controls", () => {
-	it("skips or removes only a player who has wandered off", () => {
+	it("skips the current turn, but not mid-auction", () => {
 		let s = game(3);
-		expect(
-			reduce(s, 2, { type: "hostSkip", playerId: 1 }, ctx()),
-		).toMatchObject({
-			ok: false,
-		});
-		s.hostId = 2;
-		expect(
-			reduce(s, 2, { type: "hostSkip", playerId: 1 }, ctx()),
-		).toMatchObject({
-			ok: false,
-		});
-		p(s, 1).away = true;
-		s = run(s, 2, { type: "hostSkip", playerId: 1 });
+		s = must(skipTurn(s));
 		expect(s.turn?.playerId).toBe(2);
-		s = run(s, 2, { type: "hostRemove", playerId: 1 });
+		expect(s.log.at(-1)?.text).toBe("Mochi's turn was skipped.");
+		s.turn = { ...turn(s), phase: "auction" };
+		expect(skipTurn(s)).toMatchObject({
+			ok: false,
+			error: "Wait for the auction to finish.",
+		});
+	});
+
+	it("removes a player as if they went bankrupt to the bank", () => {
+		let s = game(3);
+		own(s, 1, 1);
+		s = must(removePlayer(s, 1));
 		expect(p(s, 1).bankrupt).toBe(true);
+		expect(s.holdings[1]).toBeUndefined();
+		expect(s.turn?.playerId).toBe(2);
+		expect(removePlayer(s, 1)).toMatchObject({ ok: false });
 	});
 });

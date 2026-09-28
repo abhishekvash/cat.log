@@ -1,14 +1,16 @@
-import { type ReactNode, useId } from "react";
-import type { CatToken } from "#/lib/monopawly/types";
+import type { ReactNode } from "react";
+import { useSvgId } from "#/components/cats/cat-face";
+import { COATS } from "#/components/cats/palette";
+import type { Cat } from "#/lib/cats";
 import { cn } from "#/lib/utils";
 
 /**
  * Each cat's fur as a repeating swatch. A claimed street wears a strip of its
- * owner's fur, so you read ownership straight off the cat's coat. Colours match
- * the coats in components/mastermind/pins.tsx.
+ * owner's fur, so you read ownership straight off the cat's coat. Colours come
+ * from the shared coat palette, so they always match the cat heads.
  */
 
-const stripes = (base: string, stripe: string) => ({
+const stripes = ({ fur: base, accent: stripe }: (typeof COATS)[Cat]) => ({
 	width: 10,
 	height: 10,
 	body: (
@@ -19,7 +21,7 @@ const stripes = (base: string, stripe: string) => ({
 	),
 });
 
-const tufts = (base: string, tuft: string) => ({
+const tufts = ({ fur: base, accent: tuft }: (typeof COATS)[Cat]) => ({
 	width: 12,
 	height: 10,
 	body: (
@@ -37,21 +39,21 @@ const tufts = (base: string, tuft: string) => ({
 });
 
 const PATTERNS: Record<
-	Exclude<CatToken, "siamese">,
+	Exclude<Cat, "siamese">,
 	{ width: number; height: number; body: ReactNode }
 > = {
-	grey: stripes("#a7b0bb", "#7d8793"),
-	ginger: stripes("#f4a259", "#d9772e"),
-	white: tufts("#fbf8f4", "#e2d6cc"),
-	black: tufts("#2d2a31", "#5a5463"),
+	grey: stripes(COATS.grey),
+	ginger: stripes(COATS.ginger),
+	white: tufts(COATS.white),
+	black: tufts(COATS.black),
 	calico: {
 		width: 34,
 		height: 12,
 		body: (
 			<>
-				<rect width="34" height="12" fill="#fbf8f4" />
-				<ellipse cx="8" cy="6" rx="7" ry="5" fill="#f4a259" />
-				<ellipse cx="25" cy="5" rx="5.5" ry="4" fill="#2d2a31" />
+				<rect width="34" height="12" fill={COATS.calico.fur} />
+				<ellipse cx="8" cy="6" rx="7" ry="5" fill={COATS.ginger.fur} />
+				<ellipse cx="25" cy="5" rx="5.5" ry="4" fill={COATS.black.fur} />
 			</>
 		),
 	},
@@ -63,11 +65,11 @@ export function Fur({
 	vertical = false,
 	className,
 }: {
-	cat: CatToken;
+	cat: Cat;
 	vertical?: boolean;
 	className?: string;
 }) {
-	const id = `fur${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+	const id = useSvgId();
 	return (
 		<svg aria-hidden="true" className={cn("block size-full", className)}>
 			<defs>
@@ -80,10 +82,10 @@ export function Fur({
 						x2={vertical ? "0" : "1"}
 						y2={vertical ? "1" : "0"}
 					>
-						<stop offset="0%" stopColor="#2f2724" />
-						<stop offset="22%" stopColor="#e9d3b1" />
-						<stop offset="78%" stopColor="#e9d3b1" />
-						<stop offset="100%" stopColor="#2f2724" />
+						<stop offset="0%" stopColor={COATS.siamese.accent} />
+						<stop offset="22%" stopColor={COATS.siamese.fur} />
+						<stop offset="78%" stopColor={COATS.siamese.fur} />
+						<stop offset="100%" stopColor={COATS.siamese.accent} />
 					</linearGradient>
 				) : (
 					<pattern
@@ -107,14 +109,14 @@ export function FurSwatch({
 	cat,
 	className,
 }: {
-	cat: CatToken;
+	cat: Cat;
 	className?: string;
 }) {
 	return (
 		<span
 			aria-hidden="true"
 			className={cn(
-				"inline-block h-2.5 w-6 shrink-0 overflow-hidden rounded-full border border-[#fff4f8]/80",
+				"inline-block h-2.5 w-6 shrink-0 overflow-hidden rounded-full border border-sticker/80",
 				className,
 			)}
 		>

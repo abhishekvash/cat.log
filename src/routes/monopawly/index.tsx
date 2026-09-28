@@ -1,108 +1,53 @@
-import { ArrowLeftIcon } from "@phosphor-icons/react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Wordmark } from "#/components/catalog/wordmark";
-import { CatHead } from "#/components/mastermind/pins";
+import { GameIntro } from "#/components/catalog/game-intro";
+import { CatHead } from "#/components/cats/cat-face";
+import { useStartRoom } from "#/components/multiplayer/use-start-room";
 import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
-import { GAME_NAME } from "#/lib/monopawly/board";
-import { CODE_PATTERN, newRoomCode } from "#/lib/monopawly/protocol";
-import { CAT_TOKENS } from "#/lib/monopawly/types";
-import { jsonLd, SITE_URL, seo } from "#/lib/seo";
-
-const DESCRIPTION =
-	"Monopawly is a free online property game for 2 to 6 cats. Buy streets in a cat town, build cardboard boxes and cat houses, trade, and be the last cat standing. Private rooms, no sign-up.";
+import { MONOPAWLY } from "#/lib/catalog";
+import { CATS } from "#/lib/cats";
+import { monopawly } from "#/lib/monopawly/definition";
+import { CODE_PATTERN } from "#/lib/multiplayer/protocol";
+import { gameHead } from "#/lib/seo";
 
 export const Route = createFileRoute("/monopawly/")({
-	head: () => ({
-		...seo({
-			title: `${GAME_NAME}: a cozy online property game with cats · cat.log`,
-			description: DESCRIPTION,
-			path: "/monopawly",
-		}),
-		scripts: [
-			jsonLd({
-				"@type": "VideoGame",
-				name: GAME_NAME,
-				description: DESCRIPTION,
-				url: `${SITE_URL}/monopawly`,
-				image: `${SITE_URL}/og.png`,
-				genre: ["Board game", "Trading", "Strategy"],
-				gamePlatform: "Web browser",
-				applicationCategory: "Game",
-				operatingSystem: "Any",
-				playMode: "MultiPlayer",
-				numberOfPlayers: {
-					"@type": "QuantitativeValue",
-					minValue: 2,
-					maxValue: 6,
-				},
-				isAccessibleForFree: true,
-				offers: { "@type": "Offer", price: 0, priceCurrency: "USD" },
-				isPartOf: { "@type": "WebSite", name: "cat.log", url: SITE_URL },
-			}),
-		],
-	}),
+	head: () => gameHead(MONOPAWLY),
 	component: Home,
 });
 
 function Home() {
 	const navigate = useNavigate();
+	const startRoom = useStartRoom(monopawly.id);
 	const [code, setCode] = useState("");
 	const clean = code.trim().toUpperCase();
+	const { min, max } = MONOPAWLY.players;
 
 	return (
-		<main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 p-6">
-			<Button
-				asChild
-				variant="ghost"
-				size="compact"
-				className="-ml-3 self-start text-muted-foreground"
-			>
-				<Link to="/">
-					<ArrowLeftIcon /> Back to <Wordmark />
-				</Link>
-			</Button>
-			<div className="flex gap-2">
-				{CAT_TOKENS.map((cat) => (
-					<CatHead key={cat} coat={cat} size="2.75rem" />
-				))}
-			</div>
-			<div className="space-y-2">
-				<h1 className="font-display text-4xl font-semibold">
-					Mono<span className="text-primary">pawly</span>
-				</h1>
-				<p className="text-muted-foreground">
-					A classic property game in a cat town, for 2 to 6 players, each on
-					their own tablet or computer.
-				</p>
-			</div>
-			<ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
-				<li>
-					Roll and walk the board. Buy the streets you land on, or send them to
-					auction.
-				</li>
-				<li>
-					Own a whole street group to charge double rent, then build cardboard
-					boxes and trade four up for a cat house.
-				</li>
-				<li>
-					Trade with the other cats, mortgage when fish run low, and mind the
-					Vet.
-				</li>
-				<li>The last cat with fish left wins.</li>
-			</ol>
+		<GameIntro
+			game={MONOPAWLY}
+			pieces={CATS.map((cat) => <CatHead key={cat} cat={cat} size="2.75rem" />)}
+			lede={`A classic property game in a cat town, for ${min} to ${max} players, each on their own tablet or computer.`}
+			rules={
+				<>
+					<li>
+						Roll and walk the board. Buy the streets you land on, or send them
+						to auction.
+					</li>
+					<li>
+						Own a whole street group to charge double rent, then build cardboard
+						boxes and trade four up for a cat house.
+					</li>
+					<li>
+						Trade with the other cats, mortgage when fish run low, and mind the
+						Vet.
+					</li>
+					<li>The last cat with fish left wins.</li>
+				</>
+			}
+		>
 			<div className="space-y-4">
-				<Button
-					size="compact-lg"
-					onClick={() =>
-						navigate({
-							to: "/monopawly/$code",
-							params: { code: newRoomCode() },
-							search: { new: true },
-						})
-					}
-				>
+				<Button size="compact-lg" onClick={() => startRoom()}>
 					Start a room
 				</Button>
 				<form
@@ -132,6 +77,6 @@ function Home() {
 					</Button>
 				</form>
 			</div>
-		</main>
+		</GameIntro>
 	);
 }

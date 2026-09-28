@@ -1,4 +1,4 @@
-/** Randomness is injected so the engine stays pure and tests can replay games. */
+/** Randomness is injected so game rules stay pure and tests can replay games. */
 export interface Rng {
 	/** A whole number from 0 up to (not including) `max`. */
 	int(max: number): number;

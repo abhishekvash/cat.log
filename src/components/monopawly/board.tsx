@@ -1,6 +1,6 @@
 import { ArrowRightIcon, StethoscopeIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { CatHead } from "#/components/mastermind/pins";
+import { CatHead } from "#/components/cats/cat-face";
 import {
 	Popover,
 	PopoverContent,
@@ -8,16 +8,24 @@ import {
 } from "#/components/ui/popover";
 import {
 	BOARD,
-	groupColor,
+	CAT_HOUSE,
 	isOwnable,
 	type Space,
 	VET_INDEX,
 } from "#/lib/monopawly/board";
+import {
+	activePlayers,
+	lastRollId,
+	playerById,
+} from "#/lib/monopawly/selectors";
 import type { GameState, Player } from "#/lib/monopawly/types";
+import { seatById } from "#/lib/multiplayer/room";
 import { cn } from "#/lib/utils";
-import { lastRollId, rollAge } from "./bits";
+import { groupStyle } from "./bits";
 import { Fur } from "./fur";
+import { useRollAge } from "./roll-clock";
 import { Art, type ArtName, FishIcon } from "./tile-art";
+import { useGame } from "./use-game";
 
 type Side = "bottom" | "left" | "top" | "right" | "corner";
 
@@ -48,13 +56,12 @@ function artFor(space: Space): ArtName | null {
 		case "flap":
 			return "flap";
 		case "utility":
-			return space.name.startsWith("Laser") ? "laser" : "catnip";
+		case "tax":
+			return space.art;
 		case "zoomies":
 			return "zoomies";
 		case "treatJar":
 			return "treatJar";
-		case "tax":
-			return space.name.startsWith("Groomer") ? "comb" : "bill";
 		case "vet":
 			return "vet";
 		case "caught":
@@ -79,6 +86,7 @@ const STEP_MS = 200;
  * A move that comes with a new roll waits for the dice to land first.
  */
 function useWalkingPositions(players: Player[], rollId: number | undefined) {
+	const rollAge = useRollAge();
 	const [shown, setShown] = useState<Record<number, number>>(() =>
 		Object.fromEntries(players.map((p) => [p.id, p.position])),
 	);
@@ -133,13 +141,11 @@ const trackCentre = (n: number) =>
 	100;
 
 export function Board({
-	state,
 	selected,
 	onSelect,
 	card,
 	children,
 }: {
-	state: GameState;
 	/** The space whose card is open, if any. */
 	selected: number | null;
 	onSelect: (index: number | null) => void;
@@ -147,8 +153,10 @@ export function Board({
 	card: (index: number) => ReactNode;
 	children: ReactNode;
 }) {
+	const { state, room } = useGame();
 	const positions = useWalkingPositions(state.players, lastRollId(state));
 	const current = state.turn?.playerId;
+	const inGame = activePlayers(state);
 
 	return (
 		<div
@@ -189,24 +197,23 @@ export function Board({
 				aria-hidden="true"
 				className="pointer-events-none absolute inset-0 z-20"
 			>
-				{state.players
-					.filter((p) => !p.bankrupt)
-					.map((p) => {
-						const at = positions[p.id] ?? p.position;
-						const here = state.players.filter(
-							(q) => !q.bankrupt && (positions[q.id] ?? q.position) === at,
-						);
-						return (
-							<Token
-								key={p.id}
-								player={p}
-								index={at}
-								slot={here.indexOf(p)}
-								count={here.length}
-								current={p.id === current}
-							/>
-						);
-					})}
+				{inGame.map((p) => {
+					const at = positions[p.id] ?? p.position;
+					const here = inGame.filter(
+						(q) => (positions[q.id] ?? q.position) === at,
+					);
+					return (
+						<Token
+							key={p.id}
+							player={p}
+							index={at}
+							slot={here.indexOf(p)}
+							count={here.length}
+							current={p.id === current}
+							connected={seatById(room, p.id)?.connected ?? false}
+						/>
+					);
+				})}
 			</div>
 		</div>
 	);
@@ -223,12 +230,14 @@ function Token({
 	slot,
 	count,
 	current,
+	connected,
 }: {
 	player: Player;
 	index: number;
 	slot: number;
 	count: number;
 	current: boolean;
+	connected: boolean;
 }) {
 	const { row, col, side } = cell(index);
 	const x = col === 1 ? 0 : col === 11 ? 100 : trackCentre(col);
@@ -260,12 +269,12 @@ function Token({
 			{/* Keyed by tile, so the hop replays on every step. */}
 			<span key={index} className="token-hop relative block">
 				<CatHead
-					coat={player.cat}
+					cat={player.cat}
 					size="1.75rem"
 					className={cn(
 						"transition-transform motion-reduce:transition-none",
 						current && "scale-125",
-						!player.connected && "opacity-50",
+						!connected && "opacity-50",
 					)}
 				/>
 				{player.atVet && index === VET_INDEX && (
@@ -298,7 +307,7 @@ function Tile({
 	card: ReactNode;
 }) {
 	const holding = state.holdings[index];
-	const owner = holding && state.players.find((p) => p.id === holding.owner);
+	const owner = playerById(state, holding?.owner);
 	const art = artFor(space);
 	const edge = side !== "corner";
 	// Every edge tile is the same card: name, art, then price or fur. The side
@@ -323,10 +332,7 @@ function Tile({
 		corner: "flex-col",
 	}[side];
 	// A street group reads as one neighbourhood: its colour, very faintly.
-	const tint =
-		space.kind === "street"
-			? `color-mix(in oklab, ${groupColor(space.group)} 26%, var(--card))`
-			: undefined;
+	const street = space.kind === "street";
 
 	// Once claimed, the price gives way to a band of the owner's fur across the
 	// card's bottom edge, with any buildings riding on it. The negative margins
@@ -363,23 +369,28 @@ function Tile({
 				<button
 					type="button"
 					aria-label={owner ? `${space.name}, ${owner.name}'s` : space.name}
-					style={{ gridRow: row, gridColumn: col, background: tint }}
+					style={{
+						gridRow: row,
+						gridColumn: col,
+						...(street && groupStyle(space.group)),
+					}}
 					className={cn(
-						"relative flex min-h-0 min-w-0 overflow-hidden bg-card text-center outline-none transition-[filter] hover:brightness-125 focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/60",
+						street ? "bg-group-tint" : "bg-card",
+						"relative flex min-h-0 min-w-0 overflow-hidden text-center outline-none transition-[filter] hover:brightness-125 focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/60",
 						direction,
 						open && "z-10 ring-[3px] ring-primary",
 						// The frame no longer clips (tokens overhang it), so corners round themselves.
 						{
-							0: "rounded-tl-[13px]",
-							10: "rounded-tr-[13px]",
-							20: "rounded-br-[13px]",
-							30: "rounded-bl-[13px]",
+							0: "rounded-tl-board-inner",
+							10: "rounded-tr-board-inner",
+							20: "rounded-br-board-inner",
+							30: "rounded-bl-board-inner",
 						}[index],
 					)}
 				>
 					<span
 						className={cn(
-							"flex min-h-0 min-w-0 flex-1 flex-col items-center px-1 py-1.5 text-[11px] leading-[1.2]",
+							"flex min-h-0 min-w-0 flex-1 flex-col items-center px-1 py-1.5 text-tile",
 							edge ? "justify-between gap-0.5" : "justify-center gap-1.5",
 							// Sized to the tile's height and width swapped, then turned in place.
 							turned &&
@@ -392,7 +403,7 @@ function Tile({
 						<span
 							lang="en"
 							className={cn(
-								"font-semibold text-foreground [hyphens:auto] [overflow-wrap:break-word]",
+								"font-semibold text-foreground hyphens-auto wrap-break-word",
 								!edge && "order-2 text-xs",
 							)}
 						>
@@ -409,7 +420,7 @@ function Tile({
 							</span>
 						)}
 						{index === 0 && (
-							<span className="order-3 flex items-center gap-0.5 text-[11px] font-semibold tracking-wider text-primary uppercase">
+							<span className="order-3 flex items-center gap-0.5 text-tile font-semibold tracking-wider text-primary uppercase">
 								Start
 								<ArrowRightIcon className="size-3" />
 							</span>
@@ -433,8 +444,8 @@ function Tile({
 function Buildings({ count }: { count: number }) {
 	if (count === 0) return null;
 	return (
-		<span className="flex items-center gap-0.5 rounded-full bg-card/90 px-1 text-[11px] leading-none font-semibold text-foreground">
-			{count === 5 ? (
+		<span className="flex items-center gap-0.5 rounded-full bg-card/90 px-1 text-tile leading-none font-semibold text-foreground">
+			{count === CAT_HOUSE ? (
 				<Art name="catHouse" label="cat house" plain className="size-3.5" />
 			) : (
 				<>

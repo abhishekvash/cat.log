@@ -1,102 +1,102 @@
+import type { Cat } from "#/lib/cats";
+import {
+	attempt,
+	type Context,
+	Rejection,
+	type Result,
+	reject,
+	type Seat,
+	type SeatId,
+} from "#/lib/multiplayer/types";
+import { type Rng, rollDie, shuffle } from "#/lib/rng";
 import {
 	BANK_BOXES,
 	BANK_HOUSES,
 	BOARD,
+	buildingRefund,
+	CAT_HOUSE,
+	FLAP_INDEXES,
 	FOOD_BOWL_PAY,
-	groupSpaces,
+	flapRent,
 	isOwnable,
 	mortgageValue,
+	type OwnableSpace,
 	START_FISH,
 	type StreetSpace,
+	UTILITY_INDEXES,
+	UTILITY_MULTIPLIER,
 	unmortgageCost,
 	VET_FEE,
 	VET_INDEX,
 } from "./board";
 import { DECK_NAMES, DECKS, type Deck } from "./cards";
-import { type Rng, rollDie, shuffle } from "./rng";
+import {
+	buildBlocker,
+	mortgageBlocker,
+	sellBlocker,
+	unmortgageBlocker,
+} from "./rules";
+import {
+	activePlayers,
+	groupHasBuildings,
+	ownsGroup,
+	playerById,
+} from "./selectors";
 import {
 	AUCTION_CLOCK_MS,
-	CAT_TOKENS,
-	type CatToken,
-	type Context,
-	DEFAULT_HOUSE_RULES,
 	type GameState,
-	type Intent,
+	type HouseRules,
 	LOG_LIMIT,
-	MAX_PLAYERS,
-	MIN_PLAYERS,
+	type Move,
 	type Offer,
 	type Player,
-	type Result,
-	STATE_VERSION,
-	type SystemIntent,
 	type TurnPhase,
 } from "./types";
 
-/** A rule said no. The message is shown to the player as-is. */
-class Rejection extends Error {}
-function reject(message: string): never {
-	throw new Rejection(message);
-}
+/**
+ * Monopawly's rules. Seats, the lobby and hosting belong to the shared room
+ * (lib/multiplayer); this deals a game for the seated cats and plays it.
+ */
 
-const FLAPS = [5, 15, 25, 35];
-const UTILITIES = [12, 28];
-
-export function createGame(): GameState {
-	return {
-		version: STATE_VERSION,
-		phase: "lobby",
-		rules: { ...DEFAULT_HOUSE_RULES },
-		players: [],
-		hostId: null,
-		nextPlayerId: 1,
+/** Deals a fresh game: shuffled turn order, shuffled decks, full bank. */
+export function start(
+	seats: readonly Seat[],
+	rules: HouseRules,
+	ctx: Context,
+): GameState {
+	const players = shuffle(seats, ctx.rng).map((seat) =>
+		newPlayer(seat.id, seat.name, seat.cat),
+	);
+	const s: GameState = {
+		phase: "playing",
+		rules: { ...rules },
+		players,
 		holdings: {},
-		decks: { zoomies: [], treatJar: [] },
-		turn: null,
+		decks: {
+			zoomies: shuffle(
+				DECKS.zoomies.map((_, i) => i),
+				ctx.rng,
+			),
+			treatJar: shuffle(
+				DECKS.treatJar.map((_, i) => i),
+				ctx.rng,
+			),
+		},
+		turn: freshTurn(players[0].id),
 		auction: null,
 		trades: [],
 		nextTradeId: 1,
+		rolls: 0,
 		jackpot: 0,
 		bank: { boxes: BANK_BOXES, houses: BANK_HOUSES },
 		winnerId: null,
 		log: [],
-		seq: 0,
 	};
+	log(s, `The game begins! ${players[0].name} goes first.`);
+	return s;
 }
 
-export function cleanName(raw: string) {
-	return [...raw]
-		.filter((ch) => ch >= " " && ch !== "\u007f")
-		.join("")
-		.trim()
-		.slice(0, 16);
-}
-
-/** Seats a newcomer in the lobby. Returns their id so the room can issue a token. */
-export function addPlayer(
-	state: GameState,
-	rawName: string,
-):
-	| { ok: true; state: GameState; playerId: number }
-	| { ok: false; error: string } {
-	if (state.phase !== "lobby")
-		return { ok: false, error: "This game has already started." };
-	if (state.players.length >= MAX_PLAYERS)
-		return { ok: false, error: "The room is full." };
-	const name = cleanName(rawName);
-	if (!name) return { ok: false, error: "Pick a name first." };
-	const taken = new Set(state.players.map((p) => p.cat));
-	const cat = CAT_TOKENS.find((c) => !taken.has(c)) as CatToken;
-	const s = structuredClone(state);
-	const id = s.nextPlayerId++;
-	s.players.push(newPlayer(id, name, cat));
-	s.hostId ??= id;
-	log(s, `${name} joined.`);
-	s.seq++;
-	return { ok: true, state: s, playerId: id };
-}
-
-function newPlayer(id: number, name: string, cat: CatToken): Player {
+function newPlayer(id: SeatId, name: string, cat: Cat): Player {
 	return {
 		id,
 		name,
@@ -108,86 +108,59 @@ function newPlayer(id: number, name: string, cat: CatToken): Player {
 		getOutCards: [],
 		bankrupt: false,
 		owesTo: null,
-		connected: true,
-		away: false,
 	};
 }
 
-/**
- * Applies one intent from a player (or the room's clock). Never mutates `state`;
- * a rejected intent changes nothing.
- */
-export function reduce(
+/** Runs one change on a copy, then clears debts that have been paid off. */
+function change(
 	state: GameState,
-	actor: number | "system",
-	intent: Intent | SystemIntent,
-	ctx: Context,
-): Result {
-	const s = structuredClone(state);
-	try {
-		apply(s, actor, intent, ctx);
-	} catch (error) {
-		if (error instanceof Rejection) return { ok: false, error: error.message };
-		throw error;
-	}
-	for (const p of s.players) if (p.fish >= 0) p.owesTo = null;
-	s.seq++;
-	return { ok: true, state: s };
+	fn: (s: GameState) => void,
+): Result<GameState> {
+	return attempt(state, (s) => {
+		fn(s);
+		for (const p of s.players) if (p.fish >= 0) p.owesTo = null;
+	});
 }
 
-function apply(
-	s: GameState,
-	actor: number | "system",
-	intent: Intent | SystemIntent,
+/** Applies one player's move. Never mutates `state`; a rejected move changes nothing. */
+export function reduce(
+	state: GameState,
+	actor: SeatId,
+	move: Move,
 	ctx: Context,
-) {
-	if (intent.type === "auctionClock") {
-		if (actor !== "system") reject("Only the clock can do that.");
-		return closeAuction(s, ctx.now);
-	}
-	if (actor === "system") reject("Unknown system intent.");
+): Result<GameState> {
+	return change(state, (s) => apply(s, actor, move, ctx));
+}
+
+/** The auction clock ran out: sell to the top bidder. */
+export function tick(state: GameState, ctx: Context): Result<GameState> {
+	return change(state, (s) => closeAuction(s, ctx.now));
+}
+
+/** The host moves on past the current player. */
+export function skipTurn(state: GameState): Result<GameState> {
+	return change(state, (s) => {
+		const turn = turnOf(s);
+		if (turn.phase === "auction") reject("Wait for the auction to finish.");
+		log(s, `${player(s, turn.playerId).name}'s turn was skipped.`);
+		nextTurn(s);
+	});
+}
+
+/** The host takes a player out: their streets go back to the bank. */
+export function removePlayer(state: GameState, id: SeatId): Result<GameState> {
+	return change(state, (s) => {
+		playing(s);
+		const target = active(player(s, id));
+		log(s, `${target.name} was removed from the game.`);
+		goBankrupt(s, target, null);
+	});
+}
+
+function apply(s: GameState, actor: SeatId, intent: Move, ctx: Context) {
 	const me = player(s, actor);
 
 	switch (intent.type) {
-		case "updateMe": {
-			inLobby(s);
-			if (intent.name !== undefined) {
-				const name = cleanName(intent.name);
-				if (!name) reject("Pick a name first.");
-				me.name = name;
-			}
-			if (intent.cat !== undefined) {
-				if (!CAT_TOKENS.includes(intent.cat)) reject("That's not a cat.");
-				if (s.players.some((p) => p.id !== me.id && p.cat === intent.cat))
-					reject("Another player has that cat.");
-				me.cat = intent.cat;
-			}
-			return;
-		}
-		case "setRules": {
-			inLobby(s);
-			hostOnly(s, me);
-			s.rules = {
-				napSpotJackpot: !!intent.rules.napSpotJackpot,
-				doubleFoodBowl: !!intent.rules.doubleFoodBowl,
-				noRentAtVet: !!intent.rules.noRentAtVet,
-			};
-			return;
-		}
-		case "start":
-			inLobby(s);
-			hostOnly(s, me);
-			return start(s, ctx.rng);
-		case "leave": {
-			inLobby(s);
-			removeFromLobby(s, me.id);
-			log(s, `${me.name} left.`);
-			return;
-		}
-		case "playAgain":
-			if (s.phase !== "finished") reject("The game isn't over yet.");
-			hostOnly(s, me);
-			return playAgain(s);
 		case "roll":
 			return roll(s, myTurn(s, me, "awaitingRoll"), ctx.rng);
 		case "buy":
@@ -255,32 +228,6 @@ function apply(
 			active(me);
 			return goBankrupt(s, me, me.fish < 0 ? me.owesTo : null);
 		}
-		case "hostSkip": {
-			playing(s);
-			hostOnly(s, me);
-			const target = player(s, intent.playerId);
-			const turn = turnOf(s);
-			if (turn.playerId !== target.id) reject("It isn't their turn.");
-			if (!target.away) reject(`${target.name} is still here.`);
-			if (turn.phase === "auction") reject("Wait for the auction to finish.");
-			log(s, `${me.name} skipped ${target.name}'s turn.`);
-			return nextTurn(s);
-		}
-		case "hostRemove": {
-			hostOnly(s, me);
-			const target = player(s, intent.playerId);
-			if (target.id === me.id) reject("You can't remove yourself.");
-			if (s.phase === "lobby") {
-				removeFromLobby(s, target.id);
-				log(s, `${target.name} was removed.`);
-				return;
-			}
-			playing(s);
-			active(target);
-			if (!target.away) reject(`${target.name} is still here.`);
-			log(s, `${me.name} removed ${target.name}.`);
-			return goBankrupt(s, target, null);
-		}
 		default:
 			intent satisfies never;
 			reject("Unknown move.");
@@ -290,7 +237,7 @@ function apply(
 // ---------------------------------------------------------------- helpers
 
 function player(s: GameState, id: number) {
-	const p = s.players.find((p) => p.id === id);
+	const p = playerById(s, id);
 	if (!p) reject("That player isn't in this game.");
 	return p;
 }
@@ -300,16 +247,8 @@ function active(p: Player) {
 	return p;
 }
 
-function inLobby(s: GameState) {
-	if (s.phase !== "lobby") reject("The game has already started.");
-}
-
 function playing(s: GameState) {
 	if (s.phase !== "playing") reject("The game isn't running.");
-}
-
-function hostOnly(s: GameState, me: Player) {
-	if (s.hostId !== me.id) reject("Only the host can do that.");
 }
 
 function turnOf(s: GameState) {
@@ -325,7 +264,7 @@ function myTurn(s: GameState, me: Player, phase: TurnPhase) {
 	return me;
 }
 
-function phaseHint(phase: string) {
+function phaseHint(phase: TurnPhase) {
 	switch (phase) {
 		case "awaitingBuy":
 			return "Buy it or pass it to auction first.";
@@ -342,64 +281,10 @@ function noAuction(s: GameState) {
 	if (s.auction) reject("Wait for the auction to finish.");
 }
 
-export function log(s: GameState, text: string) {
+function log(s: GameState, text: string) {
 	const id = (s.log.at(-1)?.id ?? 0) + 1;
 	s.log.push({ id, text });
 	if (s.log.length > LOG_LIMIT) s.log.splice(0, s.log.length - LOG_LIMIT);
-}
-
-const activePlayers = (s: GameState) => s.players.filter((p) => !p.bankrupt);
-
-// ---------------------------------------------------------------- lobby
-
-function removeFromLobby(s: GameState, id: number) {
-	s.players = s.players.filter((p) => p.id !== id);
-	if (s.hostId === id) s.hostId = s.players[0]?.id ?? null;
-}
-
-function start(s: GameState, rng: Rng) {
-	if (s.players.length < MIN_PLAYERS)
-		reject("You need at least two cats to play.");
-	s.players = shuffle(s.players, rng).map((p) => ({
-		...newPlayer(p.id, p.name, p.cat),
-		connected: p.connected,
-	}));
-	s.decks = {
-		zoomies: shuffle(
-			DECKS.zoomies.map((_, i) => i),
-			rng,
-		),
-		treatJar: shuffle(
-			DECKS.treatJar.map((_, i) => i),
-			rng,
-		),
-	};
-	s.holdings = {};
-	s.trades = [];
-	s.jackpot = 0;
-	s.bank = { boxes: BANK_BOXES, houses: BANK_HOUSES };
-	s.winnerId = null;
-	s.auction = null;
-	s.phase = "playing";
-	s.turn = freshTurn(s.players[0].id);
-	log(s, `The game begins! ${s.players[0].name} goes first.`);
-}
-
-function playAgain(s: GameState) {
-	// Only the cats still around carry over to the next game.
-	s.players = s.players
-		.filter((p) => p.connected)
-		.map((p) => newPlayer(p.id, p.name, p.cat));
-	if (!s.players.some((p) => p.id === s.hostId))
-		s.hostId = s.players[0]?.id ?? null;
-	s.phase = "lobby";
-	s.turn = null;
-	s.auction = null;
-	s.trades = [];
-	s.holdings = {};
-	s.winnerId = null;
-	s.jackpot = 0;
-	log(s, "Back to the lobby for another game.");
 }
 
 const freshTurn = (playerId: number) => ({
@@ -416,6 +301,7 @@ function roll(s: GameState, p: Player, rng: Rng) {
 	if (p.fish < 0) reject("Settle your debt first: sell, mortgage or trade.");
 	const turn = turnOf(s);
 	const dice: [number, number] = [rollDie(rng), rollDie(rng)];
+	s.rolls++;
 	const sum = dice[0] + dice[1];
 	const doubles = dice[0] === dice[1];
 	turn.dice = dice;
@@ -461,7 +347,7 @@ function roll(s: GameState, p: Player, rng: Rng) {
 function settle(s: GameState) {
 	const turn = s.turn;
 	if (!turn || turn.phase === "awaitingBuy" || turn.phase === "auction") return;
-	const p = s.players.find((p) => p.id === turn.playerId);
+	const p = playerById(s, turn.playerId);
 	if (!p || p.bankrupt) return nextTurn(s);
 	turn.phase = turn.rollAgain && !p.atVet ? "awaitingRoll" : "postRoll";
 }
@@ -575,12 +461,7 @@ function land(s: GameState, p: Player, rng: Rng, opts: LandOptions): void {
 	}
 }
 
-export function rentFor(
-	s: GameState,
-	index: number,
-	rng: Rng,
-	opts: LandOptions,
-) {
+function rentFor(s: GameState, index: number, rng: Rng, opts: LandOptions) {
 	const space = BOARD[index];
 	const holding = s.holdings[index];
 	if (!holding || !isOwnable(space)) return 0;
@@ -589,21 +470,18 @@ export function rentFor(
 
 	if (space.kind === "street") {
 		if (holding.buildings > 0) return space.rent[holding.buildings];
-		return ownsGroup(s, holding.owner, space)
+		return ownsGroup(s, holding.owner, space.group)
 			? space.rent[0] * 2
 			: space.rent[0];
 	}
 	if (space.kind === "flap") {
-		const rent = 25 * 2 ** (owns(FLAPS) - 1);
+		const rent = flapRent(owns(FLAP_INDEXES));
 		return opts.doubleFlap ? rent * 2 : rent;
 	}
 	if (opts.utilityTimesTen) return 10 * (rollDie(rng) + rollDie(rng));
 	const dice = opts.dice ?? rollDie(rng) + rollDie(rng);
-	return (owns(UTILITIES) === 2 ? 10 : 4) * dice;
-}
-
-function ownsGroup(s: GameState, owner: number, space: StreetSpace) {
-	return groupSpaces(space.group).every((i) => s.holdings[i]?.owner === owner);
+	const { one, both } = UTILITY_MULTIPLIER;
+	return (owns(UTILITY_INDEXES) === UTILITY_INDEXES.length ? both : one) * dice;
 }
 
 /**
@@ -638,7 +516,7 @@ function drawCard(s: GameState, p: Player, deck: Deck, rng: Rng): void {
 			land(s, p, rng, {});
 			return;
 		case "advanceNearest": {
-			const list = effect.kind === "flap" ? FLAPS : UTILITIES;
+			const list = effect.kind === "flap" ? FLAP_INDEXES : UTILITY_INDEXES;
 			const target = list.find((i) => i > p.position) ?? list[0];
 			moveTo(s, p, target, true);
 			land(
@@ -672,7 +550,7 @@ function drawCard(s: GameState, p: Player, deck: Deck, rng: Rng): void {
 			for (const holding of Object.values(s.holdings)) {
 				if (holding.owner !== p.id) continue;
 				total +=
-					holding.buildings === 5
+					holding.buildings === CAT_HOUSE
 						? effect.perHouse
 						: holding.buildings * effect.perBox;
 			}
@@ -726,7 +604,7 @@ function closeAuction(s: GameState, now: number) {
 	if (!auction) reject("There's no auction right now.");
 	if (now < auction.endsAt) reject("The auction is still running.");
 	const space = BOARD[auction.space];
-	const winner = s.players.find((p) => p.id === auction.highBidder);
+	const winner = playerById(s, auction.highBidder);
 	if (winner && !winner.bankrupt && winner.fish >= auction.highBid) {
 		winner.fish -= auction.highBid;
 		s.holdings[auction.space] = {
@@ -745,33 +623,16 @@ function closeAuction(s: GameState, now: number) {
 
 // ---------------------------------------------------------------- building
 
-function ownedStreet(s: GameState, p: Player, index: number) {
-	playing(s);
-	noAuction(s);
-	const space = BOARD[index];
-	const holding = s.holdings[index];
-	if (!holding || holding.owner !== p.id) reject("You don't own that.");
-	return { space, holding };
-}
-
 function build(s: GameState, p: Player, index: number) {
-	const { space, holding } = ownedStreet(s, p, index);
-	if (space.kind !== "street") reject("You can only build on streets.");
-	if (!ownsGroup(s, p.id, space)) reject("Own the whole street group first.");
-	const group = groupSpaces(space.group).map((i) => s.holdings[i]);
-	if (group.some((h) => h.mortgaged))
-		reject("Lift the mortgages on this group first.");
-	if (holding.buildings >= 5) reject("That street already has a cat house.");
-	if (holding.buildings > Math.min(...group.map((h) => h.buildings)))
-		reject("Build evenly across the group.");
-	const upgrade = holding.buildings === 4;
-	if (upgrade ? s.bank.houses < 1 : s.bank.boxes < 1)
-		reject(`The bank is out of ${upgrade ? "cat houses" : "boxes"}.`);
-	if (p.fish < space.buildCost) reject("Not enough fish 🐟");
+	const why = buildBlocker(s, p.id, index);
+	if (why) reject(why);
+	const space = BOARD[index] as StreetSpace;
+	const holding = s.holdings[index];
+	const upgrade = holding.buildings === CAT_HOUSE - 1;
 	p.fish -= space.buildCost;
 	if (upgrade) {
 		s.bank.houses--;
-		s.bank.boxes += 4;
+		s.bank.boxes += CAT_HOUSE - 1;
 	} else {
 		s.bank.boxes--;
 	}
@@ -785,47 +646,39 @@ function build(s: GameState, p: Player, index: number) {
 }
 
 function sell(s: GameState, p: Player, index: number) {
-	const { space, holding } = ownedStreet(s, p, index);
-	if (space.kind !== "street" || holding.buildings === 0)
-		reject("Nothing to sell there.");
-	const group = groupSpaces(space.group).map((i) => s.holdings[i]);
-	if (holding.buildings < Math.max(...group.map((h) => h.buildings)))
-		reject("Sell evenly across the group.");
-	if (holding.buildings === 5) {
-		if (s.bank.boxes < 4) reject("The bank doesn't have 4 boxes to swap back.");
-		s.bank.boxes -= 4;
+	const why = sellBlocker(s, p.id, index);
+	if (why) reject(why);
+	const space = BOARD[index] as StreetSpace;
+	const holding = s.holdings[index];
+	if (holding.buildings === CAT_HOUSE) {
+		s.bank.boxes -= CAT_HOUSE - 1;
 		s.bank.houses++;
 	} else {
 		s.bank.boxes++;
 	}
 	holding.buildings--;
-	const refund = space.buildCost / 2;
+	const refund = buildingRefund(space);
 	p.fish += refund;
 	log(s, `${p.name} sold a building on ${space.name} for ${refund} 🐟.`);
 }
 
 function mortgage(s: GameState, p: Player, index: number) {
-	const { space, holding } = ownedStreet(s, p, index);
-	if (!isOwnable(space)) reject("You can't mortgage that.");
-	if (holding.mortgaged) reject("It's already mortgaged.");
-	if (
-		space.kind === "street" &&
-		groupSpaces(space.group).some((i) => (s.holdings[i]?.buildings ?? 0) > 0)
-	)
-		reject("Sell the buildings in this group first.");
-	holding.mortgaged = true;
+	const why = mortgageBlocker(s, p.id, index);
+	if (why) reject(why);
+	const space = BOARD[index] as OwnableSpace;
+	s.holdings[index].mortgaged = true;
 	const value = mortgageValue(space);
 	p.fish += value;
 	log(s, `${p.name} mortgaged ${space.name} for ${value} 🐟.`);
 }
 
 function unmortgage(s: GameState, p: Player, index: number) {
-	const { space, holding } = ownedStreet(s, p, index);
-	if (!isOwnable(space) || !holding.mortgaged) reject("It isn't mortgaged.");
+	const why = unmortgageBlocker(s, p.id, index);
+	if (why) reject(why);
+	const space = BOARD[index] as OwnableSpace;
 	const cost = unmortgageCost(space);
-	if (p.fish < cost) reject("Not enough fish 🐟");
 	p.fish -= cost;
-	holding.mortgaged = false;
+	s.holdings[index].mortgaged = false;
 	log(s, `${p.name} lifted the mortgage on ${space.name} for ${cost} 🐟.`);
 }
 
@@ -848,10 +701,7 @@ function checkOffer(s: GameState, p: Player, offer: Offer) {
 		const space = BOARD[index];
 		if (!space || s.holdings[index]?.owner !== p.id)
 			reject(`${p.name} doesn't own that anymore.`);
-		if (
-			space.kind === "street" &&
-			groupSpaces(space.group).some((i) => (s.holdings[i]?.buildings ?? 0) > 0)
-		)
+		if (space.kind === "street" && groupHasBuildings(s, space.group))
 			reject(`Sell the buildings on ${space.name}'s group before trading it.`);
 	}
 }
@@ -928,13 +778,13 @@ function goBankrupt(s: GameState, p: Player, creditorId: number | null) {
 	for (const [key, holding] of Object.entries(s.holdings)) {
 		if (holding.owner !== p.id || holding.buildings === 0) continue;
 		const space = BOARD[Number(key)] as StreetSpace;
-		p.fish += (space.buildCost / 2) * holding.buildings;
-		if (holding.buildings === 5) s.bank.houses++;
+		p.fish += buildingRefund(space) * holding.buildings;
+		if (holding.buildings === CAT_HOUSE) s.bank.houses++;
 		else s.bank.boxes += holding.buildings;
 		holding.buildings = 0;
 	}
-	const creditor =
-		s.players.find((c) => c.id === creditorId && !c.bankrupt) ?? null;
+	const found = playerById(s, creditorId);
+	const creditor = found && !found.bankrupt ? found : null;
 	if (creditor) {
 		// The creditor was paid in full up front; take back what was never there.
 		creditor.fish += p.fish;
@@ -958,7 +808,6 @@ function goBankrupt(s: GameState, p: Player, creditorId: number | null) {
 		s.auction.highBid = 0;
 		s.auction.highBidder = null;
 	}
-	if (s.hostId === p.id) s.hostId = activePlayers(s)[0]?.id ?? s.hostId;
 
 	const left = activePlayers(s);
 	if (left.length === 1) {

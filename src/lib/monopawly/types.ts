@@ -1,31 +1,15 @@
+import type { Cat } from "#/lib/cats";
+import type { SeatId } from "#/lib/multiplayer/types";
 import type { Deck } from "./cards";
 
-export const STATE_VERSION = 1;
+/** Bump when `GameState` changes shape; rooms saved by another version end politely. */
+export const STATE_VERSION = 2;
 export const MAX_PLAYERS = 6;
 export const MIN_PLAYERS = 2;
 export const LOG_LIMIT = 200;
 
 /** Every bid restarts the auction clock at this many milliseconds. */
 export const AUCTION_CLOCK_MS = 6000;
-
-export const CAT_TOKENS = [
-	"grey",
-	"white",
-	"black",
-	"ginger",
-	"siamese",
-	"calico",
-] as const;
-export type CatToken = (typeof CAT_TOKENS)[number];
-
-export const CAT_NAMES: Record<CatToken, string> = {
-	grey: "Grey tabby",
-	white: "Snowy",
-	black: "Void",
-	ginger: "Ginger",
-	siamese: "Siamese",
-	calico: "Calico",
-};
 
 export interface HouseRules {
 	/** Taxes and card fees go into a pot that the Nap Spot pays out. */
@@ -43,10 +27,11 @@ export const DEFAULT_HOUSE_RULES: HouseRules = {
 };
 
 export interface Player {
-	/** Stable for the life of the room; used everywhere a player is referenced. */
-	id: number;
+	/** The player's seat in the room; used everywhere a player is referenced. */
+	id: SeatId;
+	/** Copied from the seat when the game starts (names can't change mid-game). */
 	name: string;
-	cat: CatToken;
+	cat: Cat;
 	/** May dip below zero: a player in debt must raise fish or go bankrupt. */
 	fish: number;
 	position: number;
@@ -57,10 +42,6 @@ export interface Player {
 	bankrupt: boolean;
 	/** Who a negative balance is owed to (null = the bank). */
 	owesTo: number | null;
-	/** Presence, maintained by the room. */
-	connected: boolean;
-	/** Disconnected or idle for 2+ minutes; the host may skip or remove them. */
-	away: boolean;
 }
 
 export interface Holding {
@@ -111,14 +92,13 @@ export interface LogEntry {
 	text: string;
 }
 
+/** One game, from the first roll to the last cat standing. The room owns the lobby. */
 export interface GameState {
-	version: number;
-	phase: "lobby" | "playing" | "finished";
+	phase: "playing" | "finished";
+	/** Copied from the room when the game starts. */
 	rules: HouseRules;
-	/** In turn order once the game starts. */
+	/** In turn order. */
 	players: Player[];
-	hostId: number | null;
-	nextPlayerId: number;
 	/** Keyed by board index; only owned spaces appear. */
 	holdings: Record<number, Holding>;
 	decks: Record<Deck, number[]>;
@@ -126,21 +106,15 @@ export interface GameState {
 	auction: Auction | null;
 	trades: Trade[];
 	nextTradeId: number;
+	/** Counts every roll, so each one has an id the dice animation can key on. */
+	rolls: number;
 	jackpot: number;
 	bank: { boxes: number; houses: number };
 	winnerId: number | null;
 	log: LogEntry[];
-	/** Bumps on every accepted change. */
-	seq: number;
 }
 
-export type Intent =
-	// Lobby
-	| { type: "updateMe"; name?: string; cat?: CatToken }
-	| { type: "setRules"; rules: HouseRules }
-	| { type: "start" }
-	| { type: "leave" }
-	| { type: "playAgain" }
+export type Move =
 	// Turn
 	| { type: "roll" }
 	| { type: "buy" }
@@ -157,19 +131,4 @@ export type Intent =
 	| { type: "proposeTrade"; to: number; give: Offer; get: Offer }
 	| { type: "respondTrade"; id: number; accept: boolean }
 	| { type: "cancelTrade"; id: number }
-	| { type: "declareBankruptcy" }
-	// Host
-	| { type: "hostSkip"; playerId: number }
-	| { type: "hostRemove"; playerId: number };
-
-/** Intents only the room itself may send. */
-export type SystemIntent = { type: "auctionClock" };
-
-export interface Context {
-	rng: import("./rng").Rng;
-	now: number;
-}
-
-export type Result =
-	| { ok: true; state: GameState }
-	| { ok: false; error: string };
+	| { type: "declareBankruptcy" };

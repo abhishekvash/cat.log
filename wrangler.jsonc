@@ -10,9 +10,17 @@
     { "pattern": "catlog.party", "custom_domain": true },
     { "pattern": "www.catlog.party", "custom_domain": true }
   ],
-  // One Monopawly room per Durable Object (see src/server/monopawly/game-room.ts).
+  // One Durable Object class per online game, one room per object (see
+  // src/server/multiplayer/room-server.ts). partyserver serves each binding as a
+  // party named after it: MonopawlyRoom is /parties/monopawly-room/<code>.
   "durable_objects": {
-    "bindings": [{ "name": "GameRoom", "class_name": "GameRoom" }]
+    "bindings": [{ "name": "MonopawlyRoom", "class_name": "MonopawlyRoom" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }]
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GameRoom"] },
+    {
+      "tag": "v2",
+      "renamed_classes": [{ "from": "GameRoom", "to": "MonopawlyRoom" }]
+    }
+  ]
 }

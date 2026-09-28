@@ -6,44 +6,11 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.871 0.006 286.286);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.871 0.006 286.286);
-}
-
-.dark {
-  /* Midnight plum with sakura-pink accents. */
+  /*
+   * The site is dark only: the Velvet Dusk palette (DESIGN.md §2), midnight
+   * plum with sakura-pink accents. <html class="dark"> stays on so shadcn's
+   * dark: variants apply.
+   */
   --background: oklch(0.2 0.035 305);
   --foreground: oklch(0.95 0.02 340);
   --card: oklch(0.25 0.04 305);
@@ -74,6 +41,22 @@
 
   /* The pressed-in dark of board holes and preview wells (never pure black). */
   --color-well: oklch(0.14 0.03 305);
+  /* The sticker art's "Paw White" border. Keep in step with STICKER in
+     components/cats/palette.ts (a test checks). */
+  --color-sticker: #fff4f8;
+
+  /* Below text-xs, for the Monopawly board only (DESIGN.md, The 12px Floor
+     Rule): tile names and prices, and the compact rows beside the board. */
+  --text-tile: 0.6875rem;
+  --text-tile--line-height: 1.2;
+  --text-row: 0.8125rem;
+
+  /* Reading widths for short centred notes: on the board, and in its cards. */
+  --container-measure: 44ch;
+  --container-measure-narrow: 36ch;
+
+  /* The board's corner tiles sit 1px inside its rounded-xl frame. */
+  --radius-board-inner: calc(var(--radius-xl) - 1px);
 
   /* Elevation vocabulary (DESIGN.md §4): one shadow per surface. */
   --shadow-table: 0 20px 50px -20px oklch(0.08 0.02 305 / 0.7);
@@ -104,23 +87,10 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 html,
@@ -179,6 +149,25 @@ body {
       clamp(1.75rem, calc((100dvh - 32rem) / 13.5), 3rem),
       calc((100vw - 9rem) / 9)
     );
+  }
+}
+
+/* A street group's colour, very faintly, over a card. Set --group on the element. */
+@utility bg-group-tint {
+  background-color: color-mix(in oklab, var(--group) 26%, var(--card));
+}
+
+/*
+ * The Monopawly board: the biggest square that fits beside the side panel
+ * (landscape: 21.5rem of panel and gaps) or above it (portrait: 16rem), less
+ * the 3.5rem the tokens overhang the frame.
+ */
+.board-frame {
+  width: min(calc(100dvh - 3.5rem), calc(100vw - 21.5rem));
+}
+@media (orientation: portrait) {
+  .board-frame {
+    width: min(calc(100vw - 3.5rem), calc(100dvh - 16rem));
   }
 }
 

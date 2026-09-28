@@ -5,8 +5,8 @@ import {
 	Link,
 	Scripts,
 } from "@tanstack/react-router";
-import { CatEyes } from "#/components/mastermind/cat-eyes";
-import { SleepyCat } from "#/components/mastermind/pins";
+import { CatEyes } from "#/components/cats/cat-eyes";
+import { SleepyScreen } from "#/components/cats/sleepy-screen";
 import { Button } from "#/components/ui/button";
 import { Toaster } from "#/components/ui/sonner";
 import { TooltipProvider } from "#/components/ui/tooltip";
@@ -46,23 +46,16 @@ export const Route = createRootRoute({
 
 function NotFound() {
 	return (
-		<main
-			className="flex min-h-dvh flex-col items-center justify-center gap-5 p-6 text-center"
-			style={{ "--pin": "4rem" } as React.CSSProperties}
+		<SleepyScreen
+			title="This page wandered off"
+			actions={
+				<Button asChild size="lg">
+					<Link to="/">Back to cat.log</Link>
+				</Button>
+			}
 		>
-			<SleepyCat />
-			<div className="space-y-1.5">
-				<h1 className="font-display text-2xl font-semibold">
-					This page wandered off
-				</h1>
-				<p className="text-muted-foreground">
-					It's probably napping somewhere warm.
-				</p>
-			</div>
-			<Button asChild size="lg">
-				<Link to="/">Back to cat.log</Link>
-			</Button>
-		</main>
+			It's probably napping somewhere warm.
+		</SleepyScreen>
 	);
 }
 

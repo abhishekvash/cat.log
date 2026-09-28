@@ -15,11 +15,16 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "#/components/ui/tooltip";
-import { BOARD, groupColor, isOwnable } from "#/lib/monopawly/board";
-import type { GameState, Offer, Player, Trade } from "#/lib/monopawly/types";
-import { byId, PlayerChip } from "./bits";
+import { BOARD, isOwnable } from "#/lib/monopawly/board";
+import {
+	activePlayers,
+	holdingsOf,
+	playerById,
+} from "#/lib/monopawly/selectors";
+import type { Offer, Player, Trade } from "#/lib/monopawly/types";
+import { GroupDot, PlayerChip } from "./bits";
 import { FishIcon } from "./tile-art";
-import type { GameConnection } from "./use-game";
+import { useGame } from "./use-game";
 
 const empty = (): Offer => ({ fish: 0, spaces: [], getOutCards: 0 });
 
@@ -33,15 +38,7 @@ function OfferItems({ offer }: { offer: Offer }) {
 				const space = BOARD[i];
 				return (
 					<Badge key={i} variant="outline" className="font-normal">
-						<span
-							className="size-2 rounded-full"
-							style={{
-								background:
-									space.kind === "street"
-										? groupColor(space.group)
-										: "var(--muted-foreground)",
-							}}
-						/>
+						<GroupDot space={space} className="size-2" />
 						{space.name}
 					</Badge>
 				);
@@ -92,20 +89,17 @@ export const newDraft = (to: number | null = null): TradeDraft => ({
 
 /** Offers in and out, one line each, for the side panel. */
 export function TradeList({
-	game,
-	state,
 	me,
 	onCompose,
 }: {
-	game: GameConnection;
-	state: GameState;
 	me: Player;
 	onCompose: (draft: TradeDraft) => void;
 }) {
+	const { state, move } = useGame();
 	const incoming = state.trades.filter((t) => t.to === me.id);
 	const outgoing = state.trades.filter((t) => t.from === me.id);
 	const respond = (trade: Trade, accept: boolean) =>
-		game.send({ type: "respondTrade", id: trade.id, accept });
+		move({ type: "respondTrade", id: trade.id, accept });
 
 	if (incoming.length === 0 && outgoing.length === 0)
 		return (
@@ -115,7 +109,7 @@ export function TradeList({
 	return (
 		<ul className="space-y-2">
 			{incoming.map((trade) => {
-				const from = byId(state, trade.from);
+				const from = playerById(state, trade.from);
 				if (!from) return null;
 				return (
 					<li key={trade.id}>
@@ -157,7 +151,7 @@ export function TradeList({
 				);
 			})}
 			{outgoing.map((trade) => {
-				const to = byId(state, trade.to);
+				const to = playerById(state, trade.to);
 				if (!to) return null;
 				return (
 					<li key={trade.id}>
@@ -175,7 +169,7 @@ export function TradeList({
 											className="-my-1.5 -mr-1.5"
 											aria-label={`Withdraw your offer to ${to.name}`}
 											onClick={() =>
-												game.send({ type: "cancelTrade", id: trade.id })
+												move({ type: "cancelTrade", id: trade.id })
 											}
 										>
 											<XIcon />
@@ -195,22 +189,19 @@ export function TradeList({
 
 /** Builds an offer in the board centre. */
 export function TradeComposer({
-	game,
-	state,
 	me,
 	draft,
 	onChange,
 	onClose,
 }: {
-	game: GameConnection;
-	state: GameState;
 	me: Player;
 	draft: TradeDraft;
 	onChange: (draft: TradeDraft) => void;
 	onClose: () => void;
 }) {
-	const others = state.players.filter((p) => !p.bankrupt && p.id !== me.id);
-	const them = byId(state, draft.to);
+	const { state, live, move } = useGame();
+	const others = activePlayers(state).filter((p) => p.id !== me.id);
+	const them = playerById(state, draft.to);
 
 	return (
 		<div className="relative flex min-h-0 flex-1 flex-col gap-3 p-4">
@@ -244,7 +235,6 @@ export function TradeComposer({
 					<ScrollArea className="min-h-0 flex-1">
 						<div className="grid grid-cols-[1fr_auto_1fr] gap-3 pr-2">
 							<OfferEditor
-								state={state}
 								owner={me}
 								offer={draft.give}
 								onChange={(give) => onChange({ ...draft, give })}
@@ -254,7 +244,6 @@ export function TradeComposer({
 								<Separator orientation="vertical" className="flex-1" />
 							</div>
 							<OfferEditor
-								state={state}
 								owner={them}
 								offer={draft.get}
 								onChange={(get) => onChange({ ...draft, get })}
@@ -264,9 +253,9 @@ export function TradeComposer({
 					<div className="flex justify-center">
 						<Button
 							size="compact-lg"
-							disabled={game.status !== "live"}
+							disabled={!live}
 							onClick={() => {
-								game.send({
+								move({
 									type: "proposeTrade",
 									to: them.id,
 									give: draft.give,
@@ -290,23 +279,19 @@ export function TradeComposer({
 }
 
 const rowClass =
-	"w-full justify-start px-2.5 text-[13px] font-normal text-muted-foreground";
+	"w-full justify-start px-2.5 text-row font-normal text-muted-foreground";
 
 function OfferEditor({
-	state,
 	owner,
 	offer,
 	onChange,
 }: {
-	state: GameState;
 	owner: Player;
 	offer: Offer;
 	onChange: (offer: Offer) => void;
 }) {
-	const tradable = Object.entries(state.holdings)
-		.filter(([, h]) => h.owner === owner.id)
-		.map(([key, h]) => ({ index: Number(key), holding: h }))
-		.sort((a, b) => a.index - b.index);
+	const { state } = useGame();
+	const tradable = holdingsOf(state, owner.id);
 	const max = Math.max(0, owner.fish);
 
 	return (
@@ -366,15 +351,7 @@ function OfferEditor({
 								value={String(index)}
 								className={rowClass}
 							>
-								<span
-									className="size-3 shrink-0 rounded-full"
-									style={{
-										background:
-											space.kind === "street"
-												? groupColor(space.group)
-												: "var(--border)",
-									}}
-								/>
+								<GroupDot space={space} />
 								<span className="min-w-0 flex-1 truncate text-left">
 									{space.name}
 									{holding.mortgaged && " (mortgaged)"}
