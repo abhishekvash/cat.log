@@ -95,7 +95,10 @@ export function TradeList({
 	me: Player;
 	onCompose: (draft: TradeDraft) => void;
 }) {
-	const { state, move } = useGame();
+	const {
+		room: { game: state },
+		move,
+	} = useGame();
 	const incoming = state.trades.filter((t) => t.to === me.id);
 	const outgoing = state.trades.filter((t) => t.from === me.id);
 	const respond = (trade: Trade, accept: boolean) =>
@@ -103,7 +106,9 @@ export function TradeList({
 
 	if (incoming.length === 0 && outgoing.length === 0)
 		return (
-			<p className="text-sm text-muted-foreground">No offers right now.</p>
+			<p className="cat-eyes-occupied text-sm text-muted-foreground">
+				No offers right now.
+			</p>
 		);
 
 	return (
@@ -113,7 +118,7 @@ export function TradeList({
 				if (!from) return null;
 				return (
 					<li key={trade.id}>
-						<Card className="gap-2 border-primary/50 bg-primary/10 p-2.5 text-sm shadow-none">
+						<Card className="cat-eyes-occupied gap-2 border-primary/50 bg-primary/10 p-2.5 text-sm shadow-none">
 							<p className="flex items-center gap-1.5">
 								<PlayerChip player={from} size="1.25rem" />
 								<span className="text-muted-foreground">offers you</span>
@@ -155,7 +160,7 @@ export function TradeList({
 				if (!to) return null;
 				return (
 					<li key={trade.id}>
-						<Card className="gap-2 p-2.5 text-sm shadow-none">
+						<Card className="cat-eyes-occupied gap-2 p-2.5 text-sm shadow-none">
 							<div className="flex items-center gap-1.5">
 								<PlayerChip player={to} size="1.25rem" />
 								<span className="flex-1 text-muted-foreground">
@@ -199,7 +204,11 @@ export function TradeComposer({
 	onChange: (draft: TradeDraft) => void;
 	onClose: () => void;
 }) {
-	const { state, live, move } = useGame();
+	const {
+		room: { game: state },
+		live,
+		move,
+	} = useGame();
 	const others = activePlayers(state).filter((p) => p.id !== me.id);
 	const them = playerById(state, draft.to);
 
@@ -208,13 +217,15 @@ export function TradeComposer({
 			<Button
 				variant="ghost"
 				size="compact-icon"
-				className="absolute top-2 right-2"
+				className="cat-eyes-occupied absolute top-2 right-2"
 				aria-label="Close"
 				onClick={onClose}
 			>
 				<XIcon />
 			</Button>
-			<p className="text-overline text-center">Create a trade</p>
+			<p className="cat-eyes-occupied text-overline text-center">
+				Create a trade
+			</p>
 			<ToggleGroup
 				type="single"
 				variant="choice"
@@ -222,7 +233,7 @@ export function TradeComposer({
 				value={draft.to === null ? "" : String(draft.to)}
 				onValueChange={(v) => v && onChange(newDraft(Number(v)))}
 				aria-label="Trade with"
-				className="mx-auto flex-wrap justify-center"
+				className="cat-eyes-occupied mx-auto flex-wrap justify-center"
 			>
 				{others.map((p) => (
 					<ToggleGroupItem key={p.id} value={String(p.id)}>
@@ -233,7 +244,7 @@ export function TradeComposer({
 			{them ? (
 				<>
 					<ScrollArea className="min-h-0 flex-1">
-						<div className="grid grid-cols-[1fr_auto_1fr] gap-3 pr-2">
+						<div className="cat-eyes-occupied grid grid-cols-[1fr_auto_1fr] gap-3 pr-2">
 							<OfferEditor
 								owner={me}
 								offer={draft.give}
@@ -250,7 +261,7 @@ export function TradeComposer({
 							/>
 						</div>
 					</ScrollArea>
-					<div className="flex justify-center">
+					<div className="cat-eyes-occupied flex justify-center">
 						<Button
 							size="compact-lg"
 							disabled={!live}
@@ -270,7 +281,7 @@ export function TradeComposer({
 					</div>
 				</>
 			) : (
-				<p className="text-center text-muted-foreground">
+				<p className="cat-eyes-occupied text-center text-muted-foreground">
 					Who do you want to trade with?
 				</p>
 			)}
@@ -290,7 +301,9 @@ function OfferEditor({
 	offer: Offer;
 	onChange: (offer: Offer) => void;
 }) {
-	const { state } = useGame();
+	const {
+		room: { game: state },
+	} = useGame();
 	const tradable = holdingsOf(state, owner.id);
 	const max = Math.max(0, owner.fish);
 

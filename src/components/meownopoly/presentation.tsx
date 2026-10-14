@@ -7,9 +7,20 @@ import {
 	useRef,
 	useState,
 } from "react";
+import {
+	RoomProvider,
+	type RoomView,
+} from "#/components/multiplayer/room-context";
 import { BOARD, type GroupId } from "#/lib/meownopoly/board";
 import { completeGroups, playerById } from "#/lib/meownopoly/selectors";
-import type { GameState, MovePath, Step } from "#/lib/meownopoly/types";
+import type {
+	GameState,
+	HouseRules,
+	Move,
+	MovePath,
+	Step,
+} from "#/lib/meownopoly/types";
+import type { RoomState } from "#/lib/multiplayer/types";
 import { prefersReducedMotion } from "#/lib/utils";
 import { useRollAge } from "./roll-clock";
 
@@ -39,7 +50,7 @@ export interface Motion {
 	leg: "walk" | "jump";
 }
 
-export interface Presented extends Motion {
+interface Presented extends Motion {
 	/** The game as it should look right now: held back until moves finish playing. */
 	state: GameState;
 	/** A move is playing out; its results aren't shown yet. */
@@ -52,7 +63,7 @@ export interface Presented extends Motion {
 	freshSets: Set<GroupId>;
 }
 
-type View = Omit<Presented, keyof Motion>;
+type View = Pick<Presented, "card" | "deltas" | "freshSets">;
 
 const Presentation = createContext<View | null>(null);
 const MotionContext = createContext<Motion | null>(null);
@@ -68,12 +79,15 @@ const positionsOf = (s: GameState) =>
  * rent, fish, the log and the next prompt never arrive ahead of the cat.
  */
 export function PresentationProvider({
-	live,
+	value,
 	children,
 }: {
-	live: GameState;
+	value: RoomView<GameState, Move, HouseRules> & {
+		room: RoomState<GameState, HouseRules> & { game: GameState };
+	};
 	children: ReactNode;
 }) {
+	const live = value.room.game;
 	const rollAge = useRollAge();
 	const [shown, setShown] = useState<Presented>(() => ({
 		state: live,
@@ -216,9 +230,17 @@ export function PresentationProvider({
 	const { state, animating, card, deltas, freshSets, positions, glideMs, leg } =
 		shown;
 	// Split so a walk step re-renders the tokens, not the whole table.
+	const room = useMemo(
+		() => ({
+			...value,
+			room: { ...value.room, game: state },
+			live: value.live && !animating,
+		}),
+		[value, state, animating],
+	);
 	const view = useMemo(
-		() => ({ state, animating, card, deltas, freshSets }),
-		[state, animating, card, deltas, freshSets],
+		() => ({ card, deltas, freshSets }),
+		[card, deltas, freshSets],
 	);
 	const motion = useMemo(
 		() => ({ positions, glideMs, leg }),
@@ -226,13 +248,17 @@ export function PresentationProvider({
 	);
 
 	return (
-		<Presentation.Provider value={view}>
-			<MotionContext.Provider value={motion}>{children}</MotionContext.Provider>
-		</Presentation.Provider>
+		<RoomProvider value={room}>
+			<Presentation.Provider value={view}>
+				<MotionContext.Provider value={motion}>
+					{children}
+				</MotionContext.Provider>
+			</Presentation.Provider>
+		</RoomProvider>
 	);
 }
 
-/** What the table is showing right now; null outside a game table. */
+/** Visual feedback for the displayed game; null outside a game table. */
 export const usePresentation = () => useContext(Presentation);
 
 /** Where the cats stand on screen; null outside a game table. */

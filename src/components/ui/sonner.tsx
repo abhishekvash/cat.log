@@ -6,12 +6,17 @@ import {
 	XCircleIcon,
 } from "@phosphor-icons/react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { cn } from "#/lib/utils";
 
 // cat.log is always dark, so the theme is fixed rather than read from next-themes.
-const Toaster = ({ ...props }: ToasterProps) => (
+const Toaster = ({ toastOptions, ...props }: ToasterProps) => (
 	<Sonner
 		theme="dark"
 		className="toaster group"
+		toastOptions={{
+			...toastOptions,
+			className: cn("cat-eyes-occupied", toastOptions?.className),
+		}}
 		icons={{
 			success: <CheckCircleIcon className="size-4" />,
 			info: <InfoIcon className="size-4" />,

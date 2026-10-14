@@ -21,7 +21,10 @@ export function Center({
 	onDraftChange: (draft: TradeDraft) => void;
 	onCloseDraft: () => void;
 }) {
-	const { state, me } = useGame();
+	const {
+		room: { game: state },
+		me,
+	} = useGame();
 	const card = usePresentation()?.card;
 	if (card) return <CardReveal card={card} />;
 	if (state.phase === "finished") return <Results />;
@@ -47,7 +50,7 @@ function CardReveal({ card }: { card: NonNullable<Step["card"]> }) {
 	const { text } = DECKS[card.deck][card.index];
 	return (
 		<div className="flex min-h-0 flex-1 items-center justify-center p-6 perspective-distant">
-			<output className="card-reveal block w-full max-w-xs space-y-3 rounded-2xl border border-border bg-popover p-6 text-center shadow-table">
+			<output className="cat-eyes-occupied card-reveal block w-full max-w-xs space-y-3 rounded-2xl border border-border bg-popover p-6 text-center shadow-table">
 				<Art name={card.deck} className="mx-auto size-12" />
 				<p className="text-overline">{DECK_NAMES[card.deck]}</p>
 				<p className="font-display text-lg text-balance">{withFish(text)}</p>

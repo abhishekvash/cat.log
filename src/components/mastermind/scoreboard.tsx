@@ -16,6 +16,7 @@ export function NewMatchButton({
 	const button = (
 		<Button
 			variant="ghost"
+			className="cat-eyes-occupied"
 			size="sm"
 			onClick={needsConfirm ? undefined : onReset}
 		>
@@ -46,7 +47,7 @@ export function Scoreboard({ match }: { match: Match }) {
 					key={i}
 					variant="outline"
 					className={cn(
-						"gap-2 px-3 py-1 text-sm font-normal",
+						"cat-eyes-occupied gap-2 px-3 py-1 text-sm font-normal",
 						mastermindOf(match) === i && "border-primary/50 bg-primary/10",
 					)}
 				>

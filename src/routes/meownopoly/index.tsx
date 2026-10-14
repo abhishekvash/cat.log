@@ -46,7 +46,7 @@ function Home() {
 				</>
 			}
 		>
-			<div className="space-y-4">
+			<div className="cat-eyes-occupied space-y-4">
 				<Button size="compact-lg" onClick={() => startRoom()}>
 					Start a room
 				</Button>

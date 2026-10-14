@@ -24,11 +24,15 @@ export function SidePanel({
 	onSelectSpace: (index: number) => void;
 	onCompose: (draft: TradeDraft) => void;
 }) {
-	const { code, state, me } = useGame();
+	const {
+		code,
+		room: { game: state },
+		me,
+	} = useGame();
 	const deltas = usePresentation()?.deltas ?? {};
 	return (
 		<aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 landscape:max-w-sm">
-			<div className="flex items-center justify-between gap-2 text-sm">
+			<div className="cat-eyes-occupied flex items-center justify-between gap-2 text-sm">
 				<GameBreadcrumb to={MEOWNOPOLY.path}>{MEOWNOPOLY.title}</GameBreadcrumb>
 				<span className="text-muted-foreground">Room {code}</span>
 			</div>
@@ -71,7 +75,7 @@ export function SidePanel({
 				<>
 					<Separator />
 					<section aria-labelledby="trades-heading" className="space-y-2">
-						<div className="flex items-center justify-between">
+						<div className="cat-eyes-occupied flex items-center justify-between">
 							<h2 id="trades-heading" className="text-overline">
 								Trades
 							</h2>
@@ -88,7 +92,7 @@ export function SidePanel({
 						aria-labelledby="props-heading"
 						className="flex min-h-0 flex-1 flex-col gap-1"
 					>
-						<h2 id="props-heading" className="text-overline">
+						<h2 id="props-heading" className="cat-eyes-occupied text-overline">
 							My properties ({holdingsOf(state, me.id).length})
 						</h2>
 						<ScrollArea className="min-h-0 flex-1">
@@ -99,7 +103,7 @@ export function SidePanel({
 					<BankruptButton
 						label="Bankrupt"
 						variant="ghost"
-						className="self-end"
+						className="cat-eyes-occupied self-end"
 					/>
 				</>
 			)}

@@ -14,12 +14,14 @@ export function SleepyScreen({
 }) {
 	return (
 		<main className="flex min-h-dvh flex-col items-center justify-center gap-5 p-6 text-center">
-			<SleepyCat size="4rem" />
-			<div className="space-y-1.5">
+			<SleepyCat size="4rem" className="cat-eyes-occupied" />
+			<div className="cat-eyes-occupied space-y-1.5">
 				<h1 className="font-display text-2xl font-semibold">{title}</h1>
 				<p className="text-muted-foreground">{children}</p>
 			</div>
-			<div className="flex flex-wrap justify-center gap-2">{actions}</div>
+			<div className="cat-eyes-occupied flex flex-wrap justify-center gap-2">
+				{actions}
+			</div>
 		</main>
 	);
 }

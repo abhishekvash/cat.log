@@ -225,13 +225,19 @@ export function CatHead({
 }
 
 /** A sleeping cat that won't tell: hidden codes, loading and empty states. */
-export function SleepyCat({ size = "var(--pin)" }: { size?: string }) {
+export function SleepyCat({
+	size = "var(--pin)",
+	className,
+}: {
+	size?: string;
+	className?: string;
+}) {
 	return (
 		<span
 			role="img"
 			aria-label="Hidden"
 			style={{ width: size, height: size }}
-			className="relative block"
+			className={cn("relative block", className)}
 		>
 			<svg
 				aria-hidden="true"

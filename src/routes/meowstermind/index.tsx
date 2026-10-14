@@ -57,7 +57,7 @@ function Home() {
 				</>
 			}
 		>
-			<Button asChild size="lg" className="self-start">
+			<Button asChild size="lg" className="cat-eyes-occupied self-start">
 				<Link to="/meowstermind/play">Let’s play</Link>
 			</Button>
 		</GameIntro>

@@ -40,14 +40,14 @@ export function RoomLobby({
 			<Card className="relative p-5">
 				<CatEars />
 				<div className="space-y-6">
-					<div className="space-y-1">
+					<div className="cat-eyes-occupied space-y-1">
 						<p className="text-overline">Room {code}</p>
 						<h1 className="font-display text-2xl font-semibold">
 							{me ? "Who's playing?" : "Join the game"}
 						</h1>
 					</div>
 
-					<div className="space-y-2">
+					<div className="cat-eyes-occupied space-y-2">
 						<p className="text-sm text-muted-foreground">
 							Send this link to everyone playing:
 						</p>
@@ -58,7 +58,7 @@ export function RoomLobby({
 
 					{!me && (
 						<form
-							className="space-y-2"
+							className="cat-eyes-occupied space-y-2"
 							onSubmit={(e) => {
 								e.preventDefault();
 								if (name.trim()) join(name);
@@ -88,7 +88,7 @@ export function RoomLobby({
 					)}
 
 					{me && (
-						<div className="space-y-2">
+						<div className="cat-eyes-occupied space-y-2">
 							<p className="text-overline">Your cat</p>
 							<ToggleGroup
 								type="single"
@@ -120,12 +120,15 @@ export function RoomLobby({
 					)}
 
 					<div className="space-y-2">
-						<p className="text-overline">
+						<p className="cat-eyes-occupied text-overline">
 							Players {room.seats.length} of {game.maxPlayers}
 						</p>
 						<ul className="space-y-1.5">
 							{room.seats.map((s) => (
-								<li key={s.id} className="flex items-center gap-2.5">
+								<li
+									key={s.id}
+									className="cat-eyes-occupied flex items-center gap-2.5"
+								>
 									<CatHead cat={s.cat} size="1.75rem" />
 									<span className="font-display font-medium">{s.name}</span>
 									{s.id === me?.id && (
@@ -154,20 +157,22 @@ export function RoomLobby({
 								</li>
 							))}
 							{room.seats.length === 0 && (
-								<li className="text-sm text-muted-foreground">Nobody yet.</li>
+								<li className="cat-eyes-occupied text-sm text-muted-foreground">
+									Nobody yet.
+								</li>
 							)}
 						</ul>
 					</div>
 
 					{me && rules && (
-						<div className="space-y-2">
+						<div className="cat-eyes-occupied space-y-2">
 							<p className="text-overline">House rules</p>
 							{rules}
 						</div>
 					)}
 
 					{me && (
-						<div className="flex flex-wrap items-center gap-2">
+						<div className="cat-eyes-occupied flex flex-wrap items-center gap-2">
 							{isHost ? (
 								<Button
 									size="compact-lg"

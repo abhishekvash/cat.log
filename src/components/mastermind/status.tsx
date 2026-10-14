@@ -30,7 +30,7 @@ export function Status({ state }: { state: GameState }) {
 	};
 	const [who, what] = status[state.phase];
 	return (
-		<div className="space-y-1 portrait:w-52">
+		<div className="cat-eyes-occupied space-y-1 portrait:w-52">
 			<p className="text-overline">
 				{state.phase === "guessing" || state.phase === "scoring"
 					? `Try ${tries} of ${state.rows.length}`

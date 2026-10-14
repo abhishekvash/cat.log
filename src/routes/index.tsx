@@ -48,7 +48,7 @@ const PREVIEWS: Record<CatalogGame["path"], ReactNode> = {
 function Catalog() {
 	return (
 		<main className="mx-auto flex min-h-dvh w-full max-w-5xl flex-col gap-14 px-6 py-12 md:py-20">
-			<section className="max-w-2xl space-y-5">
+			<section className="cat-eyes-occupied max-w-2xl space-y-5">
 				<h1 className="font-display text-5xl font-semibold leading-tight md:text-6xl">
 					Welcome to <Wordmark />
 				</h1>
@@ -59,7 +59,9 @@ function Catalog() {
 			</section>
 
 			<section className="space-y-4">
-				<h2 className="font-display text-2xl font-semibold">Games</h2>
+				<h2 className="cat-eyes-occupied font-display text-2xl font-semibold">
+					Games
+				</h2>
 				{/* Top padding leaves room for the ears poking above each tile. */}
 				<div className="grid gap-x-6 gap-y-12 pt-8 sm:grid-cols-2 lg:grid-cols-3">
 					{GAMES.map((game) => (
@@ -78,7 +80,7 @@ function GameTile({ game }: { game: CatalogGame }) {
 			to={game.path}
 			className="group flex rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 		>
-			<Card className="relative flex-1 gap-4 p-5 transition group-hover:-translate-y-1 group-hover:border-primary/50 motion-reduce:group-hover:translate-y-0">
+			<Card className="cat-eyes-occupied relative flex-1 gap-4 p-5 transition group-hover:-translate-y-1 group-hover:border-primary/50 motion-reduce:group-hover:translate-y-0">
 				<CatEars />
 				<div className="flex h-32 items-center justify-center overflow-hidden rounded-lg bg-well/60 px-3">
 					{PREVIEWS[game.path]}
@@ -111,7 +113,7 @@ function GameTile({ game }: { game: CatalogGame }) {
 
 function ComingSoonTile() {
 	return (
-		<Card className="items-center justify-center gap-3 border-dashed bg-card/40 p-5 text-center shadow-none sm:min-h-72">
+		<Card className="cat-eyes-occupied items-center justify-center gap-3 border-dashed bg-card/40 p-5 text-center shadow-none sm:min-h-72">
 			<SleepyCat size="3.25rem" />
 			<div className="space-y-1">
 				<h3 className="font-display text-xl font-semibold">

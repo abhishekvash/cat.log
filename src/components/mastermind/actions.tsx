@@ -24,7 +24,7 @@ export function Actions({
 	switch (state.phase) {
 		case "setup":
 			return (
-				<div className="flex flex-col gap-2">
+				<div className="cat-eyes-occupied flex flex-col gap-2">
 					<Button
 						size="lg"
 						disabled={!isFull(state.secret)}
@@ -46,6 +46,7 @@ export function Actions({
 			return (
 				<Button
 					size="lg"
+					className="cat-eyes-occupied"
 					disabled={!isFull(row.guess)}
 					onClick={() => dispatch({ type: "submitGuess" })}
 				>
@@ -54,7 +55,7 @@ export function Actions({
 			);
 		case "scoring":
 			return (
-				<div className="flex flex-col gap-2">
+				<div className="cat-eyes-occupied flex flex-col gap-2">
 					<Button size="lg" onClick={() => dispatch({ type: "confirmScore" })}>
 						Confirm score
 					</Button>
@@ -83,7 +84,7 @@ export function Actions({
 			return (
 				<Button
 					size="lg"
-					className="h-auto min-h-12 py-2 whitespace-normal text-balance"
+					className="cat-eyes-occupied h-auto min-h-12 py-2 whitespace-normal text-balance"
 					onClick={() =>
 						dispatch({ type: state.match ? "nextRound" : "reset" })
 					}

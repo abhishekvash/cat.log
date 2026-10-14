@@ -8,7 +8,7 @@ export type GameInfo = Pick<
 	"id" | "name" | "minPlayers" | "maxPlayers"
 >;
 
-/** A live room as every screen inside it sees it. */
+/** The visible room supplied by the nearest provider, including any staged game. */
 export interface RoomView<Game, Move, Rules>
 	extends Omit<RoomConnection<Game, Move, Rules>, "me"> {
 	/** The game's rules, for asking whose turn it is or who's out. */
@@ -18,7 +18,7 @@ export interface RoomView<Game, Move, Rules>
 	/** The viewer's own seat (undefined for a spectator). */
 	seat: Seat | undefined;
 	isHost: boolean;
-	/** Connected and up to date, so buttons can act. */
+	/** Ready for interaction; may be false during presentation while status is live. */
 	live: boolean;
 }
 

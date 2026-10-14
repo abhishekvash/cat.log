@@ -7,11 +7,13 @@ import { RollClockProvider } from "./roll-clock";
 import { SidePanel } from "./side-panel";
 import { SpaceCard } from "./space-card";
 import type { TradeDraft } from "./trade-panel";
-import { useGame } from "./use-game";
+import { useMeownopolyRoom } from "./use-game";
 
 /** A Meownopoly game in progress: the board with its centre, and the side panel. */
 export function MeownopolyTable() {
-	const { state } = useGame();
+	const view = useMeownopolyRoom();
+	const state = view.room.game;
+	if (!state) throw new Error("MeownopolyTable needs a started game.");
 	const [selected, setSelected] = useState<number | null>(null);
 	const [draft, setDraft] = useState<TradeDraft | null>(null);
 	// Rolls from before the table mounted show still; only new ones tumble.
@@ -19,7 +21,9 @@ export function MeownopolyTable() {
 
 	return (
 		<RollClockProvider loadedRoll={loadedRoll}>
-			<PresentationProvider live={state}>
+			<PresentationProvider
+				value={{ ...view, room: { ...view.room, game: state } }}
+			>
 				<main className="flex h-dvh flex-col gap-3 overflow-hidden p-2 landscape:flex-row landscape:justify-center sm:p-3">
 					{/* The board is always the biggest thing on screen: a square as large as fits. */}
 					<div className="board-frame m-5 aspect-square shrink-0 self-center">

@@ -15,7 +15,10 @@ import { useGame } from "./use-game";
 
 /** The board centre between the big moments: whose turn it is and what they can do. */
 export function TurnPanel() {
-	const { state, me } = useGame();
+	const {
+		room: { game: state },
+		me,
+	} = useGame();
 	const turn = state.turn;
 	const current = playerById(state, turn?.playerId);
 	if (!turn || !current) return null;
@@ -26,7 +29,7 @@ export function TurnPanel() {
 				{turn.dice && (
 					<RollingDice dice={turn.dice} rollId={lastRollId(state)} />
 				)}
-				<h2 className="flex items-center justify-center gap-2 font-display text-lg font-semibold">
+				<h2 className="cat-eyes-occupied flex items-center justify-center gap-2 font-display text-lg font-semibold">
 					<CatHead cat={current.cat} size="1.5rem" />
 					{current.id === me?.id
 						? `Your turn, ${current.name}`
@@ -34,7 +37,10 @@ export function TurnPanel() {
 				</h2>
 
 				{me && me.fish < 0 && !me.bankrupt && (
-					<Alert variant="destructive" className="max-w-measure text-left">
+					<Alert
+						variant="destructive"
+						className="cat-eyes-occupied max-w-measure text-left"
+					>
 						<WarningIcon />
 						<AlertTitle>
 							You owe <Fish amount={-me.fish} />
@@ -50,7 +56,7 @@ export function TurnPanel() {
 				<WanderedOff current={current} />
 
 				{me?.bankrupt && (
-					<p className="text-sm text-muted-foreground">
+					<p className="cat-eyes-occupied text-sm text-muted-foreground">
 						You're out of this game, but you can keep watching.
 					</p>
 				)}
@@ -62,12 +68,16 @@ export function TurnPanel() {
 
 /** Your moves this turn: roll (or get out of the Vet), buy or pass, end. */
 function TurnActions({ turn, me }: { turn: Turn; me: Player }) {
-	const { state, live, move } = useGame();
+	const {
+		room: { game: state },
+		live,
+		move,
+	} = useGame();
 	const space = BOARD[me.position];
 	const auctions = state.rules.auctions;
 
 	return (
-		<div className="flex flex-wrap justify-center gap-2">
+		<div className="cat-eyes-occupied flex flex-wrap justify-center gap-2">
 			{turn.phase === "awaitingRoll" &&
 				(me.atVet ? (
 					<>
@@ -158,7 +168,7 @@ function WanderedOff({ current }: { current: Player }) {
 	const seat = seatById(room, current.id);
 	if (!isHost || current.id === me?.id || !seat?.away) return null;
 	return (
-		<Alert className="max-w-measure text-left">
+		<Alert className="cat-eyes-occupied max-w-measure text-left">
 			<MoonIcon />
 			<AlertTitle>
 				{current.name} wandered off
@@ -213,7 +223,7 @@ function ActivityTrail({ log }: { log: GameState["log"] }) {
 				<li
 					key={line.id}
 					className={cn(
-						"w-full",
+						"cat-eyes-occupied w-full",
 						i === 0 ? "text-balance" : "truncate",
 						step[i],
 					)}

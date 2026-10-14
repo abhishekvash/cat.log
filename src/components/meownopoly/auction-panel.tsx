@@ -8,7 +8,13 @@ import { useGame } from "./use-game";
 
 /** A live auction: the clock, the top bid, and quick bid buttons. */
 export function AuctionPanel() {
-	const { state, me, live, clockOffset, move } = useGame();
+	const {
+		room: { game: state },
+		me,
+		live,
+		clockOffset,
+		move,
+	} = useGame();
 	const auction = state.auction;
 	const now = useServerNow(clockOffset);
 	if (!auction) return null;
@@ -20,9 +26,9 @@ export function AuctionPanel() {
 
 	return (
 		<div className="flex flex-1 flex-col items-center justify-center gap-5 p-4 text-center">
-			<p className="text-overline">Auction</p>
+			<p className="cat-eyes-occupied text-overline">Auction</p>
 			<SpaceTitle index={auction.space} />
-			<div className="relative flex size-28 items-center justify-center">
+			<div className="cat-eyes-occupied relative flex size-28 items-center justify-center">
 				<ClockRing fraction={Math.min(1, left / auction.clock)} />
 				<div>
 					<p className="font-display text-2xl font-semibold tabular-nums">
@@ -34,7 +40,7 @@ export function AuctionPanel() {
 					</p>
 				</div>
 			</div>
-			<p className="text-sm text-muted-foreground">
+			<p className="cat-eyes-occupied text-sm text-muted-foreground">
 				{left > 0
 					? withFish(
 							`Listed at ${isOwnable(space) ? space.price : 0} 🐟. Every bid restarts the clock.`,
@@ -42,7 +48,7 @@ export function AuctionPanel() {
 					: "Going, going…"}
 			</p>
 			{me && !me.bankrupt && (
-				<div className="flex flex-wrap justify-center gap-2">
+				<div className="cat-eyes-occupied flex flex-wrap justify-center gap-2">
 					{[1, 10, 50, 100].map((step) => {
 						const amount = top.amount + step;
 						return (

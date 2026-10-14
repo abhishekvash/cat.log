@@ -27,15 +27,15 @@ export function GameIntro({
 			<BackLink to="/">
 				Back to <Wordmark />
 			</BackLink>
-			<div className="flex gap-2">{pieces}</div>
-			<div className="space-y-2">
+			<div className="cat-eyes-occupied flex gap-2">{pieces}</div>
+			<div className="cat-eyes-occupied space-y-2">
 				<h1 className="font-display text-4xl font-semibold">
 					{plain}
 					<span className="text-primary">{accent}</span>
 				</h1>
 				<p className="text-muted-foreground">{lede}</p>
 			</div>
-			<ol className="list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
+			<ol className="cat-eyes-occupied list-decimal space-y-2 pl-5 text-sm text-muted-foreground">
 				{rules}
 			</ol>
 			{children}

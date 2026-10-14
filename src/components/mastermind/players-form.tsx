@@ -22,7 +22,7 @@ export function PlayersForm({
 	};
 	return (
 		<main className="flex flex-1 items-center justify-center p-6">
-			<Card className="relative w-full max-w-sm p-6">
+			<Card className="cat-eyes-occupied relative w-full max-w-sm p-6">
 				<form onSubmit={submit} className="flex flex-col gap-5">
 					<CatEars />
 					<div className="flex justify-center gap-2">

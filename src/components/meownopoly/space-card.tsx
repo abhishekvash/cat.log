@@ -19,7 +19,7 @@ import { useGame } from "./use-game";
 export function SpaceTitle({ index }: { index: number }) {
 	const space = BOARD[index];
 	return (
-		<div className="overflow-hidden rounded-md border border-border">
+		<div className="cat-eyes-occupied overflow-hidden rounded-md border border-border">
 			{space.kind === "street" && (
 				<div className="h-3 bg-(--group)" style={groupStyle(space.group)} />
 			)}
@@ -32,7 +32,10 @@ export function SpaceTitle({ index }: { index: number }) {
 
 /** A space's card: owner, rent, and your build and mortgage controls. */
 export function SpaceCard({ index }: { index: number }) {
-	const { state, me } = useGame();
+	const {
+		room: { game: state },
+		me,
+	} = useGame();
 	const space = BOARD[index];
 	const holding = state.holdings[index];
 	const owner = playerById(state, holding?.owner);

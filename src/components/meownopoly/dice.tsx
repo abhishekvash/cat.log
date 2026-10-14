@@ -94,7 +94,7 @@ export function RollingDice({
 	}, [rollId]);
 	const [a, b] = faces ?? dice;
 	return (
-		<div className="flex gap-3">
+		<div className="cat-eyes-occupied flex gap-3">
 			<div key={`a${rollId}`} className={cn(tumbling && "dice-tumble")}>
 				<Die value={a} />
 			</div>

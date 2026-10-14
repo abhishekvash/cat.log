@@ -96,7 +96,11 @@ export function BankruptButton({
 	variant: "outline" | "ghost";
 	className?: string;
 }) {
-	const { state, me, move } = useGame();
+	const {
+		room: { game: state },
+		me,
+		move,
+	} = useGame();
 	if (!me || bankruptcyBlocker(state, me.id)) return null;
 	const creditor = soleCreditor(state, me);
 	return (

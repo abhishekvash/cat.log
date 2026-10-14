@@ -107,7 +107,9 @@ export function Board({
 	card: (index: number) => ReactNode;
 	children: ReactNode;
 }) {
-	const { state } = useGame();
+	const {
+		room: { game: state },
+	} = useGame();
 	const freshSets = usePresentation()?.freshSets;
 
 	return (
@@ -153,7 +155,8 @@ export function Board({
 
 /** Every cat in the game, where it stands on screen right now. */
 function Tokens() {
-	const { state, room } = useGame();
+	const { room } = useGame();
+	const state = room.game;
 	const motion = useMotion();
 	const positions = motion?.positions ?? {};
 	const current = state.turn?.playerId;
@@ -227,7 +230,7 @@ function Token({
 	return (
 		<div
 			className={cn(
-				"absolute transition-[left,top] ease-in-out motion-reduce:transition-none",
+				"cat-eyes-occupied absolute transition-[left,top] ease-in-out motion-reduce:transition-none",
 				current && "z-10",
 			)}
 			style={{
@@ -376,7 +379,7 @@ function Tile({
 								fullSet &&
 									"before:pointer-events-none before:absolute before:inset-0 before:z-10 before:shadow-[inset_0_0_0_2px_var(--group)] before:content-['']",
 								fresh && "set-shimmer",
-								"relative flex min-h-0 min-w-0 overflow-hidden text-center outline-none transition-[filter] hover:brightness-125 focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/60",
+								"cat-eyes-occupied relative flex min-h-0 min-w-0 overflow-hidden text-center outline-none transition-[filter] hover:brightness-125 focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/60",
 								direction,
 								open && "z-10 ring-[3px] ring-primary",
 								// The frame no longer clips (tokens overhang it), so corners round themselves.

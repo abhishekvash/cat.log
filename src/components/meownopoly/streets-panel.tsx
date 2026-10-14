@@ -39,11 +39,13 @@ export function PropertyList({
 	me: Player;
 	onSelect: (index: number) => void;
 }) {
-	const { state } = useGame();
+	const {
+		room: { game: state },
+	} = useGame();
 	const mine = holdingsOf(state, me.id);
 	if (mine.length === 0)
 		return (
-			<p className="text-sm text-muted-foreground">
+			<p className="cat-eyes-occupied text-sm text-muted-foreground">
 				None yet. Buy a street when you land on it.
 			</p>
 		);
@@ -69,7 +71,7 @@ export function PropertyList({
 					className="rounded-lg border border-(--group)/60 bg-(--group)/10 py-1"
 					style={groupStyle(group.id)}
 				>
-					<p className="flex items-center gap-1 px-1.5 pt-0.5 text-xs font-semibold text-(--group)">
+					<p className="cat-eyes-occupied flex items-center gap-1 px-1.5 pt-0.5 text-xs font-semibold text-(--group)">
 						<CrownSimpleIcon weight="fill" className="size-3" />
 						{group.name} set
 						{/* Once boxes go up, box rent applies instead. */}
@@ -110,7 +112,7 @@ function PropertyRow({
 			variant="ghost"
 			size="compact"
 			onClick={() => onSelect(index)}
-			className="h-8 w-full justify-start px-1.5 font-sans text-row font-normal tracking-normal active:scale-100"
+			className="cat-eyes-occupied h-8 w-full justify-start px-1.5 font-sans text-row font-normal tracking-normal active:scale-100"
 		>
 			{/* Nunito's line box sits low; lift the dot to the letters' middle. */}
 			<GroupDot space={space} className="size-2 -translate-y-px" />
@@ -136,7 +138,11 @@ function PropertyRow({
  * same reasons the engine gives, and the first reason is shown underneath.
  */
 export function StreetActions({ me, index }: { me: Player; index: number }) {
-	const { state, live, move } = useGame();
+	const {
+		room: { game: state },
+		live,
+		move,
+	} = useGame();
 	const space = BOARD[index];
 	const holding = state.holdings[index];
 	if (!holding || holding.owner !== me.id || !isOwnable(space)) return null;
