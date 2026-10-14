@@ -678,7 +678,7 @@ function announceSets(s: GameState, p: Player, spaces: number[]) {
 		if (!ownsGroup(s, p.id, group)) continue;
 		log(
 			s,
-			`${p.name} owns all of ${groupName(group)}! Rent doubles, and boxes can go up.`,
+			`${p.name} owns all of ${groupName(group)}! Rent doubles, and boxes can go up once all streets are unmortgaged.`,
 		);
 	}
 }
