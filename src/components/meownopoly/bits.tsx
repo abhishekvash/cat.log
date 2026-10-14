@@ -106,7 +106,13 @@ export function BankruptButton({
 	return (
 		<ConfirmAction
 			title="Go bankrupt?"
-			description={`Everything you own goes to ${creditor?.name ?? "the bank"}, and you're out. You can keep watching.`}
+			description={`${
+				creditor
+					? `Everything you own goes to ${creditor.name}`
+					: state.rules.auctions
+						? "Your streets go up for auction"
+						: "Your streets go back to the bank"
+			}, and you're out. You can keep watching.`}
 			action="Go bankrupt"
 			onConfirm={() => move({ type: "declareBankruptcy" })}
 		>

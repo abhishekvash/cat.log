@@ -39,9 +39,10 @@ function Home() {
 						boxes and trade four up for a cat house.
 					</li>
 					<li>
-						Trade with the other cats, mortgage when fish run low, and mind the
-						Vet.
+						Trade with the other cats. When fish run low, sell boxes, mortgage a
+						street, or sell it back to the bank for half its price.
 					</li>
+					<li>Mind the Vet. A cat who can't pay their debts goes bankrupt.</li>
 					<li>The last cat with fish left wins.</li>
 				</>
 			}

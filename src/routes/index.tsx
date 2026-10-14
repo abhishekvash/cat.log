@@ -5,9 +5,9 @@ import { Wordmark } from "#/components/catalog/wordmark";
 import { CatEars } from "#/components/cats/cat-ears";
 import { CatHead, SleepyCat } from "#/components/cats/cat-face";
 import { Pin } from "#/components/mastermind/pins";
-import { groupStyle } from "#/components/meownopoly/bits";
+import { BuildingIcons, groupStyle } from "#/components/meownopoly/bits";
 import { Fur } from "#/components/meownopoly/fur";
-import { Art, FishIcon } from "#/components/meownopoly/tile-art";
+import { FishIcon } from "#/components/meownopoly/tile-art";
 import { Badge } from "#/components/ui/badge";
 import { Card } from "#/components/ui/card";
 import { type CatalogGame, GAMES } from "#/lib/catalog";
@@ -177,10 +177,10 @@ function MeownopolyPreview() {
 					<div
 						// biome-ignore lint/suspicious/noArrayIndexKey: fixed decorative row
 						key={i}
-						className="flex h-14 w-11 flex-col items-center justify-end gap-1 bg-group-tint p-1 text-xs text-muted-foreground"
+						className="flex h-14 w-11 flex-col items-center justify-end gap-1 bg-group-tint p-1 text-xs text-foreground"
 						style={groupStyle(street.group)}
 					>
-						{street.boxes ? <Art name="box" className="size-4" /> : null}
+						<BuildingIcons count={street.boxes ?? 0} />
 						{street.owner ? (
 							<span className="h-3 w-full overflow-hidden rounded-full border border-sticker/85">
 								<Fur cat={street.owner} />

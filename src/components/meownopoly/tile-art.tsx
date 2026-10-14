@@ -11,7 +11,6 @@ import { cn } from "#/lib/utils";
 
 const GINGER = COATS.ginger.fur;
 const CARDBOARD = "#d9a066";
-const CARDBOARD_DARK = "#b9824a";
 const LILAC = "#c9b6e4";
 const MINT = "#8fd3a4";
 const SKY = "#9fd3ea";
@@ -36,9 +35,7 @@ export type ArtName =
 	| "vet"
 	| "caught"
 	| "nap"
-	| "bowl"
-	| "box"
-	| "catHouse";
+	| "bowl";
 
 const ART: Record<ArtName, ReactNode> = {
 	flap: (
@@ -288,40 +285,6 @@ const ART: Record<ArtName, ReactNode> = {
 				stroke={STICKER}
 				strokeWidth={4}
 				strokeLinecap="round"
-			/>
-		</>
-	),
-	box: (
-		<>
-			<path d="M14 36 L50 22 L86 36 L50 50 Z" fill={CARDBOARD} {...line} />
-			<path d="M14 36 V72 L50 88 V50 Z" fill={CARDBOARD_DARK} {...line} />
-			<path d="M86 36 V72 L50 88 V50 Z" fill={CARDBOARD} {...line} />
-			<path d="M32 29 L68 43" {...line} stroke={CREAM} strokeWidth={5} />
-		</>
-	),
-	catHouse: (
-		<>
-			<rect
-				x="20"
-				y="44"
-				width="60"
-				height="44"
-				rx="4"
-				fill={CREAM}
-				{...line}
-			/>
-			<path d="M10 48 L50 16 L90 48 Z" fill={PINK} {...line} />
-			<path
-				d="M24 36 L26 14 L40 26 Z M76 36 L74 14 L60 26 Z"
-				fill={PINK}
-				{...line}
-				strokeWidth={3}
-			/>
-			<path
-				d="M40 88 V70 Q50 58 60 70 V88 Z"
-				fill={CARDBOARD_DARK}
-				{...line}
-				strokeWidth={3}
 			/>
 		</>
 	),

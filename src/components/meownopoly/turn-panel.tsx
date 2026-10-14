@@ -46,7 +46,7 @@ export function TurnPanel() {
 							You owe <Fish amount={-me.fish} />
 						</AlertTitle>
 						<AlertDescription className="gap-2">
-							<p>Sell boxes, mortgage streets or trade to cover it.</p>
+							<p>Sell boxes or streets, mortgage, or trade to cover it.</p>
 							<BankruptButton label="Declare bankruptcy" variant="outline" />
 						</AlertDescription>
 					</Alert>
@@ -184,7 +184,7 @@ function WanderedOff({ current }: { current: Player }) {
 					</Button>
 					<ConfirmAction
 						title={`Remove ${current.name}?`}
-						description="Their streets go back to the bank and they're out of the game."
+						description={`Their streets ${room.game.rules.auctions ? "go up for auction" : "go back to the bank"} and they're out of the game.`}
 						action="Remove"
 						onConfirm={() => act({ type: "hostRemove", seat: current.id })}
 					>
