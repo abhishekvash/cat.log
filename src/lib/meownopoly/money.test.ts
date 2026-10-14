@@ -11,7 +11,7 @@ import {
 	VET_INDEX,
 } from "./board";
 import { DECKS } from "./cards";
-import { reduce, tick } from "./engine";
+import { reduce, removePlayer, tick } from "./engine";
 import { activePlayers, holdingsOf, topBid } from "./selectors";
 import {
 	ctx,
@@ -78,6 +78,56 @@ describe("money fixes", () => {
 		expect(s.holdings[3]).toBeUndefined();
 		// Back to where the turn was before the auctions.
 		expect(turn(s)).toMatchObject({ playerId: 2, phase: "awaitingRoll" });
+	});
+
+	for (const phase of ["awaitingRoll", "awaitingBuy"] as const) {
+		for (const removal of ["bankruptcy", "host"] as const) {
+			it(`advances an eliminated ${phase} player after queued auctions (${removal})`, () => {
+				let s = game(4);
+				s.rules.auctions = true;
+				turn(s).phase = phase;
+				p(s, 1).position = 6;
+				own(s, 2, 1, 3);
+				inDebt(s, 2, 10);
+				s = run(s, 2, { type: "declareBankruptcy" });
+				expect(s.auction?.resume).toBe(phase);
+				if (removal === "bankruptcy") {
+					inDebt(s, 1, 10);
+					s = run(s, 1, { type: "declareBankruptcy" });
+				} else {
+					s = must(removePlayer(s, 1, ctx()));
+				}
+				s = must(tick(s, ctx(undefined, 60_000)));
+				expect(turn(s).phase).toBe("auction");
+				expect(s.auction?.space).toBe(3);
+				s = must(tick(s, ctx(undefined, 120_000)));
+				expect(s.auction).toBeNull();
+				expect(turn(s)).toMatchObject({ playerId: 3, phase: "awaitingRoll" });
+				expect(reduce(s, 3, { type: "roll" }, ctx(dice(1, 2))).ok).toBe(true);
+			});
+		}
+
+		it(`preserves an active player's ${phase} phase after queued auctions`, () => {
+			let s = game(3);
+			s.rules.auctions = true;
+			turn(s).phase = phase;
+			p(s, 1).position = 6;
+			own(s, 2, 1, 3);
+			inDebt(s, 2, 10);
+			s = run(s, 2, { type: "declareBankruptcy" });
+			s = must(tick(s, ctx(undefined, 60_000)));
+			s = must(tick(s, ctx(undefined, 120_000)));
+			expect(turn(s)).toMatchObject({ playerId: 1, phase });
+		});
+	}
+
+	it("rejects turn actions from a bankrupt current player", () => {
+		const s = game(3);
+		p(s, 1).bankrupt = true;
+		expect(reduce(s, 1, { type: "roll" }, ctx())).toMatchObject({
+			ok: false,
+			error: "You're out of this game.",
+		});
 	});
 
 	it("sells to the runner-up when the top bidder goes bust (B4)", () => {

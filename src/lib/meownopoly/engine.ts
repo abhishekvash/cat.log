@@ -282,6 +282,7 @@ function turnOf(s: GameState) {
 
 function myTurn(s: GameState, me: Player, phase: TurnPhase) {
 	playing(s);
+	active(me);
 	const turn = turnOf(s);
 	if (turn.playerId !== me.id) reject("It's not your turn.");
 	if (turn.phase !== phase) reject(phaseHint(turn.phase));
@@ -753,6 +754,8 @@ function closeAuction(s: GameState, now: number) {
 	s.auction = null;
 	if (openQueuedAuction(s, now, auction.resume)) return;
 	if (!s.turn) return;
+	const current = playerById(s, s.turn.playerId);
+	if (!current || current.bankrupt) return nextTurn(s);
 	s.turn.phase = auction.resume;
 	if (auction.resume === "postRoll") settle(s);
 }

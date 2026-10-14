@@ -15,14 +15,14 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "#/components/ui/tooltip";
-import { BOARD, isOwnable } from "#/lib/meownopoly/board";
+import { BOARD, isOwnable, mortgageInterest } from "#/lib/meownopoly/board";
 import {
 	activePlayers,
 	holdingsOf,
 	playerById,
 } from "#/lib/meownopoly/selectors";
 import type { Offer, Player, Trade } from "#/lib/meownopoly/types";
-import { GroupDot, PlayerChip } from "./bits";
+import { Fish, GroupDot, PlayerChip } from "./bits";
 import { FishIcon } from "./tile-art";
 import { useGame } from "./use-game";
 
@@ -30,6 +30,9 @@ const empty = (): Offer => ({ fish: 0, spaces: [], getOutCards: 0 });
 
 /** One side of a trade as small chips: streets with their colour, fish, passes. */
 function OfferItems({ offer }: { offer: Offer }) {
+	const {
+		room: { game: state },
+	} = useGame();
 	if (!offer.spaces.length && !offer.fish && !offer.getOutCards)
 		return <span className="text-muted-foreground">Nothing</span>;
 	return (
@@ -40,6 +43,7 @@ function OfferItems({ offer }: { offer: Offer }) {
 					<Badge key={i} variant="outline" className="font-normal">
 						<GroupDot space={space} className="size-2" />
 						{space.name}
+						{state.holdings[i]?.mortgaged && " (mortgaged)"}
 					</Badge>
 				);
 			})}
@@ -58,19 +62,62 @@ function OfferItems({ offer }: { offer: Offer }) {
 	);
 }
 
-/** "You give" and "You get" lines, from your side of the table. */
-function TradeTerms({ give, get }: { give: Offer; get: Offer }) {
+interface TradeSides {
+	give: Offer;
+	get: Offer;
+	other: Player;
+}
+
+/** The bank charges each recipient, in addition to fish exchanged in the offer. */
+function TransferInterest({ give, get, other }: TradeSides) {
+	const {
+		room: { game: state },
+	} = useGame();
+	const interest = (offer: Offer) =>
+		offer.spaces.reduce((sum, index) => {
+			const space = BOARD[index];
+			return (
+				sum +
+				(state.holdings[index]?.mortgaged && isOwnable(space)
+					? mortgageInterest(space)
+					: 0)
+			);
+		}, 0);
+	const yours = interest(get);
+	const theirs = interest(give);
+	if (!yours && !theirs) return null;
 	return (
-		<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-2 gap-y-1.5 text-xs">
-			<dt className="text-muted-foreground">You give</dt>
-			<dd>
-				<OfferItems offer={give} />
-			</dd>
-			<dt className="text-muted-foreground">You get</dt>
-			<dd>
-				<OfferItems offer={get} />
-			</dd>
-		</dl>
+		<div className="cat-eyes-occupied space-y-1 text-xs">
+			<p>
+				You pay bank interest: <Fish amount={yours} />.
+			</p>
+			<p>
+				{other.name} pays bank interest: <Fish amount={theirs} />.
+			</p>
+			<p className="text-muted-foreground">
+				Mortgage transfers cost 10% of each loan when accepted. Any shortfall
+				becomes debt.
+			</p>
+		</div>
+	);
+}
+
+/** "You give" and "You get" lines, including each recipient's bank charges. */
+function TradeTerms({ give, get, other }: TradeSides) {
+	return (
+		<>
+			<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-2 gap-y-1.5 text-xs">
+				<dt className="text-muted-foreground">You give</dt>
+				<dd>
+					<OfferItems offer={give} />
+				</dd>
+				<dt className="text-muted-foreground">You get</dt>
+				<dd>
+					<OfferItems offer={get} />
+				</dd>
+			</dl>
+			<TransferInterest give={give} get={get} other={other} />
+		</>
 	);
 }
 
@@ -124,7 +171,7 @@ export function TradeList({
 								<span className="text-muted-foreground">offers you</span>
 							</p>
 							{/* Their give is your get. */}
-							<TradeTerms give={trade.get} get={trade.give} />
+							<TradeTerms give={trade.get} get={trade.give} other={from} />
 							<div className="flex gap-1">
 								<Button size="compact" onClick={() => respond(trade, true)}>
 									Accept
@@ -183,7 +230,7 @@ export function TradeList({
 									<TooltipContent>Withdraw</TooltipContent>
 								</Tooltip>
 							</div>
-							<TradeTerms give={trade.give} get={trade.get} />
+							<TradeTerms give={trade.give} get={trade.get} other={to} />
 						</Card>
 					</li>
 				);
@@ -261,6 +308,7 @@ export function TradeComposer({
 							/>
 						</div>
 					</ScrollArea>
+					<TransferInterest give={draft.give} get={draft.get} other={them} />
 					<div className="cat-eyes-occupied flex justify-center">
 						<Button
 							size="compact-lg"
