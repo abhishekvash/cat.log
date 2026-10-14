@@ -7,7 +7,7 @@ export const CORE_CATS = [
 	"siamese",
 ] as const;
 
-/** Every cat in cat.log. Monopawly seats all six. */
+/** Every cat in cat.log. Meownopoly seats all six. */
 export const CATS = [...CORE_CATS, "calico"] as const;
 export type Cat = (typeof CATS)[number];
 

@@ -35,7 +35,7 @@ export function SeatList({
 					<li
 						key={seat.id}
 						className={cn(
-							"rounded-md border border-transparent px-2.5 py-1.5",
+							"cat-eyes-occupied rounded-md border border-transparent px-2.5 py-1.5",
 							current === seat.id && "border-primary/50 bg-primary/10",
 							out && "opacity-45",
 						)}

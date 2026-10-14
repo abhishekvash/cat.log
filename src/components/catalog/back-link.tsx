@@ -16,7 +16,7 @@ export function BackLink({
 			asChild
 			variant="ghost"
 			size="compact"
-			className="-ml-3 self-start text-muted-foreground"
+			className="cat-eyes-occupied -ml-3 self-start text-muted-foreground"
 		>
 			<Link to={to}>
 				<ArrowLeftIcon /> {children}

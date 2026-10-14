@@ -84,28 +84,12 @@ const PAIRS: Pair[] = [
 // Breathing room kept between eyes and anything on the page, in px.
 const CLEARANCE = 20;
 
-/** Rects of everything a player reads or touches: text, controls, pieces, cards. */
-function contentRects(root: HTMLElement): DOMRect[] {
+/** Content owners mark their occupied surfaces with the non-styling class. */
+function contentRects(regions: Iterable<Element>): DOMRect[] {
 	const rects: DOMRect[] = [];
-	for (const el of document.body.querySelectorAll<HTMLElement>("*")) {
-		if (root.contains(el) || el.closest("[aria-hidden='true']")) continue;
-		const style = getComputedStyle(el);
-		const hasText = [...el.childNodes].some(
-			(n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),
-		);
-		const isThing =
-			hasText ||
-			el.matches("button, a, input, svg, [role='img']") ||
-			style.borderTopWidth !== "0px" ||
-			(style.backgroundColor !== "rgba(0, 0, 0, 0)" &&
-				el !== document.body &&
-				el.tagName !== "HTML");
-		if (!isThing) continue;
-		const r = el.getBoundingClientRect();
-		// Skip page-sized wrappers; they'd block every spot.
-		if (r.width === 0 || r.width * r.height > innerWidth * innerHeight * 0.5)
-			continue;
-		rects.push(r);
+	for (const region of regions) {
+		const rect = region.getBoundingClientRect();
+		if (rect.width > 0 && rect.height > 0) rects.push(rect);
 	}
 	return rects;
 }
@@ -154,38 +138,65 @@ export function CatEyes() {
 		const container = root.current;
 		if (!container) return;
 		let timer = 0;
+		let disposed = false;
+		const observed = new Set<Element>();
 
 		const place = () => {
-			const content = contentRects(container);
+			if (disposed) return;
+			const regions = new Set(document.querySelectorAll(".cat-eyes-occupied"));
+			for (const region of observed) {
+				if (!regions.has(region)) {
+					resizeObserver.unobserve(region);
+					observed.delete(region);
+				}
+			}
+			for (const region of regions) {
+				if (!observed.has(region)) {
+					resizeObserver.observe(region);
+					observed.add(region);
+				}
+			}
+			const content = contentRects(regions);
 			const rem = parseFloat(
 				getComputedStyle(document.documentElement).fontSize,
 			);
-			setPlaced(
-				PAIRS.map((pair) => {
-					const width = pair.size * rem;
-					const height = width * 0.4;
-					const free = pair.spots.findIndex(([x, y]) => {
-						const cx = (x / 100) * innerWidth;
-						const cy = (y / 100) * innerHeight;
-						const box = new DOMRect(
-							cx - width / 2,
-							cy - height / 2,
-							width,
-							height,
-						);
-						return !content.some((r) => overlaps(box, r));
-					});
-					return free === -1 ? null : free;
-				}),
+			const next = PAIRS.map((pair) => {
+				const width = pair.size * rem;
+				const height = width * 0.4;
+				const free = pair.spots.findIndex(([x, y]) => {
+					const cx = (x / 100) * innerWidth;
+					const cy = (y / 100) * innerHeight;
+					const box = new DOMRect(
+						cx - width / 2,
+						cy - height / 2,
+						width,
+						height,
+					);
+					return !content.some((r) => overlaps(box, r));
+				});
+				return free === -1 ? null : free;
+			});
+			setPlaced((previous) =>
+				previous.every((spot, i) => spot === next[i]) ? previous : next,
 			);
 		};
 		const schedule = () => {
-			clearTimeout(timer);
-			timer = window.setTimeout(place, 150);
+			if (disposed || timer) return;
+			timer = window.setTimeout(() => {
+				timer = 0;
+				place();
+			}, 150);
+		};
+		const resizeObserver = new ResizeObserver(schedule);
+		const onLayoutChange = (event: Event) => {
+			if (event.target instanceof Node && !container.contains(event.target))
+				schedule();
 		};
 
-		// Fonts change text widths, so place once they're in.
-		document.fonts.ready.then(place);
+		schedule();
+		// Fonts can move regions even when their own dimensions stay the same.
+		document.fonts.ready.then(schedule);
+		document.fonts.addEventListener("loadingdone", schedule);
 		// Re-check when the page changes, but not when only the eyes themselves do.
 		const observer = new MutationObserver((records) => {
 			if (records.some((r) => !container.contains(r.target))) schedule();
@@ -194,12 +205,24 @@ export function CatEyes() {
 			childList: true,
 			subtree: true,
 			characterData: true,
+			attributes: true,
+			attributeFilter: ["class", "style", "hidden", "open", "data-state"],
 		});
 		window.addEventListener("resize", schedule);
+		document.addEventListener("scroll", schedule, {
+			capture: true,
+			passive: true,
+		});
+		document.addEventListener("transitionend", onLayoutChange);
 		return () => {
+			disposed = true;
 			clearTimeout(timer);
 			observer.disconnect();
+			resizeObserver.disconnect();
+			document.fonts.removeEventListener("loadingdone", schedule);
 			window.removeEventListener("resize", schedule);
+			document.removeEventListener("scroll", schedule, true);
+			document.removeEventListener("transitionend", onLayoutChange);
 		};
 	}, []);
 

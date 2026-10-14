@@ -3,11 +3,11 @@ import {
 	defaultStreamHandler,
 } from "@tanstack/react-start/server";
 import { routePartykitRequest } from "partyserver";
-import { monopawly } from "./lib/monopawly/definition";
+import { meownopoly } from "./lib/meownopoly/definition";
 import { createRoomServer } from "./server/multiplayer/room-server";
 
 /** One Durable Object class per online game; see wrangler.jsonc for the bindings. */
-export class MonopawlyRoom extends createRoomServer(monopawly) {}
+export class MeownopolyRoom extends createRoomServer(meownopoly) {}
 
 const startFetch = createStartHandler(defaultStreamHandler);
 

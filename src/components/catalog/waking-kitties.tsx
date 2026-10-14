@@ -8,8 +8,10 @@ import { SleepyCat } from "#/components/cats/cat-face";
 export function WakingKitties() {
 	return (
 		<div className="flex min-h-dvh flex-col items-center justify-center gap-3">
-			<SleepyCat size="3.5rem" />
-			<p className="text-sm text-muted-foreground">Waking the kitties…</p>
+			<SleepyCat size="3.5rem" className="cat-eyes-occupied" />
+			<p className="cat-eyes-occupied text-sm text-muted-foreground">
+				Waking the kitties…
+			</p>
 		</div>
 	);
 }

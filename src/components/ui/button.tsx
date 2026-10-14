@@ -29,7 +29,7 @@ const buttonVariants = cva(
 				"icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
 				"icon-sm": "size-11",
 				"icon-lg": "size-12",
-				// Monopawly's denser game screens.
+				// Meownopoly's denser game screens.
 				compact: "h-9 gap-1.5 px-3 text-sm has-[>svg]:px-2.5",
 				"compact-lg": "h-10 gap-2 px-4 text-sm has-[>svg]:px-3.5",
 				"compact-icon": "size-9",

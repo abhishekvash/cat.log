@@ -25,7 +25,7 @@ export function Board({
 	const over = state.phase === "won" || state.phase === "lost";
 
 	return (
-		<Card className="relative mt-8 gap-0 p-3">
+		<Card className="cat-eyes-occupied relative mt-8 gap-0 p-3">
 			<CatEars />
 			<BoardLine className="pb-1 text-xs font-medium text-muted-foreground">
 				<span />

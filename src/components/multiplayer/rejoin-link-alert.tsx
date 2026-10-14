@@ -12,7 +12,7 @@ export function RejoinLinkAlert() {
 	// Hidden again once that cat is back online.
 	if (!rejoinLink || !seat || seat.connected) return null;
 	return (
-		<Alert>
+		<Alert className="cat-eyes-occupied">
 			<LinkIcon />
 			<AlertDescription className="gap-2">
 				<p>

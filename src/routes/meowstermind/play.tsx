@@ -80,7 +80,7 @@ function Play() {
 				<header className="flex flex-wrap items-center justify-between gap-y-2 border-b px-4 py-2">
 					<GameBreadcrumb
 						to="/meowstermind"
-						className="text-lg"
+						className="cat-eyes-occupied text-lg"
 						linkClassName="flex items-center gap-2 py-2 font-semibold"
 						hideHomeOnMobile
 					>
@@ -137,7 +137,7 @@ function Play() {
 						color={input.dragging.color}
 						kind={input.dragging.kind}
 						size={input.dragging.kind === "key" ? "1.75rem" : "3rem"}
-						className="scale-110 -rotate-6"
+						className="cat-eyes-occupied scale-110 -rotate-6"
 					/>
 				)}
 			</DragOverlay>

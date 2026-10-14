@@ -12,7 +12,7 @@ export function KittyTray({
 	onSelect: (selection: Selection) => void;
 }) {
 	return (
-		<div className="space-y-2">
+		<div className="cat-eyes-occupied space-y-2">
 			<p className="text-overline">Kitties</p>
 			<Card className="flex-row flex-wrap justify-center gap-1 p-2 shadow-none">
 				{CODE_COLORS.map((color) => (
@@ -43,7 +43,7 @@ export function PawBox({
 	return (
 		<Card
 			className={cn(
-				"w-26 shrink-0 items-center gap-3 px-2 py-4 shadow-none transition max-sm:w-auto max-sm:flex-row max-sm:px-4 max-sm:py-2",
+				"cat-eyes-occupied w-26 shrink-0 items-center gap-3 px-2 py-4 shadow-none transition max-sm:w-auto max-sm:flex-row max-sm:px-4 max-sm:py-2",
 				active && "border-primary/60 shadow-lamp",
 			)}
 		>

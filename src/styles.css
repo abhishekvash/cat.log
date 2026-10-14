@@ -45,7 +45,7 @@
      components/cats/palette.ts (a test checks). */
   --color-sticker: #fff4f8;
 
-  /* Below text-xs, for the Monopawly board only (DESIGN.md, The 12px Floor
+  /* Below text-xs, for the Meownopoly board only (DESIGN.md, The 12px Floor
      Rule): tile names and prices, and the compact rows beside the board. */
   --text-tile: 0.6875rem;
   --text-tile--line-height: 1.2;
@@ -152,13 +152,13 @@ body {
   }
 }
 
-/* A street group's colour, very faintly, over a card. Set --group on the element. */
+/* A street group's colour, clearly, over a card. Set --group on the element. */
 @utility bg-group-tint {
-  background-color: color-mix(in oklab, var(--group) 26%, var(--card));
+  background-color: color-mix(in oklab, var(--group) 50%, var(--card));
 }
 
 /*
- * The Monopawly board: the biggest square that fits beside the side panel
+ * The Meownopoly board: the biggest square that fits beside the side panel
  * (landscape: 21.5rem of panel and gaps) or above it (portrait: 16rem), less
  * the 3.5rem the tokens overhang the frame.
  */
@@ -208,7 +208,7 @@ body {
   97% { transform: rotate(-4deg); }
 }
 
-/* Monopawly: a token hops once per tile as it walks. */
+/* Meownopoly: a token hops once per tile as it walks. */
 .token-hop {
   animation: token-hop 190ms ease-out;
 }
@@ -217,7 +217,56 @@ body {
   45% { translate: 0 -38%; }
 }
 
-/* Monopawly: dice drop in spinning, overshoot, and settle. The pair spin
+/* Meownopoly: a cat sent somewhere (the Vet) arcs high on its way. */
+.token-jump {
+  animation: token-jump 560ms ease-in-out;
+}
+@keyframes token-jump {
+  0%, 100% { translate: 0 0; scale: 1; }
+  50% { translate: 0 -120%; scale: 1.35; }
+}
+
+/* Meownopoly: a drawn card flips up in the board centre. */
+.card-reveal {
+  animation: card-reveal 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes card-reveal {
+  0% { transform: translateY(18%) rotateX(70deg) scale(0.85); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+
+/* Meownopoly: a group that just became a set shines once, then keeps a ring. */
+.set-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 30%,
+    rgb(255 255 255 / 0.55) 50%,
+    transparent 70%
+  );
+  background-size: 250% 100%;
+  animation: set-shimmer 1.1s ease-out 2;
+}
+@keyframes set-shimmer {
+  from { background-position: 120% 0; }
+  to { background-position: -120% 0; }
+}
+
+/* Meownopoly: a fish change floats up beside a balance and fades. */
+.fish-delta {
+  animation: fish-delta 2.6s ease-out forwards;
+}
+@keyframes fish-delta {
+  0% { translate: 0 40%; opacity: 0; }
+  12% { translate: 0 0; opacity: 1; }
+  75% { opacity: 1; }
+  100% { translate: 0 -60%; opacity: 0; }
+}
+
+/* Meownopoly: dice drop in spinning, overshoot, and settle. The pair spin
    opposite ways so they don't move in lockstep. */
 .dice-tumble,
 .dice-tumble-reverse {
@@ -246,6 +295,10 @@ body {
   .cat-blink-double,
   .cat-ear-twitch,
   .token-hop,
+  .token-jump,
+  .card-reveal,
+  .set-shimmer::after,
+  .fish-delta,
   .dice-tumble,
   .dice-tumble-reverse {
     animation: none;

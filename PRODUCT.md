@@ -10,7 +10,7 @@ The public: anyone who finds cat.log, with no explanation from us. The typical s
 
 ## Product Purpose
 
-cat.log is a catalog of small, cozy, cat-themed games for playing together (the name is a pun on "catalog" and a `.log` file). The landing page presents the catalog; each game lives at its own route. Meowstermind is a two-player Mastermind with cats for code pins and paw prints for clues, played on one shared screen. Monopawly is a cat-town property game for 2 to 6 players in private online rooms, each on their own device. More will follow.
+cat.log is a catalog of small, cozy, cat-themed games for playing together (the name is a pun on "catalog" and a `.log` file). The landing page presents the catalog; each game lives at its own route. Meowstermind is a two-player Mastermind with cats for code pins and paw prints for clues, played on one shared screen. Meownopoly is a cat-town property game for 2 to 6 players in private online rooms, each on their own device. More will follow.
 
 Success looks like: two strangers open a game and are playing within a minute, without reading instructions twice; they finish a match and start another; the site feels like a small, lovingly made thing rather than a product trying to hook them.
 
