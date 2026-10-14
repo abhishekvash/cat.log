@@ -78,8 +78,6 @@ export interface Turn {
 
 export interface Auction {
 	space: number;
-	highBid: number;
-	highBidder: number | null;
 	/** Each bidder's best bid, so a runner-up can win if the top bidder drops out. */
 	bids: Record<number, number>;
 	endsAt: number;

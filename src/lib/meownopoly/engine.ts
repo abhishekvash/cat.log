@@ -17,11 +17,12 @@ import {
 	CAT_HOUSE,
 	FLAP_INDEXES,
 	FOOD_BOWL_PAY,
-	GROUPS,
+	groupName,
 	isOwnable,
 	mortgageInterest,
 	mortgageValue,
 	type OwnableSpace,
+	type RentRow,
 	START_FISH,
 	type StreetSpace,
 	saleValue,
@@ -32,6 +33,7 @@ import {
 } from "./board";
 import { DECK_NAMES, DECKS, type Deck } from "./cards";
 import {
+	bankruptcyBlocker,
 	buildBlocker,
 	mortgageBlocker,
 	sellBlocker,
@@ -41,10 +43,13 @@ import {
 import {
 	activePlayers,
 	groupHasBuildings,
+	holdingsOf,
 	ownsGroup,
 	playerById,
+	rankedBids,
 	rentQuote,
 	soleCreditor,
+	topBid,
 } from "./selectors";
 import {
 	AUCTION_CLOCK_MS,
@@ -243,8 +248,8 @@ function apply(s: GameState, actor: SeatId, intent: Move, ctx: Context) {
 		case "declareBankruptcy": {
 			playing(s);
 			active(me);
-			if (me.fish >= 0)
-				reject("You're not in debt. Sell or trade instead, or ask the host.");
+			const why = bankruptcyBlocker(s, me.id);
+			if (why) reject(why);
 			return goBankrupt(s, me, true, ctx.now);
 		}
 		default:
@@ -449,15 +454,17 @@ function land(s: GameState, p: Player, rng: Rng, opts: LandOptions): void {
 			}
 			if (holding.owner === p.id) return;
 			const owner = player(s, holding.owner);
-			if (holding.mortgaged) {
+			const quote = rentQuote(s, p.position);
+			if (!quote) return;
+			if (quote.waived === "mortgaged") {
 				log(s, `${space.name} is mortgaged, so no rent.`);
 				return;
 			}
-			if (s.rules.noRentAtVet && owner.atVet) {
+			if (quote.waived === "ownerAtVet") {
 				log(s, `${owner.name} is at the Vet, so no rent.`);
 				return;
 			}
-			const rent = rentFor(s, p.position, rng, opts);
+			const rent = rentFor(quote, rng, opts);
 			log(s, `${p.name} paid ${owner.name} ${rent} 🐟 rent for ${space.name}.`);
 			pay(s, p, owner, rent, false);
 			return;
@@ -489,9 +496,7 @@ function land(s: GameState, p: Player, rng: Rng, opts: LandOptions): void {
 	}
 }
 
-function rentFor(s: GameState, index: number, rng: Rng, opts: LandOptions) {
-	const quote = rentQuote(s, index);
-	if (!quote) return 0;
+function rentFor(quote: RentRow, rng: Rng, opts: LandOptions) {
 	if (!quote.perDice) return opts.doubleFlap ? quote.amount * 2 : quote.amount;
 	if (opts.utilityTimesTen) return 10 * (rollDie(rng) + rollDie(rng));
 	return quote.amount * (opts.dice ?? rollDie(rng) + rollDie(rng));
@@ -670,8 +675,10 @@ function announceSets(s: GameState, p: Player, spaces: number[]) {
 	);
 	for (const group of groups) {
 		if (!ownsGroup(s, p.id, group)) continue;
-		const name = GROUPS.find((g) => g.id === group)?.name ?? "a group";
-		log(s, `${p.name} owns all of ${name}! Rent doubles, and boxes can go up.`);
+		log(
+			s,
+			`${p.name} owns all of ${groupName(group)}! Rent doubles, and boxes can go up.`,
+		);
 	}
 }
 
@@ -685,8 +692,6 @@ function openAuction(
 	const clock = AUCTION_CLOCK_MS * 2;
 	s.auction = {
 		space,
-		highBid: 0,
-		highBidder: null,
 		bids: {},
 		endsAt: now + clock,
 		clock,
@@ -695,17 +700,24 @@ function openAuction(
 	if (s.turn) s.turn.phase = "auction";
 }
 
+/** Opens the next auction waiting in line, if any. */
+function openQueuedAuction(s: GameState, now: number, resume: TurnPhase) {
+	const next = s.auctionQueue.shift();
+	if (next === undefined) return false;
+	openAuction(s, next, now, resume);
+	return true;
+}
+
 function bid(s: GameState, me: Player, amount: number, now: number) {
 	playing(s);
 	active(me);
 	const auction = s.auction;
 	if (!auction) reject("There's no auction right now.");
 	if (now >= auction.endsAt) reject("Too late, the auction is closing.");
-	if (!Number.isInteger(amount) || amount <= auction.highBid)
-		reject(`Bid more than ${auction.highBid} 🐟.`);
+	const top = topBid(auction).amount;
+	if (!Number.isInteger(amount) || amount <= top)
+		reject(`Bid more than ${top} 🐟.`);
 	if (amount > me.fish) reject("Not enough fish 🐟");
-	auction.highBid = amount;
-	auction.highBidder = me.id;
 	auction.bids[me.id] = amount;
 	auction.clock = AUCTION_CLOCK_MS;
 	auction.endsAt = now + AUCTION_CLOCK_MS;
@@ -717,9 +729,10 @@ function closeAuction(s: GameState, now: number) {
 	if (now < auction.endsAt) reject("The auction is still running.");
 	const space = BOARD[auction.space];
 	// Best bid first; a bidder who has gone bust or can't pay drops out.
-	const ranked = Object.entries(auction.bids)
-		.map(([id, amount]) => ({ bidder: playerById(s, Number(id)), amount }))
-		.sort((a, b) => b.amount - a.amount);
+	const ranked = rankedBids(auction).map(({ bidder, amount }) => ({
+		bidder: playerById(s, bidder),
+		amount,
+	}));
 	const win = ranked.find(
 		({ bidder, amount }) => bidder && !bidder.bankrupt && bidder.fish >= amount,
 	);
@@ -738,8 +751,7 @@ function closeAuction(s: GameState, now: number) {
 		log(s, `Nobody bid on ${space.name}. It stays with the bank.`);
 	}
 	s.auction = null;
-	const next = s.auctionQueue.shift();
-	if (next !== undefined) return openAuction(s, next, now, auction.resume);
+	if (openQueuedAuction(s, now, auction.resume)) return;
 	if (!s.turn) return;
 	s.turn.phase = auction.resume;
 	if (auction.resume === "postRoll") settle(s);
@@ -941,9 +953,7 @@ function goBankrupt(s: GameState, p: Player, toCreditor: boolean, now: number) {
 		holding.buildings = 0;
 	}
 	collectDebts(s, p);
-	const theirs = Object.keys(s.holdings)
-		.map(Number)
-		.filter((i) => s.holdings[i].owner === p.id);
+	const theirs = holdingsOf(s, p.id).map(({ index }) => index);
 	if (creditor) {
 		creditor.fish += Math.max(0, p.fish);
 		for (const i of theirs) s.holdings[i].owner = creditor.id;
@@ -968,12 +978,7 @@ function goBankrupt(s: GameState, p: Player, toCreditor: boolean, now: number) {
 	p.debts = [];
 	s.trades = s.trades.filter((t) => t.from !== p.id && t.to !== p.id);
 	// Their bids are void; the best bid left stands.
-	if (s.auction) {
-		delete s.auction.bids[p.id];
-		const best = Object.entries(s.auction.bids).sort((a, b) => b[1] - a[1])[0];
-		s.auction.highBid = best?.[1] ?? 0;
-		s.auction.highBidder = best ? Number(best[0]) : null;
-	}
+	if (s.auction) delete s.auction.bids[p.id];
 
 	const left = activePlayers(s);
 	if (left.length === 1) {
@@ -987,8 +992,5 @@ function goBankrupt(s: GameState, p: Player, toCreditor: boolean, now: number) {
 		return;
 	}
 	if (s.turn?.playerId === p.id && s.turn.phase !== "auction") nextTurn(s);
-	if (!s.auction) {
-		const next = s.auctionQueue.shift();
-		if (next !== undefined && s.turn) openAuction(s, next, now, s.turn.phase);
-	}
+	if (!s.auction && s.turn) openQueuedAuction(s, now, s.turn.phase);
 }

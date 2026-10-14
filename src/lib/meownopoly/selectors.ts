@@ -1,13 +1,14 @@
 import {
 	BOARD,
 	FLAP_INDEXES,
-	flapRent,
+	GROUPS,
 	type GroupId,
 	groupSpaces,
+	type RentRow,
+	rentTable,
 	UTILITY_INDEXES,
-	UTILITY_MULTIPLIER,
 } from "./board";
-import type { GameState, Holding, Player } from "./types";
+import type { Auction, GameState, Holding, Player } from "./types";
 
 /**
  * Read-only questions about a game, shared by the engine and the UI so both
@@ -54,57 +55,57 @@ export const lastRollId = (state: GameState) => state.rolls || undefined;
 /** The groups a player owns outright. */
 export const completeGroups = (state: GameState, playerId: number) =>
 	new Set(
-		Object.keys(state.holdings).flatMap((key) => {
-			const space = BOARD[Number(key)];
-			return space.kind === "street" && ownsGroup(state, playerId, space.group)
-				? [space.group]
-				: [];
-		}),
+		GROUPS.filter((g) => ownsGroup(state, playerId, g.id)).map((g) => g.id),
 	);
 
+/** An auction's bids, best first. */
+export const rankedBids = (auction: Auction) =>
+	Object.entries(auction.bids)
+		.map(([id, amount]) => ({ bidder: Number(id), amount }))
+		.sort((a, b) => b.amount - a.amount);
+
+/** The bid to beat, or nothing yet. */
+export const topBid = (auction: Auction) =>
+	rankedBids(auction)[0] ?? { bidder: null, amount: 0 };
+
 /**
- * What landing on an owned space costs right now, before mortgages and house
- * rules. `row` is the line of the space's rent table that applies (streets:
- * base, whole group, 1 to 4 boxes, cat house; flaps: by count; utilities: one
- * or both). Utilities charge `amount` times the dice.
+ * What landing on an owned space costs right now. `row` is the line of the
+ * space's `rentTable` that applies; `waived` says why nothing is due, if so.
  */
 export function rentQuote(
 	state: GameState,
 	index: number,
-): { row: number; amount: number; perDice: boolean } | null {
+):
+	| (RentRow & { row: number; waived: "mortgaged" | "ownerAtVet" | null })
+	| null {
 	const space = BOARD[index];
 	const holding = state.holdings[index];
 	if (!holding) return null;
 	const owns = (list: number[]) =>
 		list.filter((i) => state.holdings[i]?.owner === holding.owner).length;
+	let row: number;
 	switch (space.kind) {
-		case "street": {
-			if (holding.buildings > 0)
-				return {
-					row: holding.buildings + 1,
-					amount: space.rent[holding.buildings],
-					perDice: false,
-				};
-			const set = ownsGroup(state, holding.owner, space.group);
-			return {
-				row: set ? 1 : 0,
-				amount: set ? space.rent[0] * 2 : space.rent[0],
-				perDice: false,
-			};
-		}
-		case "flap": {
-			const count = owns(FLAP_INDEXES);
-			return { row: count - 1, amount: flapRent(count), perDice: false };
-		}
-		case "utility": {
-			const both = owns(UTILITY_INDEXES) === UTILITY_INDEXES.length;
-			return {
-				row: both ? 1 : 0,
-				amount: both ? UTILITY_MULTIPLIER.both : UTILITY_MULTIPLIER.one,
-				perDice: true,
-			};
-		}
+		case "street":
+			row =
+				holding.buildings > 0
+					? holding.buildings + 1
+					: ownsGroup(state, holding.owner, space.group)
+						? 1
+						: 0;
+			break;
+		case "flap":
+			row = owns(FLAP_INDEXES) - 1;
+			break;
+		case "utility":
+			row = owns(UTILITY_INDEXES) === UTILITY_INDEXES.length ? 1 : 0;
+			break;
 		default:
 			return null;
 	}
+	const waived = holding.mortgaged
+		? "mortgaged"
+		: state.rules.noRentAtVet && playerById(state, holding.owner)?.atVet
+			? "ownerAtVet"
+			: null;
+	return { ...rentTable(space)[row], row, waived };
 }

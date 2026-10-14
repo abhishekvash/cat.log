@@ -131,11 +131,68 @@ export const groupSpaces = (group: GroupId) =>
 export const groupColor = (group: GroupId) =>
 	GROUPS.find((g) => g.id === group)?.color ?? "#ccc";
 
+export const groupName = (group: GroupId) =>
+	GROUPS.find((g) => g.id === group)?.name ?? "a group";
+
 /** Rent for landing on a cat flap when its owner holds `owned` of them. */
 export const flapRent = (owned: number) => 25 * 2 ** (owned - 1);
 
 /** Utility rent is the dice times this, depending on how many one cat owns. */
 export const UTILITY_MULTIPLIER = { one: 4, both: 10 } as const;
+
+export interface RentRow {
+	label: string;
+	amount: number;
+	/** Utilities charge `amount` times the dice. */
+	perDice: boolean;
+}
+
+/**
+ * A space's rent, line by line (streets: base, whole group, 1 to 4 boxes, cat
+ * house; flaps: by count; utilities: one or both). The engine charges from
+ * these rows and the space card prints them, so the two can't drift.
+ */
+export function rentTable(space: Space): RentRow[] {
+	const fish = (label: string, amount: number) => ({
+		label,
+		amount,
+		perDice: false,
+	});
+	switch (space.kind) {
+		case "street":
+			return [
+				fish("Rent", space.rent[0]),
+				fish("Rent with the whole group", space.rent[0] * 2),
+				fish("With 1 box", space.rent[1]),
+				fish("With 2 boxes", space.rent[2]),
+				fish("With 3 boxes", space.rent[3]),
+				fish("With 4 boxes", space.rent[4]),
+				fish("With a cat house", space.rent[5]),
+			];
+		case "flap":
+			return FLAP_INDEXES.map((_, i) =>
+				fish(
+					i === 0
+						? "Rent with 1 cat flap"
+						: i === FLAP_INDEXES.length - 1
+							? `With all ${i + 1}`
+							: `With ${i + 1} cat flaps`,
+					flapRent(i + 1),
+				),
+			);
+		case "utility":
+			return [
+				{
+					label: "Rent with one utility",
+					amount: UTILITY_MULTIPLIER.one,
+					perDice: true,
+				},
+				{ label: "With both", amount: UTILITY_MULTIPLIER.both, perDice: true },
+			];
+		default:
+			return [];
+	}
+}
 
 export const mortgageValue = (space: OwnableSpace) => space.price / 2;
 /** 10% of the loan, rounded up. Whole-number maths so no float can tip it over. */

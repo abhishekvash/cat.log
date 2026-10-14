@@ -9,6 +9,7 @@ import {
 	groupColor,
 	type Space,
 } from "#/lib/meownopoly/board";
+import { bankruptcyBlocker } from "#/lib/meownopoly/rules";
 import { soleCreditor } from "#/lib/meownopoly/selectors";
 import type { Player } from "#/lib/meownopoly/types";
 import { cn } from "#/lib/utils";
@@ -96,7 +97,7 @@ export function BankruptButton({
 	className?: string;
 }) {
 	const { state, me, move } = useGame();
-	if (!me || me.fish >= 0) return null;
+	if (!me || bankruptcyBlocker(state, me.id)) return null;
 	const creditor = soleCreditor(state, me);
 	return (
 		<ConfirmAction

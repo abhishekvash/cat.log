@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from "react";
 import { INK, STICKER } from "#/components/cats/palette";
-import { cn } from "#/lib/utils";
+import { cn, prefersReducedMotion } from "#/lib/utils";
 import { useRollAge } from "./roll-clock";
 
 const PIPS: Record<number, [number, number][]> = {
@@ -74,7 +74,7 @@ export function RollingDice({
 	useLayoutEffect(() => {
 		const age = rollAge(rollId);
 		if (age >= LAND_MS) return;
-		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+		if (prefersReducedMotion()) return;
 		const face = () => 1 + Math.floor(Math.random() * 6);
 		setTumbling(true);
 		setFaces([face(), face()]);

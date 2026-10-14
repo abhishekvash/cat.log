@@ -18,6 +18,15 @@ import type { GameState, Holding } from "./types";
 
 type Owned = { space: OwnableSpace; holding: Holding };
 
+export function bankruptcyBlocker(
+	s: GameState,
+	playerId: number,
+): string | null {
+	if ((playerById(s, playerId)?.fish ?? 0) >= 0)
+		return "You're not in debt. Sell or trade instead, or ask the host.";
+	return null;
+}
+
 function owned(s: GameState, playerId: number, index: number): string | Owned {
 	if (s.phase !== "playing") return "The game isn't running.";
 	if (s.auction) return "Wait for the auction to finish.";

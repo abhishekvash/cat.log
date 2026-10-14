@@ -1,6 +1,6 @@
 import { Button } from "#/components/ui/button";
 import { BOARD, isOwnable } from "#/lib/meownopoly/board";
-import { playerById } from "#/lib/meownopoly/selectors";
+import { playerById, topBid } from "#/lib/meownopoly/selectors";
 import { useServerNow } from "./bits";
 import { SpaceTitle } from "./space-card";
 import { FishIcon, withFish } from "./tile-art";
@@ -13,7 +13,8 @@ export function AuctionPanel() {
 	const now = useServerNow(clockOffset);
 	if (!auction) return null;
 	const space = BOARD[auction.space];
-	const leader = playerById(state, auction.highBidder);
+	const top = topBid(auction);
+	const leader = playerById(state, top.bidder);
 	const left = Math.max(0, auction.endsAt - now);
 	const canBid = me && !me.bankrupt && live && left > 0;
 
@@ -25,7 +26,7 @@ export function AuctionPanel() {
 				<ClockRing fraction={Math.min(1, left / auction.clock)} />
 				<div>
 					<p className="font-display text-2xl font-semibold tabular-nums">
-						{auction.highBid}
+						{top.amount}
 						<FishIcon />
 					</p>
 					<p className="text-sm text-muted-foreground">
@@ -43,7 +44,7 @@ export function AuctionPanel() {
 			{me && !me.bankrupt && (
 				<div className="flex flex-wrap justify-center gap-2">
 					{[1, 10, 50, 100].map((step) => {
-						const amount = auction.highBid + step;
+						const amount = top.amount + step;
 						return (
 							<Button
 								size="compact"

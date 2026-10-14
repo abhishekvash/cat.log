@@ -14,6 +14,10 @@ const twMerge = extendTailwindMerge({
 	},
 });
 
+/** The player asked for less motion; skip animations that move things around. */
+export const prefersReducedMotion = () =>
+	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }

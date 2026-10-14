@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { CATS, type Cat } from "#/lib/cats";
+import { prefersReducedMotion } from "#/lib/utils";
 import { CatHead } from "./cat-face";
 
 const PIECES = 44;
@@ -63,7 +64,7 @@ export function KittenBurst({ onDone }: { onDone: () => void }) {
 	const nodes = useRef<(HTMLSpanElement | null)[]>([]);
 
 	useEffect(() => {
-		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+		if (prefersReducedMotion()) {
 			onDone();
 			return;
 		}

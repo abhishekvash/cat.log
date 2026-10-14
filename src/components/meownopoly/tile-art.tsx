@@ -379,6 +379,15 @@ export function FishIcon({ className }: { className?: string }) {
 }
 
 /** Swaps every 🐟 in engine text for the drawn fish. */
+/** "30 🐟", or "4× the dice" for a utility; pass through `withFish` to show. */
+export const rentLabel = ({
+	amount,
+	perDice,
+}: {
+	amount: number;
+	perDice: boolean;
+}) => (perDice ? `${amount}× the dice` : `${amount} 🐟`);
+
 export function withFish(text: string): ReactNode {
 	const parts = text.split(/\s?🐟/);
 	if (parts.length === 1) return text;

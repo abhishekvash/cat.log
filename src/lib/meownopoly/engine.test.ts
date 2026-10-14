@@ -3,10 +3,12 @@ import { seededRng } from "#/lib/rng";
 import { BOARD, FOOD_BOWL_PAY, START_FISH, VET_INDEX } from "./board";
 import { DECK_NAMES, DECKS } from "./cards";
 import { reduce, removePlayer, skipTurn, start, tick } from "./engine";
+import { rentQuote } from "./selectors";
 import {
 	ctx,
 	dice,
 	game,
+	inDebt,
 	must,
 	own,
 	p,
@@ -426,10 +428,7 @@ describe("bankruptcy", () => {
 		own(s, 1, 1, 3);
 		s.holdings[1].buildings = 1;
 		s.bank.boxes = 31;
-		Object.assign(p(s, 1), {
-			fish: -500,
-			debts: [{ to: null, amount: 500, fee: false }],
-		});
+		inDebt(s, 1, 500);
 		s = run(s, 1, { type: "declareBankruptcy" });
 		expect(p(s, 1).bankrupt).toBe(true);
 		expect(s.holdings[1]).toBeUndefined();
@@ -471,6 +470,8 @@ describe("house rules", () => {
 		s.rules.noRentAtVet = true;
 		own(s, 2, 3);
 		p(s, 2).atVet = true;
+		// The board's rent hint agrees before the cat even lands.
+		expect(rentQuote(s, 3)?.waived).toBe("ownerAtVet");
 		s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
 		expect(p(s, 1).fish).toBe(START_FISH);
 	});

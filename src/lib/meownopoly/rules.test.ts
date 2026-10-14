@@ -38,8 +38,6 @@ describe("rules", () => {
 		const base = messy();
 		const auction = {
 			space: 39,
-			highBid: 0,
-			highBidder: null,
 			bids: {},
 			endsAt: 0,
 			clock: 0,

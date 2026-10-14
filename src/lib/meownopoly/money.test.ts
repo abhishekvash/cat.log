@@ -12,7 +12,18 @@ import {
 } from "./board";
 import { DECKS } from "./cards";
 import { reduce, tick } from "./engine";
-import { ctx, dice, game, must, own, p, run, turn } from "./test-fixtures";
+import { activePlayers, holdingsOf, topBid } from "./selectors";
+import {
+	ctx,
+	dice,
+	game,
+	inDebt,
+	must,
+	own,
+	p,
+	run,
+	turn,
+} from "./test-fixtures";
 import type { GameState, Move } from "./types";
 
 const noOffer = { fish: 0, spaces: [], getOutCards: 0 };
@@ -54,10 +65,7 @@ describe("money fixes", () => {
 		let s = game(3);
 		s.rules.auctions = true;
 		own(s, 1, 1, 3);
-		Object.assign(p(s, 1), {
-			fish: -10,
-			debts: [{ to: null, amount: 10, fee: false }],
-		});
+		inDebt(s, 1, 10);
 		s = run(s, 1, { type: "declareBankruptcy" }, ctx(undefined, 0));
 		expect(s.auction?.space).toBe(1);
 		expect(s.auctionQueue).toEqual([3]);
@@ -79,12 +87,9 @@ describe("money fixes", () => {
 		s = run(s, 1, { type: "decline" }, ctx(undefined, 0));
 		s = run(s, 2, { type: "bid", amount: 30 }, ctx(undefined, 100));
 		s = run(s, 3, { type: "bid", amount: 50 }, ctx(undefined, 200));
-		Object.assign(p(s, 3), {
-			fish: -1,
-			debts: [{ to: null, amount: 1, fee: false }],
-		});
+		inDebt(s, 3, 1);
 		s = run(s, 3, { type: "declareBankruptcy" }, ctx(undefined, 300));
-		expect(s.auction).toMatchObject({ highBid: 30, highBidder: 2 });
+		expect(s.auction?.bids).toEqual({ 2: 30 });
 		s = must(tick(s, ctx(undefined, 60_000)));
 		expect(s.holdings[3].owner).toBe(2);
 		expect(p(s, 2).fish).toBe(START_FISH - 30);
@@ -261,7 +266,7 @@ function candidates(s: GameState, rng: Rng): { actor: number; move: Move }[] {
 	const t = s.turn;
 	const out: { actor: number; move: Move }[] = [];
 	if (!t) return out;
-	const active = s.players.filter((x) => !x.bankrupt);
+	const active = activePlayers(s);
 	const actor = t.playerId;
 	const me = p(s, actor);
 	out.push(
@@ -273,9 +278,7 @@ function candidates(s: GameState, rng: Rng): { actor: number; move: Move }[] {
 	);
 	for (const x of active) {
 		// Mostly their own streets, so building and mortgaging actually happen.
-		const theirs = Object.keys(s.holdings)
-			.map(Number)
-			.filter((i) => s.holdings[i].owner === x.id);
+		const theirs = holdingsOf(s, x.id).map((h) => h.index);
 		const space =
 			theirs.length && rng.int(4) > 0 ? pick(theirs) : rng.int(BOARD.length);
 		for (const type of [
@@ -291,16 +294,17 @@ function candidates(s: GameState, rng: Rng): { actor: number; move: Move }[] {
 		if (s.auction)
 			out.push({
 				actor: x.id,
-				move: { type: "bid", amount: s.auction.highBid + 1 + rng.int(60) },
+				move: {
+					type: "bid",
+					amount: topBid(s.auction).amount + 1 + rng.int(60),
+				},
 			});
 		if (x.fish < 0 && rng.int(4) === 0)
 			out.push({ actor: x.id, move: { type: "declareBankruptcy" } });
 	}
 	const other = pick(active.filter((x) => x.id !== actor));
 	if (other && rng.int(6) === 0) {
-		const mine = Object.keys(s.holdings)
-			.map(Number)
-			.filter((i) => s.holdings[i].owner === actor);
+		const mine = holdingsOf(s, actor).map((h) => h.index);
 		out.push({
 			actor,
 			move: {

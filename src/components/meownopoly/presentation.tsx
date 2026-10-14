@@ -3,12 +3,14 @@ import {
 	type ReactNode,
 	useContext,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
 import { BOARD, type GroupId } from "#/lib/meownopoly/board";
-import { completeGroups } from "#/lib/meownopoly/selectors";
+import { completeGroups, playerById } from "#/lib/meownopoly/selectors";
 import type { GameState, MovePath, Step } from "#/lib/meownopoly/types";
+import { prefersReducedMotion } from "#/lib/utils";
 import { useRollAge } from "./roll-clock";
 
 /** How long a fresh roll's dice take to land (see RollingDice), before cats walk. */
@@ -27,13 +29,19 @@ const CARD_MS = 2200;
 /** How long fish changes and newly completed sets stay highlighted. */
 const FLASH_MS = 2600;
 
-export interface Presented {
-	/** The game as it should look right now: held back until moves finish playing. */
-	state: GameState;
+/** Where the cats stand on screen. Changes every step, so only tokens read it. */
+export interface Motion {
 	/** Where each cat stands on screen, mid-walk or not. */
 	positions: Record<number, number>;
 	/** How long the current glide between tiles takes. */
 	glideMs: number;
+	/** Whether the current leg hops tile by tile or arcs in one jump. */
+	leg: "walk" | "jump";
+}
+
+export interface Presented extends Motion {
+	/** The game as it should look right now: held back until moves finish playing. */
+	state: GameState;
 	/** A move is playing out; its results aren't shown yet. */
 	animating: boolean;
 	/** The card being read out, while the cat waits on its space. */
@@ -44,7 +52,10 @@ export interface Presented {
 	freshSets: Set<GroupId>;
 }
 
-const Presentation = createContext<Presented | null>(null);
+type View = Omit<Presented, keyof Motion>;
+
+const Presentation = createContext<View | null>(null);
+const MotionContext = createContext<Motion | null>(null);
 
 const positionsOf = (s: GameState) =>
 	Object.fromEntries(s.players.map((p) => [p.id, p.position]));
@@ -58,12 +69,9 @@ const positionsOf = (s: GameState) =>
  */
 export function PresentationProvider({
 	live,
-	loadedRoll,
 	children,
 }: {
 	live: GameState;
-	/** The roll on screen when the table mounted; it doesn't replay. */
-	loadedRoll: number | undefined;
 	children: ReactNode;
 }) {
 	const rollAge = useRollAge();
@@ -71,6 +79,7 @@ export function PresentationProvider({
 		state: live,
 		positions: positionsOf(live),
 		glideMs: STEP_MS,
+		leg: "walk",
 		animating: false,
 		card: null,
 		deltas: {},
@@ -102,7 +111,7 @@ export function PresentationProvider({
 			const key = ++flashKey.current;
 			const deltas: Presented["deltas"] = {};
 			for (const p of next.players) {
-				const before = prev.players.find((q) => q.id === p.id);
+				const before = playerById(prev, p.id);
 				if (before && before.fish !== p.fish)
 					deltas[p.id] = { amount: p.fish - before.fish, key };
 			}
@@ -117,6 +126,7 @@ export function PresentationProvider({
 				state: next,
 				positions: positionsOf(next),
 				glideMs: STEP_MS,
+				leg: "walk",
 				animating: false,
 				card: null,
 				deltas: Object.keys(deltas).length ? deltas : s.deltas,
@@ -149,7 +159,7 @@ export function PresentationProvider({
 					animating: true,
 					...patch,
 				}));
-			show({ card: null, glideMs: STEP_MS });
+			show({ card: null, glideMs: STEP_MS, leg: "walk" });
 			await sleep(Math.max(0, DICE_SETTLE_MS - rollAge(next.rolls)));
 
 			let at = move.from;
@@ -159,7 +169,7 @@ export function PresentationProvider({
 				if (leg.kind === "jump") {
 					at = leg.to;
 					positions[move.playerId] = at;
-					show({ glideMs: JUMP_MS });
+					show({ glideMs: JUMP_MS, leg: "jump" });
 					await sleep(JUMP_MS);
 				} else {
 					const dir = leg.kind === "back" ? -1 : 1;
@@ -169,7 +179,7 @@ export function PresentationProvider({
 						if (!alive.current) return;
 						at = (at + dir + BOARD.length) % BOARD.length;
 						positions[move.playerId] = at;
-						show({ glideMs: ms - 20 });
+						show({ glideMs: ms - 20, leg: "walk" });
 						await sleep(ms);
 					}
 				}
@@ -187,27 +197,43 @@ export function PresentationProvider({
 				const next = queue.current.shift() as GameState;
 				const prev = current.current;
 				const move = next.lastMove;
-				const reduce = window.matchMedia(
-					"(prefers-reduced-motion: reduce)",
-				).matches;
+				const reduce = prefersReducedMotion();
 				const fresh =
 					move &&
 					move.roll !== prev.lastMove?.roll &&
-					move.roll !== loadedRoll &&
 					next.turn &&
-					!reduce;
+					!reduce &&
+					// The roll on screen when the table mounted doesn't replay.
+					rollAge(move.roll) !== Infinity;
 				if (fresh) await play(prev, next, move);
 				if (!alive.current) return;
 				commit(prev, next);
 			}
 			busy.current = false;
 		})();
-	}, [live, loadedRoll, rollAge]);
+	}, [live, rollAge]);
+
+	const { state, animating, card, deltas, freshSets, positions, glideMs, leg } =
+		shown;
+	// Split so a walk step re-renders the tokens, not the whole table.
+	const view = useMemo(
+		() => ({ state, animating, card, deltas, freshSets }),
+		[state, animating, card, deltas, freshSets],
+	);
+	const motion = useMemo(
+		() => ({ positions, glideMs, leg }),
+		[positions, glideMs, leg],
+	);
 
 	return (
-		<Presentation.Provider value={shown}>{children}</Presentation.Provider>
+		<Presentation.Provider value={view}>
+			<MotionContext.Provider value={motion}>{children}</MotionContext.Provider>
+		</Presentation.Provider>
 	);
 }
 
 /** What the table is showing right now; null outside a game table. */
 export const usePresentation = () => useContext(Presentation);
+
+/** Where the cats stand on screen; null outside a game table. */
+export const useMotion = () => useContext(MotionContext);

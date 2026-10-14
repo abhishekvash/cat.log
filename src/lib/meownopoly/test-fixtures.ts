@@ -65,6 +65,12 @@ export const turn = (s: GameState) => {
 	if (!s.turn) throw new Error("no turn");
 	return s.turn;
 };
+/** Puts a cat `amount` in debt to the bank. */
+export const inDebt = (s: GameState, id: number, amount: number) =>
+	Object.assign(p(s, id), {
+		fish: -amount,
+		debts: [{ to: null, amount, fee: false }],
+	});
 export const own = (s: GameState, owner: number, ...spaces: number[]) => {
 	for (const i of spaces)
 		s.holdings[i] = { owner, buildings: 0, mortgaged: false };

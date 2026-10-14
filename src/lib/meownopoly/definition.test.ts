@@ -11,6 +11,7 @@ import {
 } from "#/lib/multiplayer/room";
 import { seededRng } from "#/lib/rng";
 import { meownopoly } from "./definition";
+import { inDebt } from "./test-fixtures";
 import type { GameState, HouseRules, Move } from "./types";
 
 // Meownopoly played through the shared room, end to end.
@@ -68,12 +69,7 @@ describe("meownopoly in a room", () => {
 		room = run(room, first, { type: "move", move: { type: "roll" } });
 		expect(room.state.game?.rolls).toBe(1);
 		// Only a cat in debt can go bankrupt.
-		const debtor = room.state.game?.players.find((p) => p.id === first);
-		if (!debtor) throw new Error("no current player");
-		Object.assign(debtor, {
-			fish: -10,
-			debts: [{ to: null, amount: 10, fee: false }],
-		});
+		inDebt(room.state.game as GameState, first, 10);
 		room = run(room, first, {
 			type: "move",
 			move: { type: "declareBankruptcy" },
@@ -96,8 +92,6 @@ describe("meownopoly in a room", () => {
 			},
 			auction: {
 				space: 1,
-				highBid: 30,
-				highBidder: bidder,
 				bids: { [bidder as number]: 30 },
 				endsAt: 5000,
 				clock: 6000,

@@ -32,8 +32,8 @@ import { seatById } from "#/lib/multiplayer/room";
 import { cn } from "#/lib/utils";
 import { BuildingIcons, groupStyle } from "./bits";
 import { Fur } from "./fur";
-import { STEP_MS, usePresentation } from "./presentation";
-import { Art, type ArtName, FishIcon, withFish } from "./tile-art";
+import { STEP_MS, useMotion, usePresentation } from "./presentation";
+import { Art, type ArtName, FishIcon, rentLabel, withFish } from "./tile-art";
 import { useGame } from "./use-game";
 
 type Side = "bottom" | "left" | "top" | "right" | "corner";
@@ -107,13 +107,8 @@ export function Board({
 	card: (index: number) => ReactNode;
 	children: ReactNode;
 }) {
-	const { state, room } = useGame();
-	const presented = usePresentation();
-	const positions = presented?.positions ?? {};
-	const glideMs = presented?.glideMs ?? STEP_MS;
-	const freshSets = presented?.freshSets;
-	const current = state.turn?.playerId;
-	const inGame = activePlayers(state);
+	const { state } = useGame();
+	const freshSets = usePresentation()?.freshSets;
 
 	return (
 		<div
@@ -151,29 +146,42 @@ export function Board({
 			>
 				{children}
 			</div>
-			<div
-				aria-hidden="true"
-				className="pointer-events-none absolute inset-0 z-20"
-			>
-				{inGame.map((p) => {
-					const at = positions[p.id] ?? p.position;
-					const here = inGame.filter(
-						(q) => (positions[q.id] ?? q.position) === at,
-					);
-					return (
-						<Token
-							key={p.id}
-							player={p}
-							index={at}
-							slot={here.indexOf(p)}
-							count={here.length}
-							current={p.id === current}
-							connected={seatById(room, p.id)?.connected ?? false}
-							glideMs={glideMs}
-						/>
-					);
-				})}
-			</div>
+			<Tokens />
+		</div>
+	);
+}
+
+/** Every cat in the game, where it stands on screen right now. */
+function Tokens() {
+	const { state, room } = useGame();
+	const motion = useMotion();
+	const positions = motion?.positions ?? {};
+	const current = state.turn?.playerId;
+	const inGame = activePlayers(state);
+	return (
+		<div
+			aria-hidden="true"
+			className="pointer-events-none absolute inset-0 z-20"
+		>
+			{inGame.map((p) => {
+				const at = positions[p.id] ?? p.position;
+				const here = inGame.filter(
+					(q) => (positions[q.id] ?? q.position) === at,
+				);
+				return (
+					<Token
+						key={p.id}
+						player={p}
+						index={at}
+						slot={here.indexOf(p)}
+						count={here.length}
+						current={p.id === current}
+						connected={seatById(room, p.id)?.connected ?? false}
+						glideMs={motion?.glideMs ?? STEP_MS}
+						jump={motion?.leg === "jump"}
+					/>
+				);
+			})}
 		</div>
 	);
 }
@@ -191,6 +199,7 @@ function Token({
 	current,
 	connected,
 	glideMs,
+	jump,
 }: {
 	player: Player;
 	index: number;
@@ -199,6 +208,7 @@ function Token({
 	current: boolean;
 	connected: boolean;
 	glideMs: number;
+	jump: boolean;
 }) {
 	const { row, col, side } = cell(index);
 	const x = col === 1 ? 0 : col === 11 ? 100 : trackCentre(col);
@@ -230,10 +240,7 @@ function Token({
 			{/* Keyed by tile, so the hop replays on every step. */}
 			<span
 				key={index}
-				className={cn(
-					"relative block",
-					glideMs > STEP_MS ? "token-jump" : "token-hop",
-				)}
+				className={cn("relative block", jump ? "token-jump" : "token-hop")}
 			>
 				<CatHead
 					cat={player.cat}
@@ -310,11 +317,11 @@ function Tile({
 		ownsGroup(state, holding.owner, space.group);
 	const quote = rentQuote(state, index);
 	const hint = owner
-		? holding.mortgaged
+		? quote?.waived === "mortgaged"
 			? `${owner.name}'s · mortgaged, no rent`
-			: quote?.perDice
-				? `${owner.name}'s · rent ${quote.amount}× the dice`
-				: `${owner.name}'s · rent ${quote?.amount ?? 0} 🐟`
+			: quote?.waived === "ownerAtVet"
+				? `${owner.name}'s · at the Vet, no rent`
+				: `${owner.name}'s · rent ${quote ? rentLabel(quote) : "0 🐟"}`
 		: isOwnable(space)
 			? `For sale · ${space.price} 🐟`
 			: null;
