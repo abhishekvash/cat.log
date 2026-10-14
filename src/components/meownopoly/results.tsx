@@ -3,7 +3,7 @@ import { useState } from "react";
 import { CatHead } from "#/components/cats/cat-face";
 import { KittenBurst } from "#/components/cats/kitten-burst";
 import { Button } from "#/components/ui/button";
-import { playerById } from "#/lib/monopawly/selectors";
+import { playerById } from "#/lib/meownopoly/selectors";
 import { useGame } from "./use-game";
 
 /** The last cat standing, a burst of kittens, and a rematch. */

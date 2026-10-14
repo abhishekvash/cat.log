@@ -3,9 +3,9 @@ import { CatHead } from "#/components/cats/cat-face";
 import { ConfirmAction } from "#/components/confirm-action";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
-import { BOARD, isOwnable, VET_FEE } from "#/lib/monopawly/board";
-import { lastRollId, playerById } from "#/lib/monopawly/selectors";
-import type { GameState, Player, Turn } from "#/lib/monopawly/types";
+import { BOARD, isOwnable, VET_FEE } from "#/lib/meownopoly/board";
+import { lastRollId, playerById } from "#/lib/meownopoly/selectors";
+import type { GameState, Player, Turn } from "#/lib/meownopoly/types";
 import { seatById } from "#/lib/multiplayer/room";
 import { cn } from "#/lib/utils";
 import { BankruptButton, Fish } from "./bits";
@@ -49,11 +49,6 @@ export function TurnPanel() {
 				{current.id === me?.id && <TurnActions turn={turn} me={current} />}
 				<WanderedOff current={current} />
 
-				{state.rules.napSpotJackpot && (
-					<p className="text-sm text-muted-foreground">
-						Nap Spot jackpot: <Fish amount={state.jackpot} />
-					</p>
-				)}
 				{me?.bankrupt && (
 					<p className="text-sm text-muted-foreground">
 						You're out of this game, but you can keep watching.
@@ -65,10 +60,11 @@ export function TurnPanel() {
 	);
 }
 
-/** Your moves this turn: roll (or get out of the Vet), buy or auction, end. */
+/** Your moves this turn: roll (or get out of the Vet), buy or pass, end. */
 function TurnActions({ turn, me }: { turn: Turn; me: Player }) {
-	const { live, move } = useGame();
+	const { state, live, move } = useGame();
 	const space = BOARD[me.position];
+	const auctions = state.rules.auctions;
 
 	return (
 		<div className="flex flex-wrap justify-center gap-2">
@@ -127,7 +123,7 @@ function TurnActions({ turn, me }: { turn: Turn; me: Player }) {
 						disabled={!live}
 						onClick={() => move({ type: "decline" })}
 					>
-						Send it to auction
+						{auctions ? "Send it to auction" : "Pass"}
 					</Button>
 					{me.fish < space.price && (
 						<Alert className="text-left">
@@ -135,8 +131,8 @@ function TurnActions({ turn, me }: { turn: Turn; me: Player }) {
 							<AlertDescription>
 								<p>
 									You have {me.fish}
-									<FishIcon />. Mortgage a street from My properties, or send it
-									to auction.
+									<FishIcon />. Mortgage or sell a street from My properties, or{" "}
+									{auctions ? "send it to auction" : "pass on it"}.
 								</p>
 							</AlertDescription>
 						</Alert>

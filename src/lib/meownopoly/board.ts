@@ -1,5 +1,5 @@
 /** Kept in one place so the game can be renamed with a one-line change. */
-export const GAME_NAME = "Monopawly";
+export const GAME_NAME = "Meownopoly";
 
 export const START_FISH = 1500;
 export const FOOD_BOWL_PAY = 200;
@@ -138,8 +138,13 @@ export const flapRent = (owned: number) => 25 * 2 ** (owned - 1);
 export const UTILITY_MULTIPLIER = { one: 4, both: 10 } as const;
 
 export const mortgageValue = (space: OwnableSpace) => space.price / 2;
+/** 10% of the loan, rounded up. Whole-number maths so no float can tip it over. */
+export const mortgageInterest = (space: OwnableSpace) =>
+	Math.ceil(space.price / 20);
 /** Lifting a mortgage costs the loan plus 10%. */
 export const unmortgageCost = (space: OwnableSpace) =>
-	Math.ceil((space.price / 2) * 1.1);
+	mortgageValue(space) + mortgageInterest(space);
+/** What the bank pays for a street sold back to it. */
+export const saleValue = mortgageValue;
 /** What the bank pays back for one box or cat house. */
 export const buildingRefund = (space: StreetSpace) => space.buildCost / 2;

@@ -12,9 +12,9 @@ import {
 	STATE_VERSION,
 } from "./types";
 
-/** Monopawly as an online game: the rules engine plugged into the shared rooms. */
-export const monopawly: GameDefinition<GameState, Move, HouseRules> = {
-	id: "monopawly",
+/** Meownopoly as an online game: the rules engine plugged into the shared rooms. */
+export const meownopoly: GameDefinition<GameState, Move, HouseRules> = {
+	id: "meownopoly",
 	name: GAME_NAME,
 	version: STATE_VERSION,
 	minPlayers: MIN_PLAYERS,

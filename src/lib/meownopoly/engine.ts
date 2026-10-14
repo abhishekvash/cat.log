@@ -17,14 +17,15 @@ import {
 	CAT_HOUSE,
 	FLAP_INDEXES,
 	FOOD_BOWL_PAY,
-	flapRent,
+	GROUPS,
 	isOwnable,
+	mortgageInterest,
 	mortgageValue,
 	type OwnableSpace,
 	START_FISH,
 	type StreetSpace,
+	saleValue,
 	UTILITY_INDEXES,
-	UTILITY_MULTIPLIER,
 	unmortgageCost,
 	VET_FEE,
 	VET_INDEX,
@@ -34,6 +35,7 @@ import {
 	buildBlocker,
 	mortgageBlocker,
 	sellBlocker,
+	sellStreetBlocker,
 	unmortgageBlocker,
 } from "./rules";
 import {
@@ -41,6 +43,7 @@ import {
 	groupHasBuildings,
 	ownsGroup,
 	playerById,
+	rentQuote,
 	soleCreditor,
 } from "./selectors";
 import {
@@ -51,11 +54,12 @@ import {
 	type Move,
 	type Offer,
 	type Player,
+	type Step,
 	type TurnPhase,
 } from "./types";
 
 /**
- * Monopawly's rules. Seats, the lobby and hosting belong to the shared room
+ * Meownopoly's rules. Seats, the lobby and hosting belong to the shared room
  * (lib/multiplayer); this deals a game for the seated cats and plays it.
  */
 
@@ -89,6 +93,8 @@ export function start(
 		nextTradeId: 1,
 		rolls: 0,
 		jackpot: 0,
+		auctionQueue: [],
+		lastMove: null,
 		bank: { boxes: BANK_BOXES, houses: BANK_HOUSES },
 		winnerId: null,
 		log: [],
@@ -119,7 +125,12 @@ function change(
 ): Result<GameState> {
 	return attempt(state, (s) => {
 		fn(s);
-		for (const p of s.players) collectDebts(s, p);
+		// Paying one creditor can let them pay theirs, so go round until it settles.
+		let paid = true;
+		while (paid) {
+			paid = false;
+			for (const p of s.players) if (collectDebts(s, p)) paid = true;
+		}
 	});
 }
 
@@ -149,12 +160,16 @@ export function skipTurn(state: GameState): Result<GameState> {
 }
 
 /** The host takes a player out: their streets go back to the bank. */
-export function removePlayer(state: GameState, id: SeatId): Result<GameState> {
+export function removePlayer(
+	state: GameState,
+	id: SeatId,
+	ctx: Context,
+): Result<GameState> {
 	return change(state, (s) => {
 		playing(s);
 		const target = active(player(s, id));
 		log(s, `${target.name} was removed from the game.`);
-		goBankrupt(s, target, false);
+		goBankrupt(s, target, false, ctx.now);
 	});
 }
 
@@ -168,15 +183,14 @@ function apply(s: GameState, actor: SeatId, intent: Move, ctx: Context) {
 			return buy(s, myTurn(s, me, "awaitingBuy"));
 		case "decline": {
 			const p = myTurn(s, me, "awaitingBuy");
-			turnOf(s).phase = "auction";
-			s.auction = {
-				space: p.position,
-				highBid: 0,
-				highBidder: null,
-				endsAt: ctx.now + AUCTION_CLOCK_MS * 2,
-			};
-			log(s, `${p.name} passed on ${BOARD[p.position].name}. Auction!`);
-			return;
+			const name = BOARD[p.position].name;
+			if (s.rules.auctions) {
+				log(s, `${p.name} passed on ${name}. Auction!`);
+				return openAuction(s, p.position, ctx.now, "postRoll");
+			}
+			log(s, `${p.name} passed on ${name}. It stays with the bank.`);
+			turnOf(s).phase = "postRoll";
+			return settle(s);
 		}
 		case "bid":
 			return bid(s, me, intent.amount, ctx.now);
@@ -209,6 +223,8 @@ function apply(s: GameState, actor: SeatId, intent: Move, ctx: Context) {
 			return build(s, active(me), intent.space);
 		case "sell":
 			return sell(s, active(me), intent.space);
+		case "sellStreet":
+			return sellStreet(s, active(me), intent.space);
 		case "mortgage":
 			return mortgage(s, active(me), intent.space);
 		case "unmortgage":
@@ -227,7 +243,9 @@ function apply(s: GameState, actor: SeatId, intent: Move, ctx: Context) {
 		case "declareBankruptcy": {
 			playing(s);
 			active(me);
-			return goBankrupt(s, me, true);
+			if (me.fish >= 0)
+				reject("You're not in debt. Sell or trade instead, or ask the host.");
+			return goBankrupt(s, me, true, ctx.now);
 		}
 		default:
 			intent satisfies never;
@@ -268,7 +286,7 @@ function myTurn(s: GameState, me: Player, phase: TurnPhase) {
 function phaseHint(phase: TurnPhase) {
 	switch (phase) {
 		case "awaitingBuy":
-			return "Buy it or pass it to auction first.";
+			return "Buy it or pass on it first.";
 		case "auction":
 			return "Wait for the auction to finish.";
 		case "awaitingRoll":
@@ -303,6 +321,7 @@ function roll(s: GameState, p: Player, rng: Rng) {
 	const turn = turnOf(s);
 	const dice: [number, number] = [rollDie(rng), rollDie(rng)];
 	s.rolls++;
+	s.lastMove = { roll: s.rolls, playerId: p.id, from: p.position, steps: [] };
 	const sum = dice[0] + dice[1];
 	const doubles = dice[0] === dice[1];
 	turn.dice = dice;
@@ -384,10 +403,18 @@ function moveTo(
 		);
 	}
 	p.position = target;
+	step(s, p, { to: target, kind: "walk" });
+}
+
+/** Records a leg of this roll's move so the board can replay it. */
+function step(s: GameState, p: Player, leg: Step) {
+	if (s.lastMove?.roll === s.rolls && s.lastMove.playerId === p.id)
+		s.lastMove.steps.push(leg);
 }
 
 function goToVet(s: GameState, p: Player) {
 	p.position = VET_INDEX;
+	step(s, p, { to: VET_INDEX, kind: "jump" });
 	p.atVet = true;
 	p.vetTries = 0;
 	if (s.turn?.playerId === p.id) {
@@ -431,13 +458,13 @@ function land(s: GameState, p: Player, rng: Rng, opts: LandOptions): void {
 				return;
 			}
 			const rent = rentFor(s, p.position, rng, opts);
-			pay(s, p, owner, rent, false);
 			log(s, `${p.name} paid ${owner.name} ${rent} 🐟 rent for ${space.name}.`);
+			pay(s, p, owner, rent, false);
 			return;
 		}
 		case "tax":
-			pay(s, p, null, space.amount, true);
 			log(s, `${p.name} paid the ${space.name}: ${space.amount} 🐟.`);
+			pay(s, p, null, space.amount, true);
 			return;
 		case "zoomies":
 			drawCard(s, p, "zoomies", rng);
@@ -463,26 +490,11 @@ function land(s: GameState, p: Player, rng: Rng, opts: LandOptions): void {
 }
 
 function rentFor(s: GameState, index: number, rng: Rng, opts: LandOptions) {
-	const space = BOARD[index];
-	const holding = s.holdings[index];
-	if (!holding || !isOwnable(space)) return 0;
-	const owns = (list: number[]) =>
-		list.filter((i) => s.holdings[i]?.owner === holding.owner).length;
-
-	if (space.kind === "street") {
-		if (holding.buildings > 0) return space.rent[holding.buildings];
-		return ownsGroup(s, holding.owner, space.group)
-			? space.rent[0] * 2
-			: space.rent[0];
-	}
-	if (space.kind === "flap") {
-		const rent = flapRent(owns(FLAP_INDEXES));
-		return opts.doubleFlap ? rent * 2 : rent;
-	}
+	const quote = rentQuote(s, index);
+	if (!quote) return 0;
+	if (!quote.perDice) return opts.doubleFlap ? quote.amount * 2 : quote.amount;
 	if (opts.utilityTimesTen) return 10 * (rollDie(rng) + rollDie(rng));
-	const dice = opts.dice ?? rollDie(rng) + rollDie(rng);
-	const { one, both } = UTILITY_MULTIPLIER;
-	return (owns(UTILITY_INDEXES) === UTILITY_INDEXES.length ? both : one) * dice;
+	return quote.amount * (opts.dice ?? rollDie(rng) + rollDie(rng));
 }
 
 /**
@@ -500,8 +512,14 @@ function pay(
 	const paid = Math.min(amount, Math.max(0, from.fish));
 	from.fish -= amount;
 	credit(s, to, paid, fee);
-	if (paid < amount)
-		from.debts.push({ to: to?.id ?? null, amount: amount - paid, fee });
+	if (paid < amount) {
+		const short = amount - paid;
+		from.debts.push({ to: to?.id ?? null, amount: short, fee });
+		log(
+			s,
+			`${from.name} came up ${short} 🐟 short and owes it to ${to?.name ?? "the bank"}.`,
+		);
+	}
 }
 
 function credit(s: GameState, to: Player | null, amount: number, fee: boolean) {
@@ -509,20 +527,32 @@ function credit(s: GameState, to: Player | null, amount: number, fee: boolean) {
 	else if (fee && s.rules.napSpotJackpot) s.jackpot += amount;
 }
 
-/** Hands whatever a debtor has raised since going negative to their creditors, oldest first. */
+/**
+ * Hands whatever a debtor has raised since going negative to their creditors,
+ * oldest first. Returns whether anything was paid.
+ */
 function collectDebts(s: GameState, p: Player) {
 	const owed = p.debts.reduce((sum, d) => sum + d.amount, 0);
 	let raised = owed - Math.max(0, -p.fish);
+	const paidAny = raised > 0 && p.debts.length > 0;
 	while (raised > 0 && p.debts.length > 0) {
 		const debt = p.debts[0];
 		const part = Math.min(raised, debt.amount);
-		const creditor = playerById(s, debt.to);
+		const found = playerById(s, debt.to);
 		// A creditor who has since gone bust can't be paid; it goes to the bank.
-		credit(s, creditor && !creditor.bankrupt ? creditor : null, part, debt.fee);
+		const creditor = found && !found.bankrupt ? found : null;
+		credit(s, creditor, part, debt.fee);
+		log(
+			s,
+			creditor
+				? `${p.name} paid ${creditor.name} ${part} 🐟 they owed.`
+				: `${p.name} paid the bank ${part} 🐟 they owed.`,
+		);
 		debt.amount -= part;
 		raised -= part;
 		if (debt.amount === 0) p.debts.shift();
 	}
+	return paidAny;
 }
 
 function drawCard(s: GameState, p: Player, deck: Deck, rng: Rng): void {
@@ -531,6 +561,9 @@ function drawCard(s: GameState, p: Player, deck: Deck, rng: Rng): void {
 	const card = DECKS[deck][index];
 	if (card.effect.type !== "getOut") s.decks[deck].push(index);
 	log(s, `${p.name} drew ${DECK_NAMES[deck]}: “${card.text}”`);
+	const arrival = s.lastMove?.steps.at(-1);
+	if (s.lastMove?.playerId === p.id && arrival?.to === p.position)
+		arrival.card = { deck, index };
 
 	const effect = card.effect;
 	const others = activePlayers(s).filter((o) => o.id !== p.id);
@@ -555,18 +588,29 @@ function drawCard(s: GameState, p: Player, deck: Deck, rng: Rng): void {
 		}
 		case "back":
 			p.position = (p.position - effect.spaces + BOARD.length) % BOARD.length;
+			step(s, p, { to: p.position, kind: "back" });
 			land(s, p, rng, {});
 			return;
 		case "collect":
 			p.fish += effect.amount;
+			log(s, `${p.name} collected ${effect.amount} 🐟.`);
 			return;
 		case "pay":
+			log(s, `${p.name} paid the bank ${effect.amount} 🐟.`);
 			pay(s, p, null, effect.amount, true);
 			return;
 		case "collectFromEach":
+			log(
+				s,
+				`${p.name} collected ${effect.amount} 🐟 from each of ${others.length} cats.`,
+			);
 			for (const o of others) pay(s, o, p, effect.amount, false);
 			return;
 		case "payEach":
+			log(
+				s,
+				`${p.name} paid ${effect.amount} 🐟 to each of ${others.length} cats.`,
+			);
 			for (const o of others) pay(s, p, o, effect.amount, false);
 			return;
 		case "repairs": {
@@ -578,6 +622,12 @@ function drawCard(s: GameState, p: Player, deck: Deck, rng: Rng): void {
 						? effect.perHouse
 						: holding.buildings * effect.perBox;
 			}
+			log(
+				s,
+				total > 0
+					? `${p.name}'s repairs came to ${total} 🐟.`
+					: `${p.name} has nothing to repair.`,
+			);
 			if (total > 0) pay(s, p, null, total, true);
 			return;
 		}
@@ -605,8 +655,44 @@ function buy(s: GameState, p: Player) {
 	p.fish -= space.price;
 	s.holdings[p.position] = { owner: p.id, buildings: 0, mortgaged: false };
 	log(s, `${p.name} bought ${space.name} for ${space.price} 🐟.`);
+	announceSets(s, p, [p.position]);
 	turnOf(s).phase = "postRoll";
 	settle(s);
+}
+
+/** Celebrates any group these new spaces complete. */
+function announceSets(s: GameState, p: Player, spaces: number[]) {
+	const groups = new Set(
+		spaces.flatMap((i) => {
+			const space = BOARD[i];
+			return space.kind === "street" ? [space.group] : [];
+		}),
+	);
+	for (const group of groups) {
+		if (!ownsGroup(s, p.id, group)) continue;
+		const name = GROUPS.find((g) => g.id === group)?.name ?? "a group";
+		log(s, `${p.name} owns all of ${name}! Rent doubles, and boxes can go up.`);
+	}
+}
+
+/** Puts a bank street up for auction, pausing the turn until it closes. */
+function openAuction(
+	s: GameState,
+	space: number,
+	now: number,
+	resume: TurnPhase,
+) {
+	const clock = AUCTION_CLOCK_MS * 2;
+	s.auction = {
+		space,
+		highBid: 0,
+		highBidder: null,
+		bids: {},
+		endsAt: now + clock,
+		clock,
+		resume,
+	};
+	if (s.turn) s.turn.phase = "auction";
 }
 
 function bid(s: GameState, me: Player, amount: number, now: number) {
@@ -620,6 +706,8 @@ function bid(s: GameState, me: Player, amount: number, now: number) {
 	if (amount > me.fish) reject("Not enough fish 🐟");
 	auction.highBid = amount;
 	auction.highBidder = me.id;
+	auction.bids[me.id] = amount;
+	auction.clock = AUCTION_CLOCK_MS;
 	auction.endsAt = now + AUCTION_CLOCK_MS;
 }
 
@@ -628,21 +716,33 @@ function closeAuction(s: GameState, now: number) {
 	if (!auction) reject("There's no auction right now.");
 	if (now < auction.endsAt) reject("The auction is still running.");
 	const space = BOARD[auction.space];
-	const winner = playerById(s, auction.highBidder);
-	if (winner && !winner.bankrupt && winner.fish >= auction.highBid) {
-		winner.fish -= auction.highBid;
+	// Best bid first; a bidder who has gone bust or can't pay drops out.
+	const ranked = Object.entries(auction.bids)
+		.map(([id, amount]) => ({ bidder: playerById(s, Number(id)), amount }))
+		.sort((a, b) => b.amount - a.amount);
+	const win = ranked.find(
+		({ bidder, amount }) => bidder && !bidder.bankrupt && bidder.fish >= amount,
+	);
+	if (win?.bidder) {
+		win.bidder.fish -= win.amount;
 		s.holdings[auction.space] = {
-			owner: winner.id,
+			owner: win.bidder.id,
 			buildings: 0,
 			mortgaged: false,
 		};
-		log(s, `${winner.name} won ${space.name} for ${auction.highBid} 🐟.`);
+		log(s, `${win.bidder.name} won ${space.name} for ${win.amount} 🐟.`);
+		announceSets(s, win.bidder, [auction.space]);
+	} else if (ranked.length > 0) {
+		log(s, `Nobody left could pay for ${space.name}. It stays with the bank.`);
 	} else {
 		log(s, `Nobody bid on ${space.name}. It stays with the bank.`);
 	}
 	s.auction = null;
-	if (s.turn) s.turn.phase = "postRoll";
-	settle(s);
+	const next = s.auctionQueue.shift();
+	if (next !== undefined) return openAuction(s, next, now, auction.resume);
+	if (!s.turn) return;
+	s.turn.phase = auction.resume;
+	if (auction.resume === "postRoll") settle(s);
 }
 
 // ---------------------------------------------------------------- building
@@ -684,6 +784,16 @@ function sell(s: GameState, p: Player, index: number) {
 	const refund = buildingRefund(space);
 	p.fish += refund;
 	log(s, `${p.name} sold a building on ${space.name} for ${refund} 🐟.`);
+}
+
+function sellStreet(s: GameState, p: Player, index: number) {
+	const why = sellStreetBlocker(s, p.id, index);
+	if (why) reject(why);
+	const space = BOARD[index] as OwnableSpace;
+	delete s.holdings[index];
+	const value = saleValue(space);
+	p.fish += value;
+	log(s, `${p.name} sold ${space.name} back to the bank for ${value} 🐟.`);
 }
 
 function mortgage(s: GameState, p: Player, index: number) {
@@ -793,6 +903,24 @@ function respondTrade(s: GameState, me: Player, id: number, accept: boolean) {
 	hand(from, me, trade.give);
 	hand(me, from, trade.get);
 	log(s, `${me.name} accepted ${from.name}'s trade.`);
+	payTransferInterest(s, me, trade.give.spaces);
+	payTransferInterest(s, from, trade.get.spaces);
+	announceSets(s, me, trade.give.spaces);
+	announceSets(s, from, trade.get.spaces);
+}
+
+/** Taking over a mortgaged street costs 10% of its loan up front. */
+function payTransferInterest(s: GameState, p: Player, spaces: number[]) {
+	for (const index of spaces) {
+		const space = BOARD[index];
+		if (!s.holdings[index]?.mortgaged || !isOwnable(space)) continue;
+		const interest = mortgageInterest(space);
+		log(
+			s,
+			`${p.name} paid ${interest} 🐟 interest to take on mortgaged ${space.name}.`,
+		);
+		pay(s, p, null, interest, false);
+	}
 }
 
 // ---------------------------------------------------------------- bankruptcy
@@ -801,7 +929,7 @@ function respondTrade(s: GameState, me: Player, id: number, accept: boolean) {
  * Takes a player out. With `toCreditor`, a player owed everything inherits
  * their streets; otherwise (or when removed by the host) they go to the bank.
  */
-function goBankrupt(s: GameState, p: Player, toCreditor: boolean) {
+function goBankrupt(s: GameState, p: Player, toCreditor: boolean, now: number) {
 	const creditor = toCreditor ? soleCreditor(s, p) : undefined;
 	// Buildings go back to the bank at half price first, paying down debts.
 	for (const [key, holding] of Object.entries(s.holdings)) {
@@ -813,17 +941,25 @@ function goBankrupt(s: GameState, p: Player, toCreditor: boolean) {
 		holding.buildings = 0;
 	}
 	collectDebts(s, p);
+	const theirs = Object.keys(s.holdings)
+		.map(Number)
+		.filter((i) => s.holdings[i].owner === p.id);
 	if (creditor) {
 		creditor.fish += Math.max(0, p.fish);
-		for (const holding of Object.values(s.holdings))
-			if (holding.owner === p.id) holding.owner = creditor.id;
+		for (const i of theirs) s.holdings[i].owner = creditor.id;
 		creditor.getOutCards.push(...p.getOutCards);
 		log(s, `${p.name} is bankrupt! Everything goes to ${creditor.name}.`);
+		payTransferInterest(s, creditor, theirs);
+		announceSets(s, creditor, theirs);
 	} else {
-		for (const [key, holding] of Object.entries(s.holdings))
-			if (holding.owner === p.id) delete s.holdings[Number(key)];
+		for (const i of theirs) delete s.holdings[i];
 		for (const deck of p.getOutCards) returnGetOutCard(s, deck);
-		log(s, `${p.name} is out! Their streets go back to the bank.`);
+		if (s.rules.auctions && theirs.length > 0) {
+			s.auctionQueue.push(...theirs);
+			log(s, `${p.name} is out! Their streets go up for auction.`);
+		} else {
+			log(s, `${p.name} is out! Their streets go back to the bank.`);
+		}
 	}
 	p.fish = 0;
 	p.getOutCards = [];
@@ -831,9 +967,12 @@ function goBankrupt(s: GameState, p: Player, toCreditor: boolean) {
 	p.atVet = false;
 	p.debts = [];
 	s.trades = s.trades.filter((t) => t.from !== p.id && t.to !== p.id);
-	if (s.auction?.highBidder === p.id) {
-		s.auction.highBid = 0;
-		s.auction.highBidder = null;
+	// Their bids are void; the best bid left stands.
+	if (s.auction) {
+		delete s.auction.bids[p.id];
+		const best = Object.entries(s.auction.bids).sort((a, b) => b[1] - a[1])[0];
+		s.auction.highBid = best?.[1] ?? 0;
+		s.auction.highBidder = best ? Number(best[0]) : null;
 	}
 
 	const left = activePlayers(s);
@@ -842,9 +981,14 @@ function goBankrupt(s: GameState, p: Player, toCreditor: boolean) {
 		s.winnerId = left[0].id;
 		s.turn = null;
 		s.auction = null;
+		s.auctionQueue = [];
 		s.trades = [];
 		log(s, `${left[0].name} is the last cat standing! 🏆`);
 		return;
 	}
 	if (s.turn?.playerId === p.id && s.turn.phase !== "auction") nextTurn(s);
+	if (!s.auction) {
+		const next = s.auctionQueue.shift();
+		if (next !== undefined && s.turn) openAuction(s, next, now, s.turn.phase);
+	}
 }

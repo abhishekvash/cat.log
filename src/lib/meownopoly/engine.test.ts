@@ -243,6 +243,7 @@ describe("buying and rent", () => {
 describe("auctions", () => {
 	it("runs on a reset clock and sells to the top bidder", () => {
 		let s = game(3);
+		s.rules.auctions = true;
 		s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
 		s = run(s, 1, { type: "decline" }, ctx(undefined, 1000));
 		expect(s.turn?.phase).toBe("auction");
@@ -265,6 +266,7 @@ describe("auctions", () => {
 
 	it("leaves the street with the bank when nobody bids", () => {
 		let s = game();
+		s.rules.auctions = true;
 		s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
 		s = run(s, 1, { type: "decline" }, ctx(undefined, 0));
 		s = must(tick(s, ctx(undefined, 60_000)));
@@ -424,6 +426,10 @@ describe("bankruptcy", () => {
 		own(s, 1, 1, 3);
 		s.holdings[1].buildings = 1;
 		s.bank.boxes = 31;
+		Object.assign(p(s, 1), {
+			fish: -500,
+			debts: [{ to: null, amount: 500, fee: false }],
+		});
 		s = run(s, 1, { type: "declareBankruptcy" });
 		expect(p(s, 1).bankrupt).toBe(true);
 		expect(s.holdings[1]).toBeUndefined();
@@ -517,10 +523,10 @@ describe("host controls", () => {
 	it("removes a player as if they went bankrupt to the bank", () => {
 		let s = game(3);
 		own(s, 1, 1);
-		s = must(removePlayer(s, 1));
+		s = must(removePlayer(s, 1, ctx()));
 		expect(p(s, 1).bankrupt).toBe(true);
 		expect(s.holdings[1]).toBeUndefined();
 		expect(s.turn?.playerId).toBe(2);
-		expect(removePlayer(s, 1)).toMatchObject({ ok: false });
+		expect(removePlayer(s, 1, ctx())).toMatchObject({ ok: false });
 	});
 });

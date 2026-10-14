@@ -99,3 +99,17 @@ export function unmortgageBlocker(
 		return "Not enough fish 🐟";
 	return null;
 }
+
+export function sellStreetBlocker(
+	s: GameState,
+	playerId: number,
+	index: number,
+): string | null {
+	const found = owned(s, playerId, index);
+	if (typeof found === "string") return found;
+	const { space, holding } = found;
+	if (holding.mortgaged) return "Lift the mortgage first.";
+	if (space.kind === "street" && groupHasBuildings(s, space.group))
+		return "Sell the buildings in this group first.";
+	return null;
+}

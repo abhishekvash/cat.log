@@ -1,11 +1,16 @@
 import { Label } from "#/components/ui/label";
 import { Switch } from "#/components/ui/switch";
-import { FOOD_BOWL_PAY } from "#/lib/monopawly/board";
-import type { HouseRules as Rules } from "#/lib/monopawly/types";
+import { FOOD_BOWL_PAY } from "#/lib/meownopoly/board";
+import type { HouseRules as Rules } from "#/lib/meownopoly/types";
 import { withFish } from "./tile-art";
-import { useMonopawlyRoom } from "./use-game";
+import { useMeownopolyRoom } from "./use-game";
 
 const RULES: { key: keyof Rules; label: string; hint: string }[] = [
+	{
+		key: "auctions",
+		label: "Auctions",
+		hint: "A street someone passes on goes to the highest bidder instead of staying with the bank.",
+	},
 	{
 		key: "napSpotJackpot",
 		label: "Nap Spot jackpot",
@@ -23,9 +28,9 @@ const RULES: { key: keyof Rules; label: string; hint: string }[] = [
 	},
 ];
 
-/** Monopawly's house rules in the lobby. Only the host can flip them. */
+/** Meownopoly's house rules in the lobby. Only the host can flip them. */
 export function HouseRules() {
-	const { room, isHost, live, act } = useMonopawlyRoom();
+	const { room, isHost, live, act } = useMeownopolyRoom();
 	return (
 		<ul className="space-y-1">
 			{RULES.map((rule) => {

@@ -21,19 +21,50 @@ const stripes = ({ fur: base, accent: stripe }: (typeof COATS)[Cat]) => ({
 	),
 });
 
-const tufts = ({ fur: base, accent: tuft }: (typeof COATS)[Cat]) => ({
-	width: 12,
-	height: 10,
+/**
+ * Short strands of differing length, each with a slight curl and its own
+ * lean, so a coat reads as fur rather than scales or rain. [x, y, length,
+ * angle in degrees, curl, opacity], in a 24×18 tile.
+ */
+const STRANDS: [number, number, number, number, number, number][] = [
+	[1.5, 6, 4, -75, 1.2, 0.85],
+	[4, 15, 6.5, -58, -1.5, 0.65],
+	[7.5, 8, 2.5, -95, 0.8, 0.5],
+	[9, 17, 3.5, -70, 1, 0.8],
+	[11.5, 11, 5.5, -62, 1.4, 0.9],
+	[13, 4.5, 3, -82, -1, 0.6],
+	[16, 16.5, 7, -66, -1.8, 0.75],
+	[17.5, 7, 4.5, -54, 1.2, 0.55],
+	[20.5, 12, 3, -88, 0.9, 0.8],
+	[22.5, 5, 5, -68, -1.2, 0.7],
+	[5.5, 2.5, 2, -72, 0.6, 0.45],
+];
+
+const strands = (base: string, strand: string) => ({
+	width: 24,
+	height: 18,
 	body: (
 		<>
-			<rect width="12" height="10" fill={base} />
-			<path
-				d="M1 7 Q3 3 5 7 M7 4 Q9 0 11 4"
-				fill="none"
-				stroke={tuft}
-				strokeWidth={1.3}
-				strokeLinecap="round"
-			/>
+			<rect width="24" height="18" fill={base} />
+			{STRANDS.map(([x, y, length, angle, curl, opacity]) => {
+				const rad = (angle * Math.PI) / 180;
+				const dx = length * Math.cos(rad);
+				const dy = length * Math.sin(rad);
+				// Bend the middle sideways by `curl` for a little wave.
+				const cx = x + dx / 2 - Math.sin(rad) * curl;
+				const cy = y + dy / 2 + Math.cos(rad) * curl;
+				return (
+					<path
+						key={`${x}-${y}`}
+						d={`M${x} ${y} Q${cx} ${cy} ${x + dx} ${y + dy}`}
+						fill="none"
+						stroke={strand}
+						strokeOpacity={opacity}
+						strokeWidth={0.9}
+						strokeLinecap="round"
+					/>
+				);
+			})}
 		</>
 	),
 });
@@ -44,16 +75,32 @@ const PATTERNS: Record<
 > = {
 	grey: stripes(COATS.grey),
 	ginger: stripes(COATS.ginger),
-	white: tufts(COATS.white),
-	black: tufts(COATS.black),
+	white: strands(COATS.white.fur, COATS.white.accent),
+	// Grey strands on black, like light catching the coat.
+	black: strands(COATS.black.fur, COATS.grey.accent),
+	// Uneven patches of ginger and black, big and small, on white.
 	calico: {
-		width: 34,
-		height: 12,
+		width: 48,
+		height: 24,
 		body: (
 			<>
-				<rect width="34" height="12" fill={COATS.calico.fur} />
-				<ellipse cx="8" cy="6" rx="7" ry="5" fill={COATS.ginger.fur} />
-				<ellipse cx="25" cy="5" rx="5.5" ry="4" fill={COATS.black.fur} />
+				<rect width="48" height="24" fill={COATS.calico.fur} />
+				<path
+					d="M3 5 C8 0 16 1 19 6 C22 11 17 16 11 15 C6 14 4 17 2 13 C0 10 0 8 3 5Z"
+					fill={COATS.ginger.fur}
+				/>
+				<path
+					d="M27 11 C30 7 36 6 40 9 C43 12 41 15 38 17 C35 20 29 21 27 18 C25 16 25 13 27 11Z"
+					fill={COATS.black.fur}
+				/>
+				<path
+					d="M38 1 C41 0 45 1 46 3 C47 5 44 6 42 6 C40 7 37 5 38 1Z"
+					fill={COATS.black.fur}
+				/>
+				<path
+					d="M13 19 C16 17 21 18 22 20 C23 22 19 23 16 23 C13 23 11 21 13 19Z"
+					fill={COATS.ginger.fur}
+				/>
 			</>
 		),
 	},

@@ -9,8 +9,10 @@ import {
 	type Space,
 	UTILITY_MULTIPLIER,
 	VET_FEE,
-} from "#/lib/monopawly/board";
-import { playerById } from "#/lib/monopawly/selectors";
+} from "#/lib/meownopoly/board";
+import { playerById, rentQuote } from "#/lib/meownopoly/selectors";
+import type { GameState } from "#/lib/meownopoly/types";
+import { cn } from "#/lib/utils";
 import { groupStyle, PlayerChip } from "./bits";
 import { StreetActions } from "./streets-panel";
 import { FishIcon, withFish } from "./tile-art";
@@ -36,7 +38,9 @@ export function SpaceCard({ index }: { index: number }) {
 	const space = BOARD[index];
 	const holding = state.holdings[index];
 	const owner = playerById(state, holding?.owner);
-	const rows: [string, number][] =
+	const quote = rentQuote(state, index);
+	const dice = (times: number) => `${times}× the dice`;
+	const rows: [string, number | string][] =
 		space.kind === "street"
 			? [
 					["Rent", space.rent[0]],
@@ -57,7 +61,12 @@ export function SpaceCard({ index }: { index: number }) {
 								: `With ${i + 1} cat flaps`,
 						flapRent(i + 1),
 					])
-				: [];
+				: space.kind === "utility"
+					? [
+							["Rent with one utility", dice(UTILITY_MULTIPLIER.one)],
+							["With both", dice(UTILITY_MULTIPLIER.both)],
+						]
+					: [];
 
 	return (
 		<div className="flex flex-col items-center gap-3 text-center text-sm">
@@ -80,26 +89,36 @@ export function SpaceCard({ index }: { index: number }) {
 				<div className="w-full">
 					<Table>
 						<TableBody>
-							{rows.map(([label, value]) => (
-								<TableRow key={label} className="hover:bg-transparent">
-									<TableCell className="h-8 py-1 text-left text-muted-foreground">
-										{label}
-									</TableCell>
-									<TableCell className="h-8 py-1 text-right tabular-nums">
-										{value}
-										<FishIcon />
-									</TableCell>
-								</TableRow>
-							))}
+							{rows.map(([label, value], row) => {
+								const active =
+									!!quote && !holding?.mortgaged && quote.row === row;
+								return (
+									<TableRow
+										key={label}
+										aria-current={active || undefined}
+										className={cn(
+											"hover:bg-transparent",
+											active &&
+												"bg-primary/15 font-semibold hover:bg-primary/15 [&>td]:text-foreground",
+										)}
+									>
+										<TableCell className="h-8 py-1 text-left text-muted-foreground">
+											{label}
+										</TableCell>
+										<TableCell className="h-8 py-1 text-right tabular-nums">
+											{value}
+											{typeof value === "number" && <FishIcon />}
+										</TableCell>
+									</TableRow>
+								);
+							})}
 						</TableBody>
 					</Table>
 				</div>
 			)}
 			{space.kind === "utility" && (
 				<p className="max-w-measure-narrow text-sm text-muted-foreground">
-					Rent is {UTILITY_MULTIPLIER.one} times the dice, or{" "}
-					{UTILITY_MULTIPLIER.both} times if one cat owns both Laser Pointer Co.
-					and Catnip Works.
+					"Both" means one cat owns Laser Pointer Co. and Catnip Works.
 				</p>
 			)}
 			{isOwnable(space) && (
@@ -110,14 +129,17 @@ export function SpaceCard({ index }: { index: number }) {
 			)}
 			{!isOwnable(space) && (
 				<p className="max-w-measure-narrow text-muted-foreground">
-					{withFish(describe(space.kind))}
+					{withFish(describe(space.kind, state))}
 				</p>
 			)}
 		</div>
 	);
 }
 
-function describe(kind: Exclude<Space["kind"], "street" | "flap" | "utility">) {
+function describe(
+	kind: Exclude<Space["kind"], "street" | "flap" | "utility">,
+	state: GameState,
+) {
 	switch (kind) {
 		case "foodBowl":
 			return `Collect ${FOOD_BOWL_PAY} 🐟 every time you pass the Food Bowl.`;
@@ -132,6 +154,8 @@ function describe(kind: Exclude<Space["kind"], "street" | "flap" | "utility">) {
 		case "caught":
 			return "Caught on the counter! Go straight to the Vet without passing the Food Bowl.";
 		case "napSpot":
-			return "A free place to nap.";
+			return state.rules.napSpotJackpot
+				? `Taxes and fees pile up here. Land on it to take the jackpot, now ${state.jackpot} 🐟.`
+				: "A free place to nap.";
 	}
 }

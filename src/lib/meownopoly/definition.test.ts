@@ -10,10 +10,10 @@ import {
 	wake,
 } from "#/lib/multiplayer/room";
 import { seededRng } from "#/lib/rng";
-import { monopawly } from "./definition";
+import { meownopoly } from "./definition";
 import type { GameState, HouseRules, Move } from "./types";
 
-// Monopawly played through the shared room, end to end.
+// Meownopoly played through the shared room, end to end.
 
 type MonoRoom = Room<GameState, HouseRules>;
 const ctx = (now: number) => ({ rng: seededRng(3), now });
@@ -24,15 +24,15 @@ function run(
 	intent: Intent<Move, HouseRules>,
 	now = 0,
 ) {
-	const r = act(monopawly, room, actor, intent, ctx(now));
+	const r = act(meownopoly, room, actor, intent, ctx(now));
 	if (!r.ok) throw new Error(r.error);
 	return r.room;
 }
 
 function started() {
-	let room = newRoom(monopawly, 0);
+	let room = newRoom(meownopoly, 0);
 	for (const name of ["Mochi", "Tux"]) {
-		const r = join(monopawly, room, name, 0);
+		const r = join(meownopoly, room, name, 0);
 		if (!r.ok) throw new Error(r.error);
 		room = r.room;
 	}
@@ -41,12 +41,12 @@ function started() {
 		rules: { napSpotJackpot: true, doubleFoodBowl: "yes" } as never,
 	});
 	room = run(room, 1, { type: "start" });
-	return refresh(monopawly, room, new Set([1, 2]), 0);
+	return refresh(meownopoly, room, new Set([1, 2]), 0);
 }
 
 const current = (room: MonoRoom) => room.state.game?.turn?.playerId as number;
 
-describe("monopawly in a room", () => {
+describe("meownopoly in a room", () => {
 	it("starts with the host's cleaned-up house rules", () => {
 		const room = started();
 		expect(room.state.phase).toBe("playing");
@@ -54,6 +54,7 @@ describe("monopawly in a room", () => {
 			napSpotJackpot: true,
 			doubleFoodBowl: true,
 			noRentAtVet: false,
+			auctions: false,
 		});
 		expect(room.state.game?.players.map((p) => p.name).sort()).toEqual([
 			"Mochi",
@@ -66,6 +67,13 @@ describe("monopawly in a room", () => {
 		const first = current(room);
 		room = run(room, first, { type: "move", move: { type: "roll" } });
 		expect(room.state.game?.rolls).toBe(1);
+		// Only a cat in debt can go bankrupt.
+		const debtor = room.state.game?.players.find((p) => p.id === first);
+		if (!debtor) throw new Error("no current player");
+		Object.assign(debtor, {
+			fish: -10,
+			debts: [{ to: null, amount: 10, fee: false }],
+		});
 		room = run(room, first, {
 			type: "move",
 			move: { type: "declareBankruptcy" },
@@ -86,10 +94,18 @@ describe("monopawly in a room", () => {
 				...(game.turn as NonNullable<GameState["turn"]>),
 				phase: "auction",
 			},
-			auction: { space: 1, highBid: 30, highBidder: bidder, endsAt: 5000 },
+			auction: {
+				space: 1,
+				highBid: 30,
+				highBidder: bidder,
+				bids: { [bidder as number]: 30 },
+				endsAt: 5000,
+				clock: 6000,
+				resume: "postRoll",
+			},
 		};
-		expect(nextWake(monopawly, room)).toBe(5000);
-		room = wake(monopawly, room, ctx(5000));
+		expect(nextWake(meownopoly, room)).toBe(5000);
+		room = wake(meownopoly, room, ctx(5000));
 		expect(room.state.game?.auction).toBeNull();
 		expect(room.state.game?.holdings[1]?.owner).toBe(bidder);
 	});
@@ -98,8 +114,8 @@ describe("monopawly in a room", () => {
 		let room = started();
 		const host = room.state.hostId as number;
 		const away = host === 1 ? 2 : 1;
-		room = refresh(monopawly, room, new Set([host]), 0);
-		room = refresh(monopawly, room, new Set([host]), 3 * 60_000);
+		room = refresh(meownopoly, room, new Set([host]), 0);
+		room = refresh(meownopoly, room, new Set([host]), 3 * 60_000);
 		room = run(room, host, { type: "hostRemove", seat: away }, 3 * 60_000);
 		expect(room.state.phase).toBe("finished");
 		expect(room.state.game?.winnerId).toBe(host);

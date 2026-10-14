@@ -1,10 +1,16 @@
+import { CatIcon, PackageIcon } from "@phosphor-icons/react";
 import { type CSSProperties, useEffect, useState } from "react";
 import { CatHead } from "#/components/cats/cat-face";
 import { ConfirmAction } from "#/components/confirm-action";
 import { Button } from "#/components/ui/button";
-import { type GroupId, groupColor, type Space } from "#/lib/monopawly/board";
-import { soleCreditor } from "#/lib/monopawly/selectors";
-import type { Player } from "#/lib/monopawly/types";
+import {
+	CAT_HOUSE,
+	type GroupId,
+	groupColor,
+	type Space,
+} from "#/lib/meownopoly/board";
+import { soleCreditor } from "#/lib/meownopoly/selectors";
+import type { Player } from "#/lib/meownopoly/types";
 import { cn } from "#/lib/utils";
 import { FishIcon } from "./tile-art";
 import { useGame } from "./use-game";
@@ -79,7 +85,7 @@ export function GroupDot({
 	);
 }
 
-/** Going bankrupt on purpose, with an "are you sure?" first. */
+/** Going bankrupt, with an "are you sure?" first. Only a cat in debt can. */
 export function BankruptButton({
 	label,
 	variant,
@@ -90,7 +96,8 @@ export function BankruptButton({
 	className?: string;
 }) {
 	const { state, me, move } = useGame();
-	const creditor = me ? soleCreditor(state, me) : undefined;
+	if (!me || me.fish >= 0) return null;
+	const creditor = soleCreditor(state, me);
 	return (
 		<ConfirmAction
 			title="Go bankrupt?"
@@ -102,5 +109,39 @@ export function BankruptButton({
 				{label}
 			</Button>
 		</ConfirmAction>
+	);
+}
+
+/**
+ * A street's buildings as plain icons sized by the text around them: one
+ * cardboard box per box, or one cat for a cat house. Reads at a glance, even on a tile.
+ */
+export function BuildingIcons({
+	count,
+	className,
+}: {
+	count: number;
+	className?: string;
+}) {
+	if (count === 0) return null;
+	const label =
+		count === CAT_HOUSE
+			? "a cat house"
+			: `${count} box${count > 1 ? "es" : ""}`;
+	return (
+		<span
+			role="img"
+			aria-label={label}
+			className={cn("inline-flex items-center gap-px", className)}
+		>
+			{count === CAT_HOUSE ? (
+				<CatIcon weight="fill" className="size-[1.25em] text-primary" />
+			) : (
+				Array.from({ length: count }, (_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: identical icons, fixed count
+					<PackageIcon key={i} weight="fill" className="size-[1em]" />
+				))
+			)}
+		</span>
 	);
 }

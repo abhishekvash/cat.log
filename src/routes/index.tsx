@@ -5,19 +5,19 @@ import { Wordmark } from "#/components/catalog/wordmark";
 import { CatEars } from "#/components/cats/cat-ears";
 import { CatHead, SleepyCat } from "#/components/cats/cat-face";
 import { Pin } from "#/components/mastermind/pins";
-import { groupStyle } from "#/components/monopawly/bits";
-import { Fur } from "#/components/monopawly/fur";
-import { Art, FishIcon } from "#/components/monopawly/tile-art";
+import { groupStyle } from "#/components/meownopoly/bits";
+import { Fur } from "#/components/meownopoly/fur";
+import { Art, FishIcon } from "#/components/meownopoly/tile-art";
 import { Badge } from "#/components/ui/badge";
 import { Card } from "#/components/ui/card";
 import { type CatalogGame, GAMES } from "#/lib/catalog";
 import { CATS, type Cat } from "#/lib/cats";
 import { CODE_COLORS } from "#/lib/mastermind";
-import type { GroupId } from "#/lib/monopawly/board";
+import type { GroupId } from "#/lib/meownopoly/board";
 import { jsonLd, SITE_NAME, SITE_URL, seo } from "#/lib/seo";
 
 const DESCRIPTION =
-	"cat.log is a little catalog of cozy cat games to play together, free in your browser. Pass one iPad around in Meowstermind, or play Monopawly with up to six cats, each on their own device.";
+	"cat.log is a little catalog of cozy cat games to play together, free in your browser. Pass one iPad around in Meowstermind, or play Meownopoly with up to six cats, each on their own device.";
 
 export const Route = createFileRoute("/")({
 	head: () => ({
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/")({
 /** A tiny, live-looking slice of each game for its tile. */
 const PREVIEWS: Record<CatalogGame["path"], ReactNode> = {
 	"/meowstermind": <MeowstermindPreview />,
-	"/monopawly": <MonopawlyPreview />,
+	"/meownopoly": <MeownopolyPreview />,
 };
 
 function Catalog() {
@@ -167,7 +167,7 @@ const STREETS: {
 ];
 
 /** A few streets off the board, some claimed in their owner's fur, and the cats. */
-function MonopawlyPreview() {
+function MeownopolyPreview() {
 	return (
 		<div className="flex flex-col items-center gap-3">
 			<div className="flex gap-px overflow-hidden rounded-md border bg-border">

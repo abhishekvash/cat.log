@@ -12,15 +12,19 @@
   ],
   // One Durable Object class per online game, one room per object (see
   // src/server/multiplayer/room-server.ts). partyserver serves each binding as a
-  // party named after it: MonopawlyRoom is /parties/monopawly-room/<code>.
+  // party named after it: MeownopolyRoom is /parties/meownopoly-room/<code>.
   "durable_objects": {
-    "bindings": [{ "name": "MonopawlyRoom", "class_name": "MonopawlyRoom" }]
+    "bindings": [{ "name": "MeownopolyRoom", "class_name": "MeownopolyRoom" }]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["GameRoom"] },
     {
       "tag": "v2",
       "renamed_classes": [{ "from": "GameRoom", "to": "MonopawlyRoom" }]
+    },
+    {
+      "tag": "v3",
+      "renamed_classes": [{ "from": "MonopawlyRoom", "to": "MeownopolyRoom" }]
     }
   ]
 }

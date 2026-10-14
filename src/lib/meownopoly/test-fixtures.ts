@@ -4,7 +4,7 @@ import { type Rng, seededRng } from "#/lib/rng";
 import { reduce, start } from "./engine";
 import { DEFAULT_HOUSE_RULES, type GameState, type Move } from "./types";
 
-/** Shared fixtures for the Monopawly engine tests. */
+/** Shared fixtures for the Meownopoly engine tests. */
 
 /** Dice come out in the order given; anything else falls back to a seed. */
 export function dice(...rolls: number[]): Rng {

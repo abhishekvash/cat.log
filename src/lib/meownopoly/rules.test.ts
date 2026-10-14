@@ -5,6 +5,7 @@ import {
 	buildBlocker,
 	mortgageBlocker,
 	sellBlocker,
+	sellStreetBlocker,
 	unmortgageBlocker,
 } from "./rules";
 import { holdingsOf, lastRollId } from "./selectors";
@@ -14,6 +15,7 @@ import type { GameState } from "./types";
 const BLOCKERS = {
 	build: buildBlocker,
 	sell: sellBlocker,
+	sellStreet: sellStreetBlocker,
 	mortgage: mortgageBlocker,
 	unmortgage: unmortgageBlocker,
 } as const;
@@ -34,7 +36,15 @@ function messy(): GameState {
 describe("rules", () => {
 	it("agree with the engine on every space, player and move", () => {
 		const base = messy();
-		const auction = { space: 39, highBid: 0, highBidder: null, endsAt: 0 };
+		const auction = {
+			space: 39,
+			highBid: 0,
+			highBidder: null,
+			bids: {},
+			endsAt: 0,
+			clock: 0,
+			resume: "postRoll" as const,
+		};
 		for (const state of [base, { ...base, auction }]) {
 			for (const player of [1, 2, 3])
 				for (const [type, blocker] of Object.entries(BLOCKERS))

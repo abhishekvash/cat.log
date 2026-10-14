@@ -6,10 +6,12 @@ import { SeatList } from "#/components/multiplayer/seat-list";
 import { Button } from "#/components/ui/button";
 import { ScrollArea } from "#/components/ui/scroll-area";
 import { Separator } from "#/components/ui/separator";
-import { MONOPAWLY } from "#/lib/catalog";
-import { holdingsOf, playerById } from "#/lib/monopawly/selectors";
+import { MEOWNOPOLY } from "#/lib/catalog";
+import { holdingsOf, playerById } from "#/lib/meownopoly/selectors";
+import { cn } from "#/lib/utils";
 import { BankruptButton, Fish } from "./bits";
 import { FurSwatch } from "./fur";
+import { usePresentation } from "./presentation";
 import { PropertyList } from "./streets-panel";
 import { newDraft, type TradeDraft, TradeList } from "./trade-panel";
 import { useGame } from "./use-game";
@@ -23,10 +25,11 @@ export function SidePanel({
 	onCompose: (draft: TradeDraft) => void;
 }) {
 	const { code, state, me } = useGame();
+	const deltas = usePresentation()?.deltas ?? {};
 	return (
 		<aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 landscape:max-w-sm">
 			<div className="flex items-center justify-between gap-2 text-sm">
-				<GameBreadcrumb to={MONOPAWLY.path}>{MONOPAWLY.title}</GameBreadcrumb>
+				<GameBreadcrumb to={MEOWNOPOLY.path}>{MEOWNOPOLY.title}</GameBreadcrumb>
 				<span className="text-muted-foreground">Room {code}</span>
 			</div>
 
@@ -41,9 +44,24 @@ export function SidePanel({
 				)}
 				extra={(seat) => {
 					const player = playerById(state, seat.id);
+					const delta = deltas[seat.id];
 					return (
 						player && (
-							<Fish amount={player.fish} className="font-display text-sm" />
+							<span className="inline-flex items-center gap-1.5">
+								{delta && (
+									<span
+										key={delta.key}
+										className={cn(
+											"fish-delta text-xs font-semibold tabular-nums",
+											delta.amount > 0 ? "text-primary" : "text-destructive",
+										)}
+									>
+										{delta.amount > 0 ? "+" : "−"}
+										{Math.abs(delta.amount)}
+									</span>
+								)}
+								<Fish amount={player.fish} className="font-display text-sm" />
+							</span>
 						)
 					);
 				}}

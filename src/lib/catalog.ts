@@ -1,5 +1,5 @@
-import { GAME_NAME } from "#/lib/monopawly/board";
-import { MAX_PLAYERS, MIN_PLAYERS } from "#/lib/monopawly/types";
+import { GAME_NAME } from "#/lib/meownopoly/board";
+import { MAX_PLAYERS, MIN_PLAYERS } from "#/lib/meownopoly/types";
 
 /**
  * Every game on cat.log, in one place: the landing tiles, each game's intro
@@ -8,7 +8,7 @@ import { MAX_PLAYERS, MIN_PLAYERS } from "#/lib/monopawly/types";
  * public/sitemap.xml.
  */
 export interface CatalogGame {
-	path: "/meowstermind" | "/monopawly";
+	path: "/meowstermind" | "/meownopoly";
 	title: string;
 	/** The title split for the two-tone heading: plain, then highlighted. */
 	titleParts: [string, string];
@@ -37,10 +37,10 @@ export const MEOWSTERMIND: CatalogGame = {
 	genre: ["Puzzle", "Board game", "Code-breaking"],
 };
 
-export const MONOPAWLY: CatalogGame = {
-	path: "/monopawly",
+export const MEOWNOPOLY: CatalogGame = {
+	path: "/meownopoly",
 	title: GAME_NAME,
-	titleParts: ["Mono", "pawly"],
+	titleParts: ["Meow", "nopoly"],
 	pageTitle: `${GAME_NAME}: a cozy online property game with cats · cat.log`,
 	description: `${GAME_NAME} is a free online property game for ${MIN_PLAYERS} to ${MAX_PLAYERS} cats. Buy streets in a cat town, build cardboard boxes and cat houses, trade, and be the last cat standing. Private rooms, no sign-up.`,
 	blurb:
@@ -50,4 +50,4 @@ export const MONOPAWLY: CatalogGame = {
 	genre: ["Board game", "Trading", "Strategy"],
 };
 
-export const GAMES: CatalogGame[] = [MEOWSTERMIND, MONOPAWLY];
+export const GAMES: CatalogGame[] = [MEOWSTERMIND, MEOWNOPOLY];

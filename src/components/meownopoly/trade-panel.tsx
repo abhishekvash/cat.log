@@ -15,13 +15,13 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "#/components/ui/tooltip";
-import { BOARD, isOwnable } from "#/lib/monopawly/board";
+import { BOARD, isOwnable } from "#/lib/meownopoly/board";
 import {
 	activePlayers,
 	holdingsOf,
 	playerById,
-} from "#/lib/monopawly/selectors";
-import type { Offer, Player, Trade } from "#/lib/monopawly/types";
+} from "#/lib/meownopoly/selectors";
+import type { Offer, Player, Trade } from "#/lib/meownopoly/types";
 import { GroupDot, PlayerChip } from "./bits";
 import { FishIcon } from "./tile-art";
 import { useGame } from "./use-game";

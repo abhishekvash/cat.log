@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { CATS, type Cat, PAW_COLORS, type PawColor } from "#/lib/cats";
-import { CatHead, PawToken, Sticker } from "./cat-face";
+import { CATS, type Cat } from "#/lib/cats";
+import { CatHead } from "./cat-face";
 
 const PIECES = 44;
 const GRAVITY = 700; // px/s²
@@ -13,8 +13,7 @@ const between = (min: number, max: number) => min + Math.random() * (max - min);
 
 interface Piece {
 	id: number;
-	/** A cat face, or (every sixth piece) a paw. */
-	look: { cat: Cat } | { paw: PawColor };
+	cat: Cat;
 	size: string;
 	// Physics state, in px and degrees relative to the burst origin.
 	x: number;
@@ -35,12 +34,10 @@ function makePieces(): Piece[] {
 		// Mostly upward and outward, like a popped confetti cannon.
 		const angle = between(-Math.PI * 0.95, -Math.PI * 0.05);
 		const speed = between(900, 2600);
-		// Every sixth piece is a paw so the burst isn't only faces.
-		const paw = id % 6 === 5;
 		return {
 			id,
-			look: paw ? { paw: pick(PAW_COLORS) } : { cat: pick(CATS) },
-			size: `${between(paw ? 1.25 : 1.75, paw ? 2 : 3.25).toFixed(2)}rem`,
+			cat: pick(CATS),
+			size: `${between(1.75, 3.25).toFixed(2)}rem`,
 			x: 0,
 			y: 0,
 			vx: Math.cos(angle) * speed,
@@ -56,7 +53,7 @@ function makePieces(): Piece[] {
 }
 
 /**
- * Exploding kittens: cat faces (and a few paws) burst from the middle of the
+ * Exploding kittens: cat faces burst from the middle of the
  * screen, slow down against the air and then flutter down like confetti.
  * Positions are simulated per frame and written straight to the DOM, so React
  * only renders once. Removes itself when done; skipped under reduced motion.
@@ -134,13 +131,7 @@ export function KittenBurst({ onDone }: { onDone: () => void }) {
 					}}
 					className="absolute top-0 left-0 opacity-0 will-change-transform"
 				>
-					{"cat" in piece.look ? (
-						<CatHead cat={piece.look.cat} size={piece.size} />
-					) : (
-						<Sticker size={piece.size} className="rounded-full">
-							<PawToken color={piece.look.paw} />
-						</Sticker>
-					)}
+					<CatHead cat={piece.cat} size={piece.size} />
 				</span>
 			))}
 		</div>

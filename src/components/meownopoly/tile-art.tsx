@@ -4,7 +4,7 @@ import { COATS, CREAM, INK, PINK, STICKER } from "#/components/cats/palette";
 import { cn } from "#/lib/utils";
 
 /**
- * Monopawly's board art: chunky sticker SVGs drawn to match the cat heads
+ * Meownopoly's board art: chunky sticker SVGs drawn to match the cat heads
  * (near-black outline, Paw White sticker border, soft coat colours). Everything
  * lives in a 100×100 box.
  */

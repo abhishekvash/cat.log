@@ -1,7 +1,6 @@
 import { Button } from "#/components/ui/button";
-import { BOARD, isOwnable } from "#/lib/monopawly/board";
-import { playerById } from "#/lib/monopawly/selectors";
-import { AUCTION_CLOCK_MS } from "#/lib/monopawly/types";
+import { BOARD, isOwnable } from "#/lib/meownopoly/board";
+import { playerById } from "#/lib/meownopoly/selectors";
 import { useServerNow } from "./bits";
 import { SpaceTitle } from "./space-card";
 import { FishIcon, withFish } from "./tile-art";
@@ -23,7 +22,7 @@ export function AuctionPanel() {
 			<p className="text-overline">Auction</p>
 			<SpaceTitle index={auction.space} />
 			<div className="relative flex size-28 items-center justify-center">
-				<ClockRing fraction={Math.min(1, left / AUCTION_CLOCK_MS)} />
+				<ClockRing fraction={Math.min(1, left / auction.clock)} />
 				<div>
 					<p className="font-display text-2xl font-semibold tabular-nums">
 						{auction.highBid}

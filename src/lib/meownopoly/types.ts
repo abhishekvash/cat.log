@@ -3,7 +3,7 @@ import type { SeatId } from "#/lib/multiplayer/types";
 import type { Deck } from "./cards";
 
 /** Bump when `GameState` changes shape; rooms saved by another version end politely. */
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 export const MAX_PLAYERS = 6;
 export const MIN_PLAYERS = 2;
 export const LOG_LIMIT = 200;
@@ -18,12 +18,15 @@ export interface HouseRules {
 	doubleFoodBowl: boolean;
 	/** Owners at the Vet collect no rent. */
 	noRentAtVet: boolean;
+	/** Streets a player passes on (or a bankrupt leaves the bank) go to auction. */
+	auctions: boolean;
 }
 
 export const DEFAULT_HOUSE_RULES: HouseRules = {
 	napSpotJackpot: false,
 	doubleFoodBowl: false,
 	noRentAtVet: false,
+	auctions: false,
 };
 
 export interface Player {
@@ -77,7 +80,29 @@ export interface Auction {
 	space: number;
 	highBid: number;
 	highBidder: number | null;
+	/** Each bidder's best bid, so a runner-up can win if the top bidder drops out. */
+	bids: Record<number, number>;
 	endsAt: number;
+	/** How long the current clock runs, for the countdown ring. */
+	clock: number;
+	/** The turn phase to return to once it closes. */
+	resume: TurnPhase;
+}
+
+/** One leg of a move, for the board to animate: a walk tile by tile, or a jump. */
+export interface Step {
+	to: number;
+	kind: "walk" | "back" | "jump";
+	/** The card drawn on arrival, shown while the cat pauses there. */
+	card?: { deck: Deck; index: number };
+}
+
+/** How the last roll moved its player, leg by leg. Keyed by the roll it came from. */
+export interface MovePath {
+	roll: number;
+	playerId: number;
+	from: number;
+	steps: Step[];
 }
 
 export interface Offer {
@@ -118,6 +143,9 @@ export interface GameState {
 	/** Counts every roll, so each one has an id the dice animation can key on. */
 	rolls: number;
 	jackpot: number;
+	/** The bank's streets from a bankruptcy, waiting their turn at auction. */
+	auctionQueue: number[];
+	lastMove: MovePath | null;
 	bank: { boxes: number; houses: number };
 	winnerId: number | null;
 	log: LogEntry[];
@@ -135,6 +163,7 @@ export type Move =
 	// Any time
 	| { type: "build"; space: number }
 	| { type: "sell"; space: number }
+	| { type: "sellStreet"; space: number }
 	| { type: "mortgage"; space: number }
 	| { type: "unmortgage"; space: number }
 	| { type: "proposeTrade"; to: number; give: Offer; get: Offer }
