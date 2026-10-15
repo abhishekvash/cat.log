@@ -38,4 +38,6 @@ export const meownopoly: GameDefinition<GameState, Move, HouseRules> = {
 	removeSeat: removePlayer,
 	nextTimer: (state) => state.auction?.endsAt ?? null,
 	tick,
+	// The deck order is what gets drawn next; nobody gets to peek.
+	view: (state) => ({ ...state, decks: { zoomies: [], treatJar: [] } }),
 };
