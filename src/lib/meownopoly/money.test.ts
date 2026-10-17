@@ -239,7 +239,7 @@ describe("sets", () => {
 		s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
 		s = run(s, 1, { type: "buy" });
 		expect(s.log.at(-1)?.text).toBe(
-			"Mochi owns all of Alley! Rent doubles, and boxes can go up.",
+			"Mochi owns all of Alley! Rent doubles, and boxes can go up once all streets are unmortgaged.",
 		);
 	});
 });

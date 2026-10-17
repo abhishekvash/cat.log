@@ -18,7 +18,7 @@ export interface Card {
 }
 
 // Classic Chance.
-export const ZOOMIES: Card[] = [
+const ZOOMIES: Card[] = [
 	{
 		text: "Sprint all the way to Velvet Paw Park.",
 		effect: { type: "advance", to: 39 },
@@ -86,7 +86,7 @@ export const ZOOMIES: Card[] = [
 ];
 
 // Classic Community Chest.
-export const TREAT_JAR: Card[] = [
+const TREAT_JAR: Card[] = [
 	{
 		text: "Breakfast is served. Go to the Food Bowl.",
 		effect: { type: "advance", to: 0 },

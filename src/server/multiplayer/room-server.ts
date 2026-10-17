@@ -8,6 +8,7 @@ import {
 import {
 	type Acted,
 	act,
+	type Intent,
 	issueRejoin,
 	join,
 	newRoom,
@@ -84,72 +85,12 @@ export function createRoomServer<S, M, R, V>(def: GameDefinition<S, M, R, V>) {
 			switch (message.type) {
 				case "hello":
 					return this.hello(connection, message, now);
-				case "join": {
-					if (!this.room) return this.gone(connection);
-					if (connection.state?.seat != null) return;
-					const result = join(def, this.room, String(message.name ?? ""), now);
-					if (!result.ok)
-						return this.send(connection, {
-							type: "rejected",
-							reason: result.error,
-						});
-					this.room = result.room;
-					connection.setState({ seat: result.seat, token: result.token });
-					this.send(connection, {
-						type: "welcome",
-						seat: result.seat,
-						token: result.token,
-					});
-					return this.commit(now);
-				}
-				case "intent": {
-					const seat = connection.state?.seat;
-					if (!this.room) return this.gone(connection);
-					if (seat == null) {
-						return this.send(connection, {
-							type: "rejected",
-							reason: "You're watching this game.",
-						});
-					}
-					let result: Acted<S, R>;
-					try {
-						result = act(def, this.room, seat, message.intent, {
-							rng: cryptoRng,
-							now,
-						});
-					} catch (error) {
-						// A bug in the rules must never corrupt the room: keep the last good state.
-						console.error(`${def.id}: intent failed`, error);
-						result = {
-							ok: false,
-							error: "Something went wrong. Try that again?",
-						};
-					}
-					if (!result.ok)
-						return this.send(connection, {
-							type: "rejected",
-							reason: result.error,
-						});
-					this.room = result.room;
-					return this.commit(now);
-				}
-				case "issueRejoin": {
-					const seat = connection.state?.seat;
-					if (!this.room || seat == null) return;
-					const issued = issueRejoin(def, this.room, seat, message.seat);
-					if (!issued.ok)
-						return this.send(connection, {
-							type: "rejected",
-							reason: issued.error,
-						});
-					this.room = issued.room;
-					await this.save();
-					return this.send(connection, {
-						type: "rejoinLink",
-						seat: message.seat,
-						token: issued.token,
-					});
-				}
+				case "join":
+					return this.seat(connection, message.name, now);
+				case "intent":
+					return this.play(connection, message.intent, now);
+				case "issueRejoin":
+					return this.rejoinLink(connection, message.seat);
 			}
 		}
 
@@ -194,6 +135,80 @@ export function createRoomServer<S, M, R, V>(def: GameDefinition<S, M, R, V>) {
 			if (this.room.state.seats.length === 0)
 				return this.sendState(connection, now);
 			return this.commit(now);
+		}
+
+		private async seat(
+			connection: Connection<Seat>,
+			name: unknown,
+			now: number,
+		) {
+			if (!this.room) return this.gone(connection);
+			if (connection.state?.seat != null) return;
+			const result = join(def, this.room, String(name ?? ""), now);
+			if (!result.ok)
+				return this.send(connection, {
+					type: "rejected",
+					reason: result.error,
+				});
+			this.room = result.room;
+			connection.setState({ seat: result.seat, token: result.token });
+			this.send(connection, {
+				type: "welcome",
+				seat: result.seat,
+				token: result.token,
+			});
+			return this.commit(now);
+		}
+
+		private async play(
+			connection: Connection<Seat>,
+			intent: Intent<M, R>,
+			now: number,
+		) {
+			const seat = connection.state?.seat;
+			if (!this.room) return this.gone(connection);
+			if (seat == null) {
+				return this.send(connection, {
+					type: "rejected",
+					reason: "You're watching this game.",
+				});
+			}
+			let result: Acted<S, R>;
+			try {
+				result = act(def, this.room, seat, intent, { rng: cryptoRng, now });
+			} catch (error) {
+				// A bug in the rules must never corrupt the room: keep the last good state.
+				console.error(`${def.id}: intent failed`, error);
+				result = {
+					ok: false,
+					error: "Something went wrong. Try that again?",
+				};
+			}
+			if (!result.ok)
+				return this.send(connection, {
+					type: "rejected",
+					reason: result.error,
+				});
+			this.room = result.room;
+			return this.commit(now);
+		}
+
+		private async rejoinLink(connection: Connection<Seat>, target: SeatId) {
+			const seat = connection.state?.seat;
+			if (!this.room || seat == null) return;
+			const issued = issueRejoin(def, this.room, seat, target);
+			if (!issued.ok)
+				return this.send(connection, {
+					type: "rejected",
+					reason: issued.error,
+				});
+			this.room = issued.room;
+			await this.save();
+			return this.send(connection, {
+				type: "rejoinLink",
+				seat: target,
+				token: issued.token,
+			});
 		}
 
 		async onClose(connection: Connection<Seat>) {

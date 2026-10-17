@@ -22,7 +22,7 @@ import {
 } from "./presentation-state";
 import { useRollAge } from "./roll-clock";
 
-export { type Motion, STEP_MS } from "./presentation-state";
+export { STEP_MS } from "./presentation-state";
 
 type View = Pick<Presented, "card" | "deltas" | "freshSets">;
 const Presentation = createContext<View | null>(null);

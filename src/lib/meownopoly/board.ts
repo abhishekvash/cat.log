@@ -135,10 +135,10 @@ export const groupName = (group: GroupId) =>
 	GROUPS.find((g) => g.id === group)?.name ?? "a group";
 
 /** Rent for landing on a cat flap when its owner holds `owned` of them. */
-export const flapRent = (owned: number) => 25 * 2 ** (owned - 1);
+const flapRent = (owned: number) => 25 * 2 ** (owned - 1);
 
 /** Utility rent is the dice times this, depending on how many one cat owns. */
-export const UTILITY_MULTIPLIER = { one: 4, both: 10 } as const;
+const UTILITY_MULTIPLIER = { one: 4, both: 10 } as const;
 
 export interface RentRow {
 	label: string;

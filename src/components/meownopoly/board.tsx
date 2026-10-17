@@ -27,7 +27,7 @@ import {
 	playerById,
 	rentQuote,
 } from "#/lib/meownopoly/selectors";
-import type { GameState, Player } from "#/lib/meownopoly/types";
+import type { GameState, Holding, Player } from "#/lib/meownopoly/types";
 import { seatById } from "#/lib/multiplayer/room";
 import { cn } from "#/lib/utils";
 import { BuildingIcons, groupStyle } from "./bits";
@@ -262,6 +262,206 @@ function Token({
 	);
 }
 
+// Cards open toward the middle of the board.
+const TOWARD = {
+	top: "bottom",
+	bottom: "top",
+	left: "right",
+	right: "left",
+} as const;
+
+const towardCentre = (side: Side, index: number) =>
+	side === "corner" ? (index < 20 ? "bottom" : "top") : TOWARD[side];
+
+const DIRECTION: Record<Side, string> = {
+	bottom: "flex-col",
+	top: "flex-col",
+	left: "[container-type:size]",
+	right: "[container-type:size]",
+	corner: "flex-col",
+};
+
+// The frame no longer clips (tokens overhang it), so corners round themselves.
+const CORNER_ROUNDING: Record<number, string> = {
+	0: "rounded-tl-board-inner",
+	10: "rounded-tr-board-inner",
+	20: "rounded-br-board-inner",
+	30: "rounded-bl-board-inner",
+};
+
+/** What a tile's tooltip says: who owns it and the rent, or its price. */
+function tileHint(
+	space: Space,
+	owner: Player | undefined,
+	quote: ReturnType<typeof rentQuote>,
+) {
+	if (!owner) return isOwnable(space) ? `For sale · ${space.price} 🐟` : null;
+	if (quote?.waived === "mortgaged")
+		return `${owner.name}'s · mortgaged, no rent`;
+	if (quote?.waived === "ownerAtVet")
+		return `${owner.name}'s · at the Vet, no rent`;
+	return `${owner.name}'s · rent ${quote ? rentLabel(quote) : "0 🐟"}`;
+}
+
+/**
+ * Once claimed, the price gives way to a band of the owner's fur across the
+ * card's bottom edge, with any buildings riding on it. The negative margins
+ * cancel the card's padding so the band runs edge to edge.
+ */
+function tilePrice(
+	space: Space,
+	owner: Player | undefined,
+	holding: Holding,
+	state: GameState,
+): ReactNode {
+	if (owner)
+		return (
+			<span
+				className={cn(
+					"relative -mx-1 -mb-1.5 flex h-5 w-[calc(100%+0.5rem)] shrink-0 items-center justify-center overflow-hidden",
+					holding.mortgaged && "opacity-40",
+				)}
+			>
+				<span className="absolute inset-0">
+					<Fur cat={owner.cat} />
+				</span>
+			</span>
+		);
+	if (isOwnable(space) || space.kind === "tax")
+		return (
+			<span className="whitespace-nowrap">
+				{space.kind === "tax" ? space.amount : space.price}
+				<FishIcon />
+			</span>
+		);
+	if (space.kind === "napSpot" && state.rules.napSpotJackpot)
+		return (
+			<span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs whitespace-nowrap text-primary">
+				Jackpot {state.jackpot}
+				<FishIcon />
+			</span>
+		);
+	return null;
+}
+
+/**
+ * Buildings stand just above the fur, in the same light ink as the name, so
+ * they read on any group and any fur and line up along a row however long the
+ * names are. A set that just completed flashes a crown while it shines; after
+ * that its ring says it.
+ */
+function TileBadge({
+	owned,
+	buildings,
+	crown,
+}: {
+	/** An owned street; nothing else carries buildings. */
+	owned: boolean;
+	buildings: number;
+	crown: boolean;
+}) {
+	if (!owned || (buildings === 0 && !crown)) return null;
+	return (
+		<span className="flex min-h-0 flex-1 items-end justify-center pb-0.5 text-xs text-foreground drop-shadow-sticker">
+			{buildings > 0 ? (
+				<BuildingIcons count={buildings} />
+			) : (
+				<CrownSimpleIcon
+					weight="fill"
+					role="img"
+					aria-label="whole set"
+					className="size-[1em] opacity-80"
+				/>
+			)}
+		</span>
+	);
+}
+
+/**
+ * Every edge tile is the same card: name, art, then price or fur. The side
+ * lanes lay it out upright and turn it a quarter to face the centre, like a
+ * printed board; the top and bottom rows stay upright.
+ */
+function TileFace({
+	index,
+	space,
+	side,
+	state,
+	owner,
+	fullSet,
+	fresh,
+}: {
+	index: number;
+	space: Space;
+	side: Side;
+	state: GameState;
+	owner: Player | undefined;
+	fullSet: boolean;
+	fresh: boolean;
+}) {
+	const holding = state.holdings[index];
+	const art = artFor(space);
+	const edge = side !== "corner";
+	const turned = side === "left" || side === "right";
+	const price = tilePrice(space, owner, holding, state);
+	return (
+		<span
+			className={cn(
+				"flex min-h-0 min-w-0 flex-1 flex-col items-center px-1 py-1.5 text-tile",
+				edge ? "justify-between gap-0.5" : "justify-center gap-1.5",
+				// Sized to the tile's height and width swapped, then turned in place.
+				turned &&
+					"absolute top-1/2 left-1/2 h-[100cqw] w-[100cqh] -translate-x-1/2 -translate-y-1/2",
+				side === "left" && "rotate-90",
+				side === "right" && "-rotate-90",
+				holding?.mortgaged && "opacity-55",
+			)}
+		>
+			<span
+				lang="en"
+				className={cn(
+					"font-bold text-foreground hyphens-auto wrap-break-word",
+					!edge && "order-2 text-xs",
+				)}
+			>
+				{tileName(space.name)}
+			</span>
+			<TileBadge
+				owned={!!owner && space.kind === "street"}
+				buildings={holding?.buildings ?? 0}
+				crown={fullSet && fresh}
+			/>
+			{art && (
+				<span
+					className={cn(
+						"flex min-h-0 items-center justify-center",
+						edge ? "flex-1" : "order-1",
+					)}
+				>
+					<Art name={art} className={edge ? "size-5" : "size-10"} />
+				</span>
+			)}
+			{index === 0 && (
+				<span className="order-3 flex items-center gap-0.5 text-tile font-semibold tracking-wider text-primary uppercase">
+					Start
+					<ArrowRightIcon className="size-3" />
+				</span>
+			)}
+			{price && (
+				<span
+					className={cn(
+						// Full Milk on every tile: muted grey is too faint this small.
+						"flex w-full items-center justify-center font-semibold text-foreground",
+						!edge && "order-3",
+					)}
+				>
+					{price}
+				</span>
+			)}
+		</span>
+	);
+}
+
 function Tile({
 	index,
 	space,
@@ -288,29 +488,7 @@ function Tile({
 }) {
 	const holding = state.holdings[index];
 	const owner = playerById(state, holding?.owner);
-	const art = artFor(space);
-	const edge = side !== "corner";
-	// Every edge tile is the same card: name, art, then price or fur. The side
-	// lanes lay it out upright and turn it a quarter to face the centre, like a
-	// printed board; the top and bottom rows stay upright.
-	const turned = side === "left" || side === "right";
-	// Cards open toward the middle of the board.
-	const toward = (
-		{
-			top: "bottom",
-			bottom: "top",
-			left: "right",
-			right: "left",
-			corner: index < 20 ? "bottom" : "top",
-		} as const
-	)[side];
-	const direction = {
-		bottom: "flex-col",
-		top: "flex-col",
-		left: "[container-type:size]",
-		right: "[container-type:size]",
-		corner: "flex-col",
-	}[side];
+	const toward = towardCentre(side, index);
 	// A street group reads as one neighbourhood: its colour.
 	const street = space.kind === "street";
 	// A whole set held by one cat gets a full-strength ring and a crown.
@@ -318,47 +496,7 @@ function Tile({
 		space.kind === "street" &&
 		!!holding &&
 		ownsGroup(state, holding.owner, space.group);
-	const quote = rentQuote(state, index);
-	const hint = owner
-		? quote?.waived === "mortgaged"
-			? `${owner.name}'s · mortgaged, no rent`
-			: quote?.waived === "ownerAtVet"
-				? `${owner.name}'s · at the Vet, no rent`
-				: `${owner.name}'s · rent ${quote ? rentLabel(quote) : "0 🐟"}`
-		: isOwnable(space)
-			? `For sale · ${space.price} 🐟`
-			: null;
-
-	// Once claimed, the price gives way to a band of the owner's fur across the
-	// card's bottom edge, with any buildings riding on it. The negative margins
-	// cancel the card's padding so the band runs edge to edge.
-	const price = owner ? (
-		<span
-			className={cn(
-				"relative -mx-1 -mb-1.5 flex h-5 w-[calc(100%+0.5rem)] shrink-0 items-center justify-center overflow-hidden",
-				holding.mortgaged && "opacity-40",
-			)}
-		>
-			<span className="absolute inset-0">
-				<Fur cat={owner.cat} />
-			</span>
-		</span>
-	) : isOwnable(space) ? (
-		<span className="whitespace-nowrap">
-			{space.price}
-			<FishIcon />
-		</span>
-	) : space.kind === "tax" ? (
-		<span className="whitespace-nowrap">
-			{space.amount}
-			<FishIcon />
-		</span>
-	) : space.kind === "napSpot" && state.rules.napSpotJackpot ? (
-		<span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs whitespace-nowrap text-primary">
-			Jackpot {state.jackpot}
-			<FishIcon />
-		</span>
-	) : null;
+	const hint = tileHint(space, owner, rentQuote(state, index));
 
 	return (
 		<Popover open={open} onOpenChange={onOpenChange}>
@@ -380,87 +518,20 @@ function Tile({
 									"before:pointer-events-none before:absolute before:inset-0 before:z-10 before:shadow-[inset_0_0_0_2px_var(--group)] before:content-['']",
 								fresh && "set-shimmer",
 								"cat-eyes-occupied relative flex min-h-0 min-w-0 overflow-hidden text-center outline-none transition-[filter] hover:brightness-125 focus-visible:z-10 focus-visible:ring-[3px] focus-visible:ring-ring/60",
-								direction,
+								DIRECTION[side],
 								open && "z-10 ring-[3px] ring-primary",
-								// The frame no longer clips (tokens overhang it), so corners round themselves.
-								{
-									0: "rounded-tl-board-inner",
-									10: "rounded-tr-board-inner",
-									20: "rounded-br-board-inner",
-									30: "rounded-bl-board-inner",
-								}[index],
+								CORNER_ROUNDING[index],
 							)}
 						>
-							<span
-								className={cn(
-									"flex min-h-0 min-w-0 flex-1 flex-col items-center px-1 py-1.5 text-tile",
-									edge ? "justify-between gap-0.5" : "justify-center gap-1.5",
-									// Sized to the tile's height and width swapped, then turned in place.
-									turned &&
-										"absolute top-1/2 left-1/2 h-[100cqw] w-[100cqh] -translate-x-1/2 -translate-y-1/2",
-									side === "left" && "rotate-90",
-									side === "right" && "-rotate-90",
-									holding?.mortgaged && "opacity-55",
-								)}
-							>
-								<span
-									lang="en"
-									className={cn(
-										"font-bold text-foreground hyphens-auto wrap-break-word",
-										!edge && "order-2 text-xs",
-									)}
-								>
-									{tileName(space.name)}
-								</span>
-								{/* Buildings stand just above the fur, in the same light ink
-								    as the name, so they read on any group and any fur and line
-								    up along a row however long the names are. A set that just
-								    completed flashes a crown while it shines; after that its
-								    ring says it. */}
-								{owner &&
-									street &&
-									(holding.buildings > 0 || (fullSet && fresh)) && (
-										<span className="flex min-h-0 flex-1 items-end justify-center pb-0.5 text-xs text-foreground drop-shadow-sticker">
-											{holding.buildings > 0 ? (
-												<BuildingIcons count={holding.buildings} />
-											) : (
-												<CrownSimpleIcon
-													weight="fill"
-													role="img"
-													aria-label="whole set"
-													className="size-[1em] opacity-80"
-												/>
-											)}
-										</span>
-									)}
-								{art && (
-									<span
-										className={cn(
-											"flex min-h-0 items-center justify-center",
-											edge ? "flex-1" : "order-1",
-										)}
-									>
-										<Art name={art} className={edge ? "size-5" : "size-10"} />
-									</span>
-								)}
-								{index === 0 && (
-									<span className="order-3 flex items-center gap-0.5 text-tile font-semibold tracking-wider text-primary uppercase">
-										Start
-										<ArrowRightIcon className="size-3" />
-									</span>
-								)}
-								{price && (
-									<span
-										className={cn(
-											// Full Milk on every tile: muted grey is too faint this small.
-											"flex w-full items-center justify-center font-semibold text-foreground",
-											!edge && "order-3",
-										)}
-									>
-										{price}
-									</span>
-								)}
-							</span>
+							<TileFace
+								index={index}
+								space={space}
+								side={side}
+								state={state}
+								owner={owner}
+								fullSet={fullSet}
+								fresh={fresh}
+							/>
 						</button>
 					</TooltipTrigger>
 				</PopoverTrigger>

@@ -274,6 +274,83 @@ function removeFromLobby(s: RoomState<unknown, unknown>, id: SeatId) {
 	s.seats = s.seats.filter((x) => x.id !== id);
 }
 
+function updateMe(
+	s: RoomState<unknown, unknown>,
+	me: Seat,
+	intent: Extract<RoomIntent<unknown>, { type: "updateMe" }>,
+) {
+	inLobby(s);
+	if (intent.name !== undefined) {
+		const name = cleanName(intent.name);
+		if (!name) reject("Pick a name first.");
+		me.name = name;
+	}
+	if (intent.cat !== undefined) {
+		if (!CATS.includes(intent.cat)) reject("That's not a cat.");
+		if (s.seats.some((x) => x.id !== me.id && x.cat === intent.cat))
+			reject("Another player has that cat.");
+		me.cat = intent.cat;
+	}
+}
+
+function start<S, M, R>(
+	def: Game<S, M, R>,
+	s: RoomState<S, R>,
+	me: Seat,
+	ctx: Context,
+) {
+	inLobby(s);
+	hostOnly(s, me);
+	if (s.seats.length < def.minPlayers)
+		reject(`You need at least ${def.minPlayers} cats to play.`);
+	s.game = def.start(s.seats, s.rules, ctx);
+	s.phase = "playing";
+	s.round++;
+}
+
+function playAgain(s: RoomState<unknown, unknown>, me: Seat) {
+	if (s.phase !== "finished") reject("The game isn't over yet.");
+	hostOnly(s, me);
+	// Only the cats still around carry over to the next game.
+	s.seats = s.seats
+		.filter((x) => x.connected)
+		.map((x) => ({ ...x, away: false }));
+	s.phase = "lobby";
+	s.game = null;
+}
+
+function hostSkip<S, M, R>(
+	def: Game<S, M, R>,
+	s: RoomState<S, R>,
+	me: Seat,
+	seat: SeatId,
+	ctx: Context,
+) {
+	const game = playing(s);
+	hostOnly(s, me);
+	const target = seatOf(s, seat);
+	if (def.currentPlayer(game) !== target.id) reject("It isn't their turn.");
+	if (!target.away) reject(`${target.name} is still here.`);
+	s.game = unwrap(def.skipTurn(game, ctx));
+}
+
+function hostRemove<S, M, R>(
+	def: Game<S, M, R>,
+	s: RoomState<S, R>,
+	me: Seat,
+	seat: SeatId,
+	ctx: Context,
+) {
+	hostOnly(s, me);
+	const target = seatOf(s, seat);
+	if (target.id === me.id) reject("You can't remove yourself.");
+	if (s.phase === "lobby") return removeFromLobby(s, target.id);
+	const game = playing(s);
+	if (def.isOut(game, target.id)) reject(`${target.name} is already out.`);
+	if (!target.away) reject(`${target.name} is still here.`);
+	s.game = unwrap(def.removeSeat(game, target.id, ctx));
+}
+
 function apply<S, M, R>(
 	def: Game<S, M, R>,
 	s: RoomState<S, R>,
@@ -288,69 +365,25 @@ function apply<S, M, R>(
 		case "move":
 			s.game = unwrap(def.reduce(playing(s), me.id, intent.move, ctx));
 			return;
-		case "updateMe": {
-			inLobby(s);
-			if (intent.name !== undefined) {
-				const name = cleanName(intent.name);
-				if (!name) reject("Pick a name first.");
-				me.name = name;
-			}
-			if (intent.cat !== undefined) {
-				if (!CATS.includes(intent.cat)) reject("That's not a cat.");
-				if (s.seats.some((x) => x.id !== me.id && x.cat === intent.cat))
-					reject("Another player has that cat.");
-				me.cat = intent.cat;
-			}
-			return;
-		}
+		case "updateMe":
+			return updateMe(s, me, intent);
 		case "setRules":
 			inLobby(s);
 			hostOnly(s, me);
 			s.rules = def.sanitizeRules(intent.rules);
 			return;
 		case "start":
-			inLobby(s);
-			hostOnly(s, me);
-			if (s.seats.length < def.minPlayers)
-				reject(`You need at least ${def.minPlayers} cats to play.`);
-			s.game = def.start(s.seats, s.rules, ctx);
-			s.phase = "playing";
-			s.round++;
-			return;
+			return start(def, s, me, ctx);
 		case "leave":
 			inLobby(s);
 			removeFromLobby(s, me.id);
 			return;
 		case "playAgain":
-			if (s.phase !== "finished") reject("The game isn't over yet.");
-			hostOnly(s, me);
-			// Only the cats still around carry over to the next game.
-			s.seats = s.seats
-				.filter((x) => x.connected)
-				.map((x) => ({ ...x, away: false }));
-			s.phase = "lobby";
-			s.game = null;
-			return;
-		case "hostSkip": {
-			const game = playing(s);
-			hostOnly(s, me);
-			const target = seatOf(s, intent.seat);
-			if (def.currentPlayer(game) !== target.id) reject("It isn't their turn.");
-			if (!target.away) reject(`${target.name} is still here.`);
-			s.game = unwrap(def.skipTurn(game, ctx));
-			return;
-		}
-		case "hostRemove": {
-			hostOnly(s, me);
-			const target = seatOf(s, intent.seat);
-			if (target.id === me.id) reject("You can't remove yourself.");
-			if (s.phase === "lobby") return removeFromLobby(s, target.id);
-			const game = playing(s);
-			if (def.isOut(game, target.id)) reject(`${target.name} is already out.`);
-			if (!target.away) reject(`${target.name} is still here.`);
-			s.game = unwrap(def.removeSeat(game, target.id, ctx));
-			return;
-		}
+			return playAgain(s, me);
+		case "hostSkip":
+			return hostSkip(def, s, me, intent.seat, ctx);
+		case "hostRemove":
+			return hostRemove(def, s, me, intent.seat, ctx);
 		default:
 			intent satisfies never;
 			reject("Unknown move.");
