@@ -1,7 +1,7 @@
 import {
 	createContext,
 	type ReactNode,
-	useContext,
+	use,
 	useEffect,
 	useMemo,
 	useRef,
@@ -85,17 +85,15 @@ export function PresentationProvider({
 
 	return (
 		<RoomProvider value={room}>
-			<Presentation.Provider value={view}>
-				<MotionContext.Provider value={motion}>
-					{children}
-				</MotionContext.Provider>
-			</Presentation.Provider>
+			<Presentation value={view}>
+				<MotionContext value={motion}>{children}</MotionContext>
+			</Presentation>
 		</RoomProvider>
 	);
 }
 
 /** Visual feedback for the displayed game; null outside a game table. */
-export const usePresentation = () => useContext(Presentation);
+export const usePresentation = () => use(Presentation);
 
 /** Where the cats stand on screen; null outside a game table. */
-export const useMotion = () => useContext(MotionContext);
+export const useMotion = () => use(MotionContext);

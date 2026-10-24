@@ -56,14 +56,23 @@ export function attempt<S>(
 	return { ok: true, state: draft };
 }
 
-export interface GameDefinition<State, Move, Rules, View = State> {
+/** Metadata and selectors needed to display a game in the browser. */
+export interface ClientGame<Game> {
 	/** Short and URL-safe: names the party, storage keys and the route. */
 	id: string;
 	name: string;
-	/** Bump when `State` changes shape; rooms saved by another version end politely. */
-	version: number;
 	minPlayers: number;
 	maxPlayers: number;
+	/** Whose turn it is, for spotting someone sitting on it. */
+	currentPlayer(state: Game): SeatId | null;
+	/** Knocked out, but still watching. */
+	isOut(state: Game, seat: SeatId): boolean;
+}
+
+export interface GameDefinition<State, Move, Rules, View = State>
+	extends ClientGame<State> {
+	/** Bump when `State` changes shape; rooms saved by another version end politely. */
+	version: number;
 	defaultRules: Rules;
 	/** Cleans rules sent by the host (untrusted input). */
 	sanitizeRules(raw: unknown): Rules;
@@ -71,10 +80,6 @@ export interface GameDefinition<State, Move, Rules, View = State> {
 	start(seats: readonly Seat[], rules: Rules, ctx: Context): State;
 	/** Applies one player's move. Never mutates `state`. */
 	reduce(state: State, seat: SeatId, move: Move, ctx: Context): Result<State>;
-	/** Whose turn it is, for spotting someone sitting on it. */
-	currentPlayer(state: State): SeatId | null;
-	/** Knocked out, but still watching. */
-	isOut(state: State, seat: SeatId): boolean;
 	isOver(state: State): boolean;
 	/** The host moves on past a player who wandered off. */
 	skipTurn(state: State, ctx: Context): Result<State>;

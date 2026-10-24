@@ -1,18 +1,18 @@
-import { createContext, type ReactNode, useContext } from "react";
-import type { GameDefinition, RoomState, Seat } from "#/lib/multiplayer/types";
+import { createContext, type ReactNode, use } from "react";
+import type { ClientGame, RoomState, Seat } from "#/lib/multiplayer/types";
 import type { RoomConnection } from "./use-room";
 
 /** The parts of a game's definition a route needs. */
 export type GameInfo = Pick<
-	GameDefinition<unknown, unknown, unknown>,
+	ClientGame<unknown>,
 	"id" | "name" | "minPlayers" | "maxPlayers"
 >;
 
 /** The visible room supplied by the nearest provider, including any staged game. */
 export interface RoomView<Game, Move, Rules>
 	extends Omit<RoomConnection<Game, Move, Rules>, "me"> {
-	/** The game's rules, for asking whose turn it is or who's out. */
-	game: GameDefinition<Game, Move, Rules>;
+	/** The game's selectors, for asking whose turn it is or who's out. */
+	game: ClientGame<Game>;
 	code: string;
 	room: RoomState<Game, Rules>;
 	/** The viewer's own seat (undefined for a spectator). */
@@ -34,17 +34,17 @@ export function RoomProvider<Game, Move, Rules>({
 	children: ReactNode;
 }) {
 	return (
-		<RoomContext.Provider
+		<RoomContext
 			value={value as unknown as RoomView<unknown, unknown, unknown>}
 		>
 			{children}
-		</RoomContext.Provider>
+		</RoomContext>
 	);
 }
 
 /** The room this screen is in. Each game wraps this with its own types. */
 export function useRoom<Game, Move, Rules>() {
-	const room = useContext(RoomContext);
+	const room = use(RoomContext);
 	if (!room) throw new Error("useRoom needs a <RoomGate> above it.");
 	return room as unknown as RoomView<Game, Move, Rules>;
 }

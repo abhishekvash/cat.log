@@ -1,24 +1,18 @@
 import type { GameDefinition } from "#/lib/multiplayer/types";
-import { GAME_NAME } from "./board";
+import { meownopolyClient } from "./client";
 import { reduce, removePlayer, skipTurn, start, tick } from "./engine";
-import { playerById } from "./selectors";
 import {
 	DEFAULT_HOUSE_RULES,
 	type GameState,
 	type HouseRules,
-	MAX_PLAYERS,
-	MIN_PLAYERS,
 	type Move,
 	STATE_VERSION,
 } from "./types";
 
 /** Meownopoly as an online game: the rules engine plugged into the shared rooms. */
 export const meownopoly: GameDefinition<GameState, Move, HouseRules> = {
-	id: "meownopoly",
-	name: GAME_NAME,
+	...meownopolyClient,
 	version: STATE_VERSION,
-	minPlayers: MIN_PLAYERS,
-	maxPlayers: MAX_PLAYERS,
 	defaultRules: DEFAULT_HOUSE_RULES,
 	sanitizeRules: (raw) => {
 		const rules = (raw ?? {}) as Partial<Record<keyof HouseRules, unknown>>;
@@ -31,8 +25,6 @@ export const meownopoly: GameDefinition<GameState, Move, HouseRules> = {
 	},
 	start,
 	reduce,
-	currentPlayer: (state) => state.turn?.playerId ?? null,
-	isOut: (state, seat) => playerById(state, seat)?.bankrupt ?? false,
 	isOver: (state) => state.phase === "finished",
 	skipTurn,
 	removeSeat: removePlayer,

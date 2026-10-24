@@ -1,8 +1,6 @@
-import {
-	ArrowRightIcon,
-	CrownSimpleIcon,
-	StethoscopeIcon,
-} from "@phosphor-icons/react";
+import { ArrowRightIcon } from "@phosphor-icons/react/ArrowRight";
+import { CrownSimpleIcon } from "@phosphor-icons/react/CrownSimple";
+import { StethoscopeIcon } from "@phosphor-icons/react/Stethoscope";
 import type { ReactNode } from "react";
 import { CatHead } from "#/components/cats/cat-face";
 import {

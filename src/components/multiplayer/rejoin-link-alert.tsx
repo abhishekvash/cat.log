@@ -1,4 +1,4 @@
-import { LinkIcon } from "@phosphor-icons/react";
+import { LinkIcon } from "@phosphor-icons/react/Link";
 import { Alert, AlertDescription } from "#/components/ui/alert";
 import { roomPath } from "#/lib/multiplayer/protocol";
 import { seatById } from "#/lib/multiplayer/room";

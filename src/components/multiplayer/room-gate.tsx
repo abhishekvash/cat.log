@@ -5,7 +5,7 @@ import { WakingKitties } from "#/components/catalog/waking-kitties";
 import { SleepyScreen } from "#/components/cats/sleepy-screen";
 import { Button } from "#/components/ui/button";
 import { seatById } from "#/lib/multiplayer/room";
-import type { GameDefinition } from "#/lib/multiplayer/types";
+import type { ClientGame } from "#/lib/multiplayer/types";
 import { RoomProvider, type RoomView } from "./room-context";
 import type { RoomSearch } from "./room-route";
 import { type RoomConnection, useRoomConnection } from "./use-room";
@@ -24,7 +24,7 @@ export function RoomGate({
 	formatNotice = (text) => text,
 	children,
 }: {
-	game: GameDefinition<unknown, unknown, unknown>;
+	game: ClientGame<unknown>;
 	code: string;
 	search: RoomSearch;
 	/** Shown while players gather. */

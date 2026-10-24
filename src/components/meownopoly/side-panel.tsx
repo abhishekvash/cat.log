@@ -1,4 +1,5 @@
-import { PlusIcon, StethoscopeIcon } from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react/Plus";
+import { StethoscopeIcon } from "@phosphor-icons/react/Stethoscope";
 import { GameBreadcrumb } from "#/components/catalog/game-breadcrumb";
 import { IconHint } from "#/components/multiplayer/icon-hint";
 import { RejoinLinkAlert } from "#/components/multiplayer/rejoin-link-alert";
@@ -13,17 +14,17 @@ import { BankruptButton, Fish } from "./bits";
 import { FurSwatch } from "./fur";
 import { usePresentation } from "./presentation";
 import { PropertyList } from "./streets-panel";
-import { newDraft, type TradeDraft, TradeList } from "./trade-panel";
+import { useTradeDraftActions } from "./trade-draft";
+import { newDraft, TradeList } from "./trade-panel";
 import { useGame } from "./use-game";
 
 /** Beside the board: the players and their fish, your trades and your streets. */
 export function SidePanel({
 	onSelectSpace,
-	onCompose,
 }: {
 	onSelectSpace: (index: number) => void;
-	onCompose: (draft: TradeDraft) => void;
 }) {
+	const { compose } = useTradeDraftActions();
 	const {
 		code,
 		room: { game: state },
@@ -79,12 +80,12 @@ export function SidePanel({
 							<h2 id="trades-heading" className="text-overline">
 								Trades
 							</h2>
-							<Button size="compact" onClick={() => onCompose(newDraft())}>
+							<Button size="compact" onClick={() => compose(newDraft())}>
 								<PlusIcon />
 								Create
 							</Button>
 						</div>
-						<TradeList me={me} onCompose={onCompose} />
+						<TradeList me={me} onCompose={compose} />
 					</section>
 
 					<Separator />

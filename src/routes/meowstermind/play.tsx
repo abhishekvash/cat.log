@@ -6,7 +6,7 @@ import {
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
-import { CatIcon } from "@phosphor-icons/react";
+import { CatIcon } from "@phosphor-icons/react/Cat";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { GameBreadcrumb } from "#/components/catalog/game-breadcrumb";

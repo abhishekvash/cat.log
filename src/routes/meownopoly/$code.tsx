@@ -6,10 +6,10 @@ import { RoomGate } from "#/components/multiplayer/room-gate";
 import { RoomLobby } from "#/components/multiplayer/room-lobby";
 import { roomRoute } from "#/components/multiplayer/room-route";
 import { MEOWNOPOLY } from "#/lib/catalog";
-import { meownopoly } from "#/lib/meownopoly/definition";
+import { meownopolyClient } from "#/lib/meownopoly/client";
 
 export const Route = createFileRoute("/meownopoly/$code")({
-	...roomRoute(meownopoly),
+	...roomRoute(meownopolyClient),
 	component: Room,
 });
 
@@ -20,7 +20,7 @@ function Room() {
 		// A fresh room per code, so nothing carries over when it changes.
 		<RoomGate
 			key={code}
-			game={meownopoly}
+			game={meownopolyClient}
 			code={code}
 			search={search}
 			formatNotice={withFish}

@@ -1,4 +1,6 @@
-import { InfoIcon, MoonIcon, WarningIcon } from "@phosphor-icons/react";
+import { InfoIcon } from "@phosphor-icons/react/Info";
+import { MoonIcon } from "@phosphor-icons/react/Moon";
+import { WarningIcon } from "@phosphor-icons/react/Warning";
 import { CatHead } from "#/components/cats/cat-face";
 import { ConfirmAction } from "#/components/confirm-action";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";

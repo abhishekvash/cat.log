@@ -1,4 +1,5 @@
-import { CatIcon, PackageIcon } from "@phosphor-icons/react";
+import { CatIcon } from "@phosphor-icons/react/Cat";
+import { PackageIcon } from "@phosphor-icons/react/Package";
 import { type CSSProperties, useEffect, useState } from "react";
 import { CatHead } from "#/components/cats/cat-face";
 import { ConfirmAction } from "#/components/confirm-action";

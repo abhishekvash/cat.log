@@ -1,4 +1,5 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { memo } from "react";
 import { CatFace, Paw, PawToken, Sticker } from "#/components/cats/cat-face";
 import type { CodeColor, KeyColor, PinColor } from "#/lib/mastermind";
 import { cn } from "#/lib/utils";
@@ -25,7 +26,7 @@ export const PIN_SIZE: Record<PinKind, string> = {
 };
 
 /** A code cat or a score paw, sized for the board. */
-export function Pin({
+export const Pin = memo(function Pin({
 	color,
 	kind,
 	size = PIN_SIZE[kind],
@@ -46,9 +47,15 @@ export function Pin({
 			)}
 		</Sticker>
 	);
-}
+});
 
-function Hole({ kind, over }: { kind: PinKind; over: boolean }) {
+const Hole = memo(function Hole({
+	kind,
+	over,
+}: {
+	kind: PinKind;
+	over: boolean;
+}) {
 	return (
 		<span
 			aria-hidden="true"
@@ -63,7 +70,7 @@ function Hole({ kind, over }: { kind: PinKind; over: boolean }) {
 			</svg>
 		</span>
 	);
-}
+});
 
 /**
  * A board hole that accepts pins. When enabled and filled, the pin inside can be

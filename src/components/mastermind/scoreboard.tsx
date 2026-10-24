@@ -1,4 +1,4 @@
-import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
+import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/ArrowCounterClockwise";
 import { ConfirmAction } from "#/components/confirm-action";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";

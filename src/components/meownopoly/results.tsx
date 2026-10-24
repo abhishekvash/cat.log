@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { CatHead } from "#/components/cats/cat-face";
 import { KittenBurst } from "#/components/cats/kitten-burst";
 import { Button } from "#/components/ui/button";
@@ -15,9 +15,10 @@ export function Results() {
 	} = useGame();
 	const winner = playerById(state, state.winnerId);
 	const [burst, setBurst] = useState(true);
+	const endBurst = useCallback(() => setBurst(false), []);
 	return (
 		<div className="flex flex-1 flex-col items-center justify-center gap-5 p-4 text-center">
-			{burst && <KittenBurst onDone={() => setBurst(false)} />}
+			{burst && <KittenBurst onDone={endBurst} />}
 			{winner && (
 				<CatHead cat={winner.cat} size="5rem" className="cat-eyes-occupied" />
 			)}

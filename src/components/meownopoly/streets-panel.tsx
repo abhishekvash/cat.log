@@ -1,4 +1,4 @@
-import { CrownSimpleIcon } from "@phosphor-icons/react";
+import { CrownSimpleIcon } from "@phosphor-icons/react/CrownSimple";
 import { Button } from "#/components/ui/button";
 import {
 	BOARD,

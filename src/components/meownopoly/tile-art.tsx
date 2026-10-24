@@ -1,4 +1,4 @@
-import { FishSimpleIcon } from "@phosphor-icons/react";
+import { FishSimpleIcon } from "@phosphor-icons/react/FishSimple";
 import type { ReactNode } from "react";
 import { COATS, CREAM, INK, PINK, STICKER } from "#/components/cats/palette";
 import { cn } from "#/lib/utils";
