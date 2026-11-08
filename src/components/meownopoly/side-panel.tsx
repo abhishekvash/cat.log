@@ -1,5 +1,8 @@
-import { PlusIcon, StethoscopeIcon } from "@phosphor-icons/react";
+import { DoorOpenIcon } from "@phosphor-icons/react/DoorOpen";
+import { PlusIcon } from "@phosphor-icons/react/Plus";
+import { StethoscopeIcon } from "@phosphor-icons/react/Stethoscope";
 import { GameBreadcrumb } from "#/components/catalog/game-breadcrumb";
+import { ConfirmAction } from "#/components/confirm-action";
 import { IconHint } from "#/components/multiplayer/icon-hint";
 import { RejoinLinkAlert } from "#/components/multiplayer/rejoin-link-alert";
 import { SeatList } from "#/components/multiplayer/seat-list";
@@ -13,28 +16,44 @@ import { BankruptButton, Fish } from "./bits";
 import { FurSwatch } from "./fur";
 import { usePresentation } from "./presentation";
 import { PropertyList } from "./streets-panel";
-import { newDraft, type TradeDraft, TradeList } from "./trade-panel";
+import { useTradeDraftActions } from "./trade-draft";
+import { newDraft, TradeList } from "./trade-panel";
 import { useGame } from "./use-game";
 
 /** Beside the board: the players and their fish, your trades and your streets. */
 export function SidePanel({
 	onSelectSpace,
-	onCompose,
 }: {
 	onSelectSpace: (index: number) => void;
-	onCompose: (draft: TradeDraft) => void;
 }) {
+	const { compose } = useTradeDraftActions();
 	const {
 		code,
 		room: { game: state },
 		me,
+		act,
 	} = useGame();
 	const deltas = usePresentation()?.deltas ?? {};
 	return (
 		<aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 landscape:max-w-sm">
 			<div className="cat-eyes-occupied flex items-center justify-between gap-2 text-sm">
 				<GameBreadcrumb to={MEOWNOPOLY.path}>{MEOWNOPOLY.title}</GameBreadcrumb>
-				<span className="text-muted-foreground">Room {code}</span>
+				<span className="flex items-center gap-1 text-muted-foreground">
+					Room {code}
+					{me && !me.bankrupt && state.phase === "playing" && (
+						<ConfirmAction
+							title="Leave this game?"
+							description={`Your streets ${state.rules.auctions ? "go up for auction" : "go back to the bank"} and you'll watch from the sidelines.`}
+							action="Leave game"
+							onConfirm={() => act({ type: "resign" })}
+						>
+							<Button variant="ghost" size="compact">
+								<DoorOpenIcon />
+								Leave
+							</Button>
+						</ConfirmAction>
+					)}
+				</span>
 			</div>
 
 			<SeatList
@@ -79,12 +98,12 @@ export function SidePanel({
 							<h2 id="trades-heading" className="text-overline">
 								Trades
 							</h2>
-							<Button size="compact" onClick={() => onCompose(newDraft())}>
+							<Button size="compact" onClick={() => compose(newDraft())}>
 								<PlusIcon />
 								Create
 							</Button>
 						</div>
-						<TradeList me={me} onCompose={onCompose} />
+						<TradeList me={me} onCompose={compose} />
 					</section>
 
 					<Separator />

@@ -11,8 +11,8 @@ import {
 	VET_INDEX,
 } from "./board";
 import { DECKS } from "./cards";
-import { reduce, removePlayer, tick } from "./engine";
-import { activePlayers, holdingsOf, topBid } from "./selectors";
+import { reduce, removePlayer, skipTurn, tick } from "./engine";
+import { activePlayers, holdingsOf, rentQuote, topBid } from "./selectors";
 import {
 	ctx,
 	dice,
@@ -78,6 +78,47 @@ describe("money fixes", () => {
 		expect(s.holdings[3]).toBeUndefined();
 		// Back to where the turn was before the auctions.
 		expect(turn(s)).toMatchObject({ playerId: 2, phase: "awaitingRoll" });
+	});
+
+	const owes = (
+		s: ReturnType<typeof game>,
+		id: number,
+		debts: [number, number][],
+	) =>
+		Object.assign(p(s, id), {
+			fish: -debts.reduce((sum, [, amount]) => sum + amount, 0),
+			debts: debts.map(([to, amount]) => ({ to, amount, fee: false })),
+		});
+
+	it("hands a cat who leaves in debt to one creditor over to them", () => {
+		let s = game(3);
+		own(s, 1, 1, 3);
+		owes(s, 1, [[2, 10]]);
+		s = must(removePlayer(s, 1, ctx(), "left"));
+		expect(p(s, 1).bankrupt).toBe(true);
+		expect(s.holdings[1].owner).toBe(2);
+		expect(s.holdings[3].owner).toBe(2);
+	});
+
+	it("sends a leaver's streets to the bank when they owe several cats", () => {
+		let s = game(3);
+		own(s, 1, 1, 3);
+		owes(s, 1, [
+			[2, 10],
+			[3, 10],
+		]);
+		s = must(removePlayer(s, 1, ctx(), "left"));
+		expect(s.holdings[1]).toBeUndefined();
+		expect(s.holdings[3]).toBeUndefined();
+	});
+
+	it("sends a host-removed debtor's streets to the bank", () => {
+		let s = game(3);
+		own(s, 1, 1, 3);
+		owes(s, 1, [[2, 10]]);
+		s = must(removePlayer(s, 1, ctx()));
+		expect(s.holdings[1]).toBeUndefined();
+		expect(s.holdings[3]).toBeUndefined();
 	});
 
 	for (const phase of ["awaitingRoll", "awaitingBuy"] as const) {
@@ -196,6 +237,46 @@ describe("money fixes", () => {
 	});
 });
 
+describe("rent a cat can't pay", () => {
+	/** Player 2, broke, about to roll onto player 1's street on space 3. */
+	function brokeOnRent() {
+		const s = game();
+		own(s, 1, 3);
+		own(s, 2, 1);
+		p(s, 2).fish = 0;
+		s.turn = { ...turn(s), playerId: 2 };
+		return s;
+	}
+
+	it("puts the tenant in debt to the owner and holds the turn", () => {
+		const rent = rentQuote(brokeOnRent(), 3)?.amount ?? 0;
+		expect(rent).toBeGreaterThan(0);
+		const s = run(brokeOnRent(), 2, { type: "roll" }, ctx(dice(1, 2)));
+		expect(p(s, 2).fish).toBe(-rent);
+		expect(p(s, 2).debts).toEqual([{ to: 1, amount: rent, fee: false }]);
+		expect(p(s, 1).fish).toBe(START_FISH);
+		expect(s.log.map((l) => l.text)).toContain(
+			`Tux came up ${rent} 🐟 short and owes it to Mochi.`,
+		);
+		expect(reduce(s, 2, { type: "endTurn" }, ctx())).toMatchObject({
+			ok: false,
+		});
+	});
+
+	it("pays the owner once the tenant raises fish", () => {
+		let s = run(brokeOnRent(), 2, { type: "roll" }, ctx(dice(1, 2)));
+		const rent = -p(s, 2).fish;
+		s = run(s, 2, { type: "mortgage", space: 1 }); // +30
+		expect(p(s, 1).fish).toBe(START_FISH + Math.min(30, rent));
+		expect(p(s, 2).fish).toBe(30 - rent);
+	});
+
+	it("won't let the host skip past a cat in debt", () => {
+		const s = run(brokeOnRent(), 2, { type: "roll" }, ctx(dice(1, 2)));
+		expect(skipTurn(s)).toMatchObject({ ok: false });
+	});
+});
+
 describe("auctions are a house rule", () => {
 	it("leaves a passed street with the bank when auctions are off", () => {
 		let s = game();
@@ -239,7 +320,7 @@ describe("sets", () => {
 		s = run(s, 1, { type: "roll" }, ctx(dice(1, 2)));
 		s = run(s, 1, { type: "buy" });
 		expect(s.log.at(-1)?.text).toBe(
-			"Mochi owns all of Alley! Rent doubles, and boxes can go up.",
+			"Mochi owns all of Alley! Rent doubles, and boxes can go up once all streets are unmortgaged.",
 		);
 	});
 });

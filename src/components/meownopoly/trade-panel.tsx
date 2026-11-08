@@ -1,8 +1,6 @@
-import {
-	ArrowsLeftRightIcon,
-	PaperPlaneTiltIcon,
-	XIcon,
-} from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon } from "@phosphor-icons/react/ArrowsLeftRight";
+import { PaperPlaneTiltIcon } from "@phosphor-icons/react/PaperPlaneTilt";
+import { XIcon } from "@phosphor-icons/react/X";
 import { Badge } from "#/components/ui/badge";
 import { Button } from "#/components/ui/button";
 import { Card } from "#/components/ui/card";

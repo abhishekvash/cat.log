@@ -4,7 +4,8 @@ import { AuctionPanel } from "./auction-panel";
 import { usePresentation } from "./presentation";
 import { Results } from "./results";
 import { Art, withFish } from "./tile-art";
-import { TradeComposer, type TradeDraft } from "./trade-panel";
+import { useTradeDraft, useTradeDraftActions } from "./trade-draft";
+import { TradeComposer } from "./trade-panel";
 import { TurnPanel } from "./turn-panel";
 import { useGame } from "./use-game";
 
@@ -12,15 +13,9 @@ import { useGame } from "./use-game";
  * The board's centre: the next move by default, or whatever needs the room
  * right now (results, an auction, a trade being drafted).
  */
-export function Center({
-	draft,
-	onDraftChange,
-	onCloseDraft,
-}: {
-	draft: TradeDraft | null;
-	onDraftChange: (draft: TradeDraft) => void;
-	onCloseDraft: () => void;
-}) {
+export function Center() {
+	const draft = useTradeDraft();
+	const { compose, close } = useTradeDraftActions();
 	const {
 		room: { game: state },
 		me,
@@ -31,12 +26,7 @@ export function Center({
 	if (state.auction) return <AuctionPanel />;
 	if (draft && me && !me.bankrupt)
 		return (
-			<TradeComposer
-				me={me}
-				draft={draft}
-				onChange={onDraftChange}
-				onClose={onCloseDraft}
-			/>
+			<TradeComposer me={me} draft={draft} onChange={compose} onClose={close} />
 		);
 	return (
 		<div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 pb-4">

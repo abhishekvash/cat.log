@@ -155,40 +155,49 @@ export function createPresentation(
 				...patch,
 			});
 		};
-		show({ card: null, glideMs: STEP_MS, leg: "walk" });
-		await sleep(Math.max(0, DICE_SETTLE_MS - options.rollAge(next.rolls)));
-		if (!valid()) return;
-
+		/** Waits, then says whether playback should go on. */
+		const wait = async (ms: number) => {
+			await sleep(ms);
+			return valid();
+		};
 		let at = move.from;
-		for (const [i, leg] of move.steps.entries()) {
-			if (i > 0) {
-				await sleep(BEAT_MS);
-				if (!valid()) return;
-			}
-			if (leg.kind === "jump") {
-				at = leg.to;
+		const jump = (to: number) => {
+			at = to;
+			positions[move.playerId] = at;
+			show({ glideMs: JUMP_MS, leg: "jump" });
+			return wait(JUMP_MS);
+		};
+		const walk = async (to: number, dir: 1 | -1) => {
+			const tiles = (dir * (to - at) + BOARD.length * 2) % BOARD.length;
+			const ms = tiles > LONG_WALK ? FAST_STEP_MS : STEP_MS;
+			for (let t = 0; t < tiles; t++) {
+				at = (at + dir + BOARD.length) % BOARD.length;
 				positions[move.playerId] = at;
-				show({ glideMs: JUMP_MS, leg: "jump" });
-				await sleep(JUMP_MS);
-				if (!valid()) return;
-			} else {
-				const dir = leg.kind === "back" ? -1 : 1;
-				const tiles = (dir * (leg.to - at) + BOARD.length * 2) % BOARD.length;
-				const ms = tiles > LONG_WALK ? FAST_STEP_MS : STEP_MS;
-				for (let t = 0; t < tiles; t++) {
-					at = (at + dir + BOARD.length) % BOARD.length;
-					positions[move.playerId] = at;
-					show({ glideMs: ms - 20, leg: "walk" });
-					await sleep(ms);
-					if (!valid()) return;
-				}
+				show({ glideMs: ms - 20, leg: "walk" });
+				if (!(await wait(ms))) return false;
 			}
-			if (leg.card) {
-				show({ card: leg.card });
-				await sleep(CARD_MS);
-				if (!valid()) return;
-				show({ card: null });
-			}
+			return true;
+		};
+		const reveal = async (card: NonNullable<Step["card"]>) => {
+			show({ card });
+			if (!(await wait(CARD_MS))) return false;
+			show({ card: null });
+			return true;
+		};
+		const travel = (leg: Step) =>
+			leg.kind === "jump"
+				? jump(leg.to)
+				: walk(leg.to, leg.kind === "back" ? -1 : 1);
+
+		show({ card: null, glideMs: STEP_MS, leg: "walk" });
+		if (
+			!(await wait(Math.max(0, DICE_SETTLE_MS - options.rollAge(next.rolls))))
+		)
+			return;
+		for (const [i, leg] of move.steps.entries()) {
+			if (i > 0 && !(await wait(BEAT_MS))) return;
+			if (!(await travel(leg))) return;
+			if (leg.card && !(await reveal(leg.card))) return;
 		}
 		await sleep(BEAT_MS);
 	};

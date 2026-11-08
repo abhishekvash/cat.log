@@ -1,4 +1,6 @@
-import { ArrowUUpLeftIcon, EyeIcon, ShuffleIcon } from "@phosphor-icons/react";
+import { ArrowUUpLeftIcon } from "@phosphor-icons/react/ArrowUUpLeft";
+import { EyeIcon } from "@phosphor-icons/react/Eye";
+import { ShuffleIcon } from "@phosphor-icons/react/Shuffle";
 import type { Dispatch } from "react";
 import { Button } from "#/components/ui/button";
 import {

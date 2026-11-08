@@ -1,4 +1,4 @@
-import { ArrowRightIcon } from "@phosphor-icons/react";
+import { ArrowRightIcon } from "@phosphor-icons/react/ArrowRight";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Wordmark } from "#/components/catalog/wordmark";

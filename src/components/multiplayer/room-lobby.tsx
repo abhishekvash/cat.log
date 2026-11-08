@@ -1,5 +1,5 @@
 import type { LinkProps } from "@tanstack/react-router";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { BackLink } from "#/components/catalog/back-link";
 import { CatEars } from "#/components/cats/cat-ears";
 import { CatHead } from "#/components/cats/cat-face";
@@ -30,7 +30,6 @@ export function RoomLobby({
 }) {
 	const { game, code, room, seat: me, isHost, live, act, join } = useRoom();
 	const host = seatById(room, room.hostId);
-	const [name, setName] = useState("");
 	const full = room.seats.length >= game.maxPlayers;
 	const enough = room.seats.length >= game.minPlayers;
 
@@ -61,6 +60,9 @@ export function RoomLobby({
 							className="cat-eyes-occupied space-y-2"
 							onSubmit={(e) => {
 								e.preventDefault();
+								// Read the field itself: autofill can fill it without the
+								// input event React relies on, so state would lag behind.
+								const name = String(new FormData(e.currentTarget).get("name"));
 								if (name.trim()) join(name);
 							}}
 						>
@@ -70,17 +72,13 @@ export function RoomLobby({
 							<div className="flex gap-2">
 								<Input
 									id="name"
-									value={name}
+									name="name"
+									required
 									maxLength={NAME_MAX}
 									autoComplete="nickname"
-									onChange={(e) => setName(e.target.value)}
 									placeholder="Mochi"
 								/>
-								<Button
-									size="compact"
-									type="submit"
-									disabled={!live || !name.trim() || full}
-								>
+								<Button size="compact" type="submit" disabled={!live || full}>
 									{full ? "Room is full" : "Take a seat"}
 								</Button>
 							</div>

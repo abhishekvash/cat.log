@@ -1,4 +1,6 @@
-import { CrownIcon, type Icon, WifiSlashIcon } from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
+import { CrownIcon } from "@phosphor-icons/react/Crown";
+import { WifiSlashIcon } from "@phosphor-icons/react/WifiSlash";
 import {
 	Tooltip,
 	TooltipContent,

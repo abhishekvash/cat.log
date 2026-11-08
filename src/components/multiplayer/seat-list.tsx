@@ -1,4 +1,4 @@
-import { LinkIcon } from "@phosphor-icons/react";
+import { LinkIcon } from "@phosphor-icons/react/Link";
 import type { ReactNode } from "react";
 import { CatHead } from "#/components/cats/cat-face";
 import { Button } from "#/components/ui/button";

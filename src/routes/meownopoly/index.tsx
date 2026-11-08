@@ -7,7 +7,7 @@ import { Button } from "#/components/ui/button";
 import { Input } from "#/components/ui/input";
 import { MEOWNOPOLY } from "#/lib/catalog";
 import { CATS } from "#/lib/cats";
-import { meownopoly } from "#/lib/meownopoly/definition";
+import { meownopolyClient } from "#/lib/meownopoly/client";
 import { CODE_PATTERN } from "#/lib/multiplayer/protocol";
 import { gameHead } from "#/lib/seo";
 
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/meownopoly/")({
 
 function Home() {
 	const navigate = useNavigate();
-	const startRoom = useStartRoom(meownopoly.id);
+	const startRoom = useStartRoom(meownopolyClient.id);
 	const [code, setCode] = useState("");
 	const clean = code.trim().toUpperCase();
 	const { min, max } = MEOWNOPOLY.players;

@@ -159,22 +159,34 @@ export function skipTurn(state: GameState): Result<GameState> {
 	return change(state, (s) => {
 		const turn = turnOf(s);
 		if (turn.phase === "auction") reject("Wait for the auction to finish.");
-		log(s, `${player(s, turn.playerId).name}'s turn was skipped.`);
+		const p = player(s, turn.playerId);
+		// Skipping would leave their debt hanging; removing them settles it.
+		if (p.fish < 0) reject(`${p.name} is in debt. Remove them instead.`);
+		log(s, `${p.name}'s turn was skipped.`);
 		nextTurn(s);
 	});
 }
 
-/** The host takes a player out: their streets go back to the bank. */
+/**
+ * A player is taken out (or leaves). Leaving while owing one cat hands that
+ * cat everything, as resigning would; otherwise their streets go to the bank.
+ */
 export function removePlayer(
 	state: GameState,
 	id: SeatId,
 	ctx: Context,
+	reason: "removed" | "left" = "removed",
 ): Result<GameState> {
 	return change(state, (s) => {
 		playing(s);
 		const target = active(player(s, id));
-		log(s, `${target.name} was removed from the game.`);
-		goBankrupt(s, target, false, ctx.now);
+		log(
+			s,
+			reason === "left"
+				? `${target.name} left the game.`
+				: `${target.name} was removed from the game.`,
+		);
+		goBankrupt(s, target, reason === "left", ctx.now);
 	});
 }
 

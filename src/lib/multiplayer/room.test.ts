@@ -68,6 +68,11 @@ const turnOf = (room: TestRoom) =>
 	game.currentPlayer(room.state.game as CountState);
 
 describe("lobby", () => {
+	it("keeps spaces inside a name", () => {
+		const { room } = lobby(["  Mr Whiskers  "]);
+		expect(room.state.seats[0].name).toBe("Mr Whiskers");
+	});
+
 	it("seats players with distinct cats and makes the first one host", () => {
 		const { room } = lobby(["A", "B", "C"]);
 		expect(room.state.hostId).toBe(1);
@@ -260,6 +265,44 @@ describe("host controls", () => {
 		room = run(room, 2, { type: "hostRemove", seat: 1 }, AWAY_AFTER);
 		expect(room.state.phase).toBe("finished");
 		expect(room.state.game?.winner).toBe(2);
+	});
+});
+
+describe("leaving a running game", () => {
+	it("takes the player out, passes their turn and keeps them watching", () => {
+		let { room } = started(0, ["Mochi", "Tux", "Biscuit"]);
+		expect(turnOf(room)).toBe(1);
+		room = run(room, 1, { type: "resign" });
+		expect(room.state.game?.out).toEqual([1]);
+		expect(turnOf(room)).toBe(2);
+		expect(seat(room, 1)).toBeDefined();
+		expect(room.state.phase).toBe("playing");
+	});
+
+	it("hands hosting on when the host leaves", () => {
+		let { room } = started(0, ["Mochi", "Tux", "Biscuit"]);
+		room = run(room, 1, { type: "resign" });
+		expect(room.state.hostId).toBe(2);
+	});
+
+	it("ends the game when only one cat is left", () => {
+		let { room } = started();
+		room = run(room, 2, { type: "resign" });
+		expect(room.state.phase).toBe("finished");
+		expect(room.state.game?.winner).toBe(1);
+	});
+
+	it("only works mid-game, once", () => {
+		const { room: waiting } = lobby(["A", "B"]);
+		expect(act(game, waiting, 1, { type: "resign" }, ctx(0))).toMatchObject({
+			ok: false,
+		});
+		const { room } = started(0, ["Mochi", "Tux", "Biscuit"]);
+		const left = run(room, 3, { type: "resign" });
+		expect(act(game, left, 3, { type: "resign" }, ctx(0))).toMatchObject({
+			ok: false,
+			error: "You're already out of this game.",
+		});
 	});
 });
 

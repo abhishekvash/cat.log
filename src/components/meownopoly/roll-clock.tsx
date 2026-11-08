@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useState } from "react";
+import { createContext, type ReactNode, use, useState } from "react";
 
 /**
  * When each roll was first seen here, so the dice and the walking cats agree
@@ -25,8 +25,8 @@ export function RollClockProvider({
 			return performance.now() - (seenAt.get(rollId) ?? 0);
 		};
 	});
-	return <RollClock.Provider value={age}>{children}</RollClock.Provider>;
+	return <RollClock value={age}>{children}</RollClock>;
 }
 
 /** Milliseconds since a roll first showed up here (Infinity if it's old). */
-export const useRollAge = () => useContext(RollClock);
+export const useRollAge = () => use(RollClock);

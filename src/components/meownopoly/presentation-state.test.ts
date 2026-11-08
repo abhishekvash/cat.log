@@ -9,7 +9,7 @@ import {
 	p,
 	run,
 } from "#/lib/meownopoly/test-fixtures";
-import type { GameState } from "#/lib/meownopoly/types";
+import type { GameState, Step } from "#/lib/meownopoly/types";
 import { createPresentation, initialPresentation } from "./presentation-state";
 
 const controllers: ReturnType<typeof createPresentation>[] = [];
@@ -42,6 +42,33 @@ function cardMove() {
 	before.decks.zoomies = [3, ...before.decks.zoomies.filter((i) => i !== 3)];
 	const rolled = run(before, 1, { type: "roll" }, ctx(dice(6, 6)));
 	return { before, rolled };
+}
+
+/** A snapshot where player 1 has just rolled and moved along `steps`. */
+function moved(before: GameState, from: number, steps: Step[]) {
+	p(before, 1).position = from;
+	const next = structuredClone(before);
+	next.rolls = before.rolls + 1;
+	next.lastMove = { roll: next.rolls, playerId: 1, from, steps };
+	p(next, 1).position = steps.at(-1)?.to ?? from;
+	return next;
+}
+
+/** Every frame shown while the cat moved, from dice to landing. */
+async function frames(from: number, steps: Step[]) {
+	const before = game();
+	const view = present(before);
+	view.update(moved(before, from, steps));
+	await vi.advanceTimersByTimeAsync(60_000);
+	return view.publish.mock.calls
+		.map(([shown]) => shown)
+		.filter((shown) => shown.animating)
+		.map(({ positions, glideMs, leg, card }) => ({
+			at: positions[1],
+			glideMs,
+			leg,
+			card,
+		}));
 }
 
 beforeEach(() => vi.useFakeTimers());
@@ -110,6 +137,46 @@ describe("presentation playback", () => {
 		await vi.advanceTimersByTimeAsync(1500);
 		expect(view.shown.state).toBe(bought);
 		expect(view.shown.animating).toBe(false);
+	});
+
+	it("walks backwards one tile at a time", async () => {
+		const shown = await frames(5, [{ to: 2, kind: "back" }]);
+		expect(shown.map((f) => f.at)).toEqual([5, 4, 3, 2]);
+		expect(shown.slice(1).every((f) => f.glideMs === 180)).toBe(true);
+	});
+
+	it("walks round the corner of the board", async () => {
+		const shown = await frames(38, [{ to: 1, kind: "walk" }]);
+		expect(shown.map((f) => f.at)).toEqual([38, 39, 0, 1]);
+	});
+
+	it("hurries through a long walk", async () => {
+		const shown = await frames(0, [{ to: 20, kind: "walk" }]);
+		expect(shown).toHaveLength(21);
+		expect(shown.slice(1).every((f) => f.glideMs === 90)).toBe(true);
+	});
+
+	it("jumps in one go", async () => {
+		const shown = await frames(5, [{ to: 30, kind: "jump" }]);
+		expect(shown.slice(1)).toEqual([
+			{ at: 30, glideMs: 560, leg: "jump", card: null },
+		]);
+	});
+
+	it("shows a drawn card, then puts it away before the next leg", async () => {
+		const card = { deck: "zoomies" as const, index: 0 };
+		const shown = await frames(5, [
+			{ to: 7, kind: "walk", card },
+			{ to: 30, kind: "jump" },
+		]);
+		expect(shown.map((f) => [f.at, f.card])).toEqual([
+			[5, null],
+			[6, null],
+			[7, null],
+			[7, card],
+			[7, null],
+			[30, null],
+		]);
 	});
 
 	it("preserves normal movement timing and queues results until landing", async () => {

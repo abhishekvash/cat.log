@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon } from "@phosphor-icons/react/ArrowLeft";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Button } from "#/components/ui/button";
