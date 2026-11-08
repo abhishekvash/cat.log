@@ -61,6 +61,7 @@ export type RoomIntent<R> =
 	| { type: "setRules"; rules: R }
 	| { type: "start" }
 	| { type: "leave" }
+	| { type: "resign" }
 	| { type: "playAgain" }
 	| { type: "hostSkip"; seat: SeatId }
 	| { type: "hostRemove"; seat: SeatId };
@@ -334,6 +335,18 @@ function hostSkip<S, M, R>(
 	s.game = unwrap(def.skipTurn(game, ctx));
 }
 
+/** A player walks away from a running game; they stay on to watch. */
+function resign<S, M, R>(
+	def: Game<S, M, R>,
+	s: RoomState<S, R>,
+	me: Seat,
+	ctx: Context,
+) {
+	const game = playing(s);
+	if (def.isOut(game, me.id)) reject("You're already out of this game.");
+	s.game = unwrap(def.removeSeat(game, me.id, ctx, "left"));
+}
+
 function hostRemove<S, M, R>(
 	def: Game<S, M, R>,
 	s: RoomState<S, R>,
@@ -378,6 +391,8 @@ function apply<S, M, R>(
 			inLobby(s);
 			removeFromLobby(s, me.id);
 			return;
+		case "resign":
+			return resign(def, s, me, ctx);
 		case "playAgain":
 			return playAgain(s, me);
 		case "hostSkip":

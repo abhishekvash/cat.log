@@ -11,8 +11,8 @@ import {
 	VET_INDEX,
 } from "./board";
 import { DECKS } from "./cards";
-import { reduce, removePlayer, tick } from "./engine";
-import { activePlayers, holdingsOf, topBid } from "./selectors";
+import { reduce, removePlayer, skipTurn, tick } from "./engine";
+import { activePlayers, holdingsOf, rentQuote, topBid } from "./selectors";
 import {
 	ctx,
 	dice,
@@ -193,6 +193,46 @@ describe("money fixes", () => {
 		own(s, 1, 1);
 		s = run(s, 1, { type: "mortgage", space: 1 });
 		expect(s.log.at(-1)?.text).toBe("Mochi paid Biscuit 30 🐟 they owed.");
+	});
+});
+
+describe("rent a cat can't pay", () => {
+	/** Player 2, broke, about to roll onto player 1's street on space 3. */
+	function brokeOnRent() {
+		const s = game();
+		own(s, 1, 3);
+		own(s, 2, 1);
+		p(s, 2).fish = 0;
+		s.turn = { ...turn(s), playerId: 2 };
+		return s;
+	}
+
+	it("puts the tenant in debt to the owner and holds the turn", () => {
+		const rent = rentQuote(brokeOnRent(), 3)?.amount ?? 0;
+		expect(rent).toBeGreaterThan(0);
+		const s = run(brokeOnRent(), 2, { type: "roll" }, ctx(dice(1, 2)));
+		expect(p(s, 2).fish).toBe(-rent);
+		expect(p(s, 2).debts).toEqual([{ to: 1, amount: rent, fee: false }]);
+		expect(p(s, 1).fish).toBe(START_FISH);
+		expect(s.log.map((l) => l.text)).toContain(
+			`Tux came up ${rent} 🐟 short and owes it to Mochi.`,
+		);
+		expect(reduce(s, 2, { type: "endTurn" }, ctx())).toMatchObject({
+			ok: false,
+		});
+	});
+
+	it("pays the owner once the tenant raises fish", () => {
+		let s = run(brokeOnRent(), 2, { type: "roll" }, ctx(dice(1, 2)));
+		const rent = -p(s, 2).fish;
+		s = run(s, 2, { type: "mortgage", space: 1 }); // +30
+		expect(p(s, 1).fish).toBe(START_FISH + Math.min(30, rent));
+		expect(p(s, 2).fish).toBe(30 - rent);
+	});
+
+	it("won't let the host skip past a cat in debt", () => {
+		const s = run(brokeOnRent(), 2, { type: "roll" }, ctx(dice(1, 2)));
+		expect(skipTurn(s)).toMatchObject({ ok: false });
 	});
 });
 

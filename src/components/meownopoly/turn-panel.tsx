@@ -169,6 +169,7 @@ function WanderedOff({ current }: { current: Player }) {
 	const { room, isHost, me, act } = useGame();
 	const seat = seatById(room, current.id);
 	if (!isHost || current.id === me?.id || !seat?.away) return null;
+	const inDebt = current.fish < 0;
 	return (
 		<Alert className="cat-eyes-occupied max-w-measure text-left">
 			<MoonIcon />
@@ -177,13 +178,16 @@ function WanderedOff({ current }: { current: Player }) {
 				{seat.connected ? " mid-turn" : " (disconnected)"}
 			</AlertTitle>
 			<AlertDescription>
+				{inDebt && <p>They're in debt, so their turn can't be skipped.</p>}
 				<div className="flex flex-wrap gap-2 pt-1">
-					<Button
-						size="compact"
-						onClick={() => act({ type: "hostSkip", seat: current.id })}
-					>
-						Skip their turn
-					</Button>
+					{!inDebt && (
+						<Button
+							size="compact"
+							onClick={() => act({ type: "hostSkip", seat: current.id })}
+						>
+							Skip their turn
+						</Button>
+					)}
 					<ConfirmAction
 						title={`Remove ${current.name}?`}
 						description={`Their streets ${room.game.rules.auctions ? "go up for auction" : "go back to the bank"} and they're out of the game.`}

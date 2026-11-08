@@ -83,8 +83,13 @@ export interface GameDefinition<State, Move, Rules, View = State>
 	isOver(state: State): boolean;
 	/** The host moves on past a player who wandered off. */
 	skipTurn(state: State, ctx: Context): Result<State>;
-	/** The host takes a player who wandered off out of the game. */
-	removeSeat(state: State, seat: SeatId, ctx: Context): Result<State>;
+	/** Takes a player out of the game: the host removing them, or them leaving. */
+	removeSeat(
+		state: State,
+		seat: SeatId,
+		ctx: Context,
+		reason?: "removed" | "left",
+	): Result<State>;
 	/** When the game next needs to act on its own (an auction clock, say). */
 	nextTimer?(state: State): number | null;
 	/** What happens when that time comes. */
