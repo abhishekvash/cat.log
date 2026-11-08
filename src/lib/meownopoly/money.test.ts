@@ -80,6 +80,47 @@ describe("money fixes", () => {
 		expect(turn(s)).toMatchObject({ playerId: 2, phase: "awaitingRoll" });
 	});
 
+	const owes = (
+		s: ReturnType<typeof game>,
+		id: number,
+		debts: [number, number][],
+	) =>
+		Object.assign(p(s, id), {
+			fish: -debts.reduce((sum, [, amount]) => sum + amount, 0),
+			debts: debts.map(([to, amount]) => ({ to, amount, fee: false })),
+		});
+
+	it("hands a cat who leaves in debt to one creditor over to them", () => {
+		let s = game(3);
+		own(s, 1, 1, 3);
+		owes(s, 1, [[2, 10]]);
+		s = must(removePlayer(s, 1, ctx(), "left"));
+		expect(p(s, 1).bankrupt).toBe(true);
+		expect(s.holdings[1].owner).toBe(2);
+		expect(s.holdings[3].owner).toBe(2);
+	});
+
+	it("sends a leaver's streets to the bank when they owe several cats", () => {
+		let s = game(3);
+		own(s, 1, 1, 3);
+		owes(s, 1, [
+			[2, 10],
+			[3, 10],
+		]);
+		s = must(removePlayer(s, 1, ctx(), "left"));
+		expect(s.holdings[1]).toBeUndefined();
+		expect(s.holdings[3]).toBeUndefined();
+	});
+
+	it("sends a host-removed debtor's streets to the bank", () => {
+		let s = game(3);
+		own(s, 1, 1, 3);
+		owes(s, 1, [[2, 10]]);
+		s = must(removePlayer(s, 1, ctx()));
+		expect(s.holdings[1]).toBeUndefined();
+		expect(s.holdings[3]).toBeUndefined();
+	});
+
 	for (const phase of ["awaitingRoll", "awaitingBuy"] as const) {
 		for (const removal of ["bankruptcy", "host"] as const) {
 			it(`advances an eliminated ${phase} player after queued auctions (${removal})`, () => {

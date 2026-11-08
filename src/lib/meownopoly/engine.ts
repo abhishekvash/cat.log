@@ -167,7 +167,10 @@ export function skipTurn(state: GameState): Result<GameState> {
 	});
 }
 
-/** A player is taken out (or leaves): their streets go back to the bank. */
+/**
+ * A player is taken out (or leaves). Leaving while owing one cat hands that
+ * cat everything, as resigning would; otherwise their streets go to the bank.
+ */
 export function removePlayer(
 	state: GameState,
 	id: SeatId,
@@ -183,7 +186,7 @@ export function removePlayer(
 				? `${target.name} left the game.`
 				: `${target.name} was removed from the game.`,
 		);
-		goBankrupt(s, target, false, ctx.now);
+		goBankrupt(s, target, reason === "left", ctx.now);
 	});
 }
 
