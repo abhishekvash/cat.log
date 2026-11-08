@@ -268,8 +268,10 @@ const TOWARD = {
 	right: "left",
 } as const;
 
-const towardCentre = (side: Side, index: number) =>
-	side === "corner" ? (index < 20 ? "bottom" : "top") : TOWARD[side];
+const towardCentre = (side: Side, index: number) => {
+	if (side === "corner") return index < 20 ? "bottom" : "top";
+	return TOWARD[side];
+};
 
 const DIRECTION: Record<Side, string> = {
 	bottom: "flex-col",
