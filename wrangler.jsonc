@@ -6,6 +6,10 @@
   "main": "src/server.ts",
   "workers_dev": false,
   "preview_urls": true,
+  // Branch Previews (`wrangler preview`) start from production's top-level
+  // settings; each gets its own Durable Object namespaces, so rooms in a
+  // Preview never touch production rooms.
+  "previews": {},
   "routes": [
     { "pattern": "catlog.party", "custom_domain": true },
     { "pattern": "www.catlog.party", "custom_domain": true }
