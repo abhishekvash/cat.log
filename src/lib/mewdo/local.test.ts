@@ -27,6 +27,22 @@ describe("checking a saved shared-screen game", () => {
 			{ players: [...players, ...players], state: null, round: 0 },
 			{ ...fresh(), state: { ...fresh().state, players: [] } },
 			{ ...fresh(), state: { ...fresh().state, turn: null } },
+			{ ...fresh(), state: { ...fresh().state, log: [null] } },
+			{ ...fresh(), state: { ...fresh().state, lastRoll: { id: 1 } } },
+			{
+				...fresh(),
+				state: {
+					...fresh().state,
+					lastMove: {
+						id: 1,
+						playerId: 1,
+						kitten: 0,
+						from: 0,
+						to: 3,
+						booped: [null],
+					},
+				},
+			},
 			{
 				...fresh(),
 				state: {

@@ -132,11 +132,36 @@ function isGameState(x: unknown): x is GameState {
 	return (
 		turnOk &&
 		Array.isArray(x.log) &&
-		(x.lastRoll === null || isObject(x.lastRoll)) &&
-		(x.lastMove === null ||
-			(isObject(x.lastMove) && Array.isArray(x.lastMove.booped)))
+		x.log.every(isLogEntry) &&
+		(x.lastRoll === null || isLastRoll(x.lastRoll)) &&
+		(x.lastMove === null || isLastMove(x.lastMove))
 	);
 }
+
+const isLogEntry = (x: unknown) =>
+	isObject(x) && Number.isInteger(x.id) && typeof x.text === "string";
+
+const isLastRoll = (x: unknown) =>
+	isObject(x) &&
+	Number.isInteger(x.id) &&
+	Number.isInteger(x.playerId) &&
+	isInt(x.value, 1, 6);
+
+const isBoop = (x: unknown) =>
+	isObject(x) &&
+	Number.isInteger(x.playerId) &&
+	isInt(x.kitten, 0, KITTENS - 1) &&
+	isInt(x.from, BASKET, HOME);
+
+const isLastMove = (x: unknown) =>
+	isObject(x) &&
+	Number.isInteger(x.id) &&
+	Number.isInteger(x.playerId) &&
+	isInt(x.kitten, 0, KITTENS - 1) &&
+	isInt(x.from, BASKET, HOME) &&
+	isInt(x.to, BASKET, HOME) &&
+	Array.isArray(x.booped) &&
+	x.booped.every(isBoop);
 
 export function isLocalGame(x: unknown): x is LocalGame {
 	if (!isObject(x) || !isInt(x.round, 0, Number.MAX_SAFE_INTEGER)) return false;
