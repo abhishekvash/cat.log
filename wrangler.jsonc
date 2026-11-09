@@ -6,10 +6,18 @@
   "main": "src/server.ts",
   "workers_dev": false,
   "preview_urls": true,
-  // Branch Previews (`wrangler preview`) start from production's top-level
-  // settings; each gets its own Durable Object namespaces, so rooms in a
-  // Preview never touch production rooms.
-  "previews": {},
+  // Branch Previews (`wrangler preview`). Each gets its own Durable Object
+  // namespaces, so rooms in a Preview never touch production rooms. The room
+  // bindings are repeated here because partyserver reads them from env;
+  // classes and migrations stay at the top level.
+  "previews": {
+    "durable_objects": {
+      "bindings": [
+        { "name": "MeownopolyRoom", "class_name": "MeownopolyRoom" },
+        { "name": "MewdoRoom", "class_name": "MewdoRoom" }
+      ]
+    }
+  },
   "routes": [
     { "pattern": "catlog.party", "custom_domain": true },
     { "pattern": "www.catlog.party", "custom_domain": true }
