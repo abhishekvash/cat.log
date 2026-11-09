@@ -171,6 +171,27 @@ body {
   }
 }
 
+/*
+ * The Mewdo board: the biggest square that fits beside the side panel
+ * (landscape: 24rem of panel and gaps) or above it (portrait: room for the
+ * turn card underneath).
+ */
+.mewdo-board {
+  width: min(calc(100vw - 1.5rem), calc(100dvh - 15rem));
+}
+@media (orientation: landscape) {
+  /* Too narrow for the panel alongside: the board fills the height and the
+     panel scrolls in underneath. */
+  .mewdo-board {
+    width: min(calc(100vw - 1.5rem), calc(100dvh - 1.5rem));
+  }
+}
+@media (orientation: landscape) and (min-width: 48rem) {
+  .mewdo-board {
+    width: min(calc(100dvh - 1.5rem), calc(100vw - 25.5rem));
+  }
+}
+
 /* Background cat eyes: a soft glow, and a quick blink once per cycle. */
 .cat-eyes {
   opacity: 0.55;
@@ -290,7 +311,43 @@ body {
   100% { transform: none; }
 }
 
+/* Mewdo: kittens slide between squares; a booped one tumbles back to its basket. */
+.kitten {
+  transition: left 150ms ease-out, top 150ms ease-out;
+}
+.kitten-booped {
+  transition-duration: 620ms;
+  transition-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
+}
+/* On the face inside, so the jump doesn't fight the wrapper's centring. */
+.kitten-tumble {
+  animation: token-jump 620ms ease-in-out;
+}
+/* Mewdo: a kitten you can move gives a small, patient bob. */
+.kitten-ready {
+  animation: kitten-ready 1.4s ease-in-out infinite;
+  box-shadow: 0 0 0 0.12em var(--color-sticker), 0 0 0.9em var(--corner);
+}
+@keyframes kitten-ready {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -12%; }
+}
+.landing-ring {
+  animation: landing-ring 1.4s ease-in-out infinite;
+}
+@keyframes landing-ring {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .kitten,
+  .kitten-booped {
+    transition: none;
+  }
+  .kitten-ready,
+  .kitten-tumble,
+  .landing-ring,
   .cat-blink,
   .cat-blink-double,
   .cat-ear-twitch,

@@ -15,18 +15,26 @@ import { useRoom } from "./room-context";
 /**
  * Everyone at the table during a game: whose turn it is, who's out, who's
  * wandered off, and (for the host) new-device links for anyone disconnected.
- * Games add their own bits beside the name (`badges`) and at the end (`extra`).
+ * Games add their own bits beside the name (`badges`) and at the end (`extra`),
+ * and may say why a seat is out (`outLabel`; a cat home first isn't "Out").
  */
 export function SeatList({
 	badges,
 	extra,
+	outLabel,
 }: {
 	badges?: (seat: Seat) => ReactNode;
+	outLabel?: (seat: Seat) => ReactNode;
 	extra?: (seat: Seat) => ReactNode;
 }) {
 	const { game, room, seat: me, isHost, issueRejoin } = useRoom();
 	const current = room.game !== null ? game.currentPlayer(room.game) : null;
 	const isOut = (id: SeatId) => room.game !== null && game.isOut(room.game, id);
+	const status = (seat: Seat, out: boolean) => {
+		if (out) return outLabel?.(seat) ?? "Out";
+		if (seat.away) return "Wandered off 💤";
+		return null;
+	};
 	return (
 		<ul className="space-y-1" aria-label="Players">
 			{room.seats.map((seat) => {
@@ -53,7 +61,7 @@ export function SeatList({
 									{!seat.connected && <Disconnected />}
 								</span>
 								<span className="block text-xs text-muted-foreground">
-									{out ? "Out" : seat.away ? "Wandered off 💤" : null}
+									{status(seat, out)}
 								</span>
 							</span>
 							{!out && extra?.(seat)}

@@ -14,7 +14,10 @@
   // src/server/multiplayer/room-server.ts). partyserver serves each binding as a
   // party named after it: MeownopolyRoom is /parties/meownopoly-room/<code>.
   "durable_objects": {
-    "bindings": [{ "name": "MeownopolyRoom", "class_name": "MeownopolyRoom" }]
+    "bindings": [
+      { "name": "MeownopolyRoom", "class_name": "MeownopolyRoom" },
+      { "name": "MewdoRoom", "class_name": "MewdoRoom" }
+    ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["GameRoom"] },
@@ -25,6 +28,7 @@
     {
       "tag": "v3",
       "renamed_classes": [{ "from": "MonopawlyRoom", "to": "MeownopolyRoom" }]
-    }
+    },
+    { "tag": "v4", "new_sqlite_classes": ["MewdoRoom"] }
   ]
 }

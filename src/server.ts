@@ -4,10 +4,12 @@ import {
 } from "@tanstack/react-start/server";
 import { routePartykitRequest } from "partyserver";
 import { meownopoly } from "./lib/meownopoly/definition";
+import { mewdo } from "./lib/mewdo/definition";
 import { createRoomServer } from "./server/multiplayer/room-server";
 
 /** One Durable Object class per online game; see wrangler.jsonc for the bindings. */
 export class MeownopolyRoom extends createRoomServer(meownopoly) {}
+export class MewdoRoom extends createRoomServer(mewdo) {}
 
 const startFetch = createStartHandler(defaultStreamHandler);
 

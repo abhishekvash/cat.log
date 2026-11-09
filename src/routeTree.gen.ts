@@ -14,6 +14,9 @@ import { Route as MeownopolyIndexRouteImport } from './routes/meownopoly/index'
 import { Route as MeownopolyCodeRouteImport } from './routes/meownopoly/$code'
 import { Route as MeowstermindIndexRouteImport } from './routes/meowstermind/index'
 import { Route as MeowstermindPlayRouteImport } from './routes/meowstermind/play'
+import { Route as MewdoIndexRouteImport } from './routes/mewdo/index'
+import { Route as MewdoCodeRouteImport } from './routes/mewdo/$code'
+import { Route as MewdoPlayRouteImport } from './routes/mewdo/play'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,28 +43,52 @@ const MeowstermindPlayRoute = MeowstermindPlayRouteImport.update({
   path: '/meowstermind/play',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MewdoIndexRoute = MewdoIndexRouteImport.update({
+  id: '/mewdo/',
+  path: '/mewdo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MewdoCodeRoute = MewdoCodeRouteImport.update({
+  id: '/mewdo/$code',
+  path: '/mewdo/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MewdoPlayRoute = MewdoPlayRouteImport.update({
+  id: '/mewdo/play',
+  path: '/mewdo/play',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/meownopoly/$code': typeof MeownopolyCodeRoute
   '/meowstermind/play': typeof MeowstermindPlayRoute
+  '/mewdo/$code': typeof MewdoCodeRoute
+  '/mewdo/play': typeof MewdoPlayRoute
   '/meownopoly/': typeof MeownopolyIndexRoute
   '/meowstermind/': typeof MeowstermindIndexRoute
+  '/mewdo/': typeof MewdoIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/meownopoly/$code': typeof MeownopolyCodeRoute
   '/meowstermind/play': typeof MeowstermindPlayRoute
+  '/mewdo/$code': typeof MewdoCodeRoute
+  '/mewdo/play': typeof MewdoPlayRoute
   '/meownopoly': typeof MeownopolyIndexRoute
   '/meowstermind': typeof MeowstermindIndexRoute
+  '/mewdo': typeof MewdoIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/meownopoly/$code': typeof MeownopolyCodeRoute
   '/meowstermind/play': typeof MeowstermindPlayRoute
+  '/mewdo/$code': typeof MewdoCodeRoute
+  '/mewdo/play': typeof MewdoPlayRoute
   '/meownopoly/': typeof MeownopolyIndexRoute
   '/meowstermind/': typeof MeowstermindIndexRoute
+  '/mewdo/': typeof MewdoIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -69,30 +96,42 @@ export interface FileRouteTypes {
     | '/'
     | '/meownopoly/$code'
     | '/meowstermind/play'
+    | '/mewdo/$code'
+    | '/mewdo/play'
     | '/meownopoly/'
     | '/meowstermind/'
+    | '/mewdo/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/meownopoly/$code'
     | '/meowstermind/play'
+    | '/mewdo/$code'
+    | '/mewdo/play'
     | '/meownopoly'
     | '/meowstermind'
+    | '/mewdo'
   id:
     | '__root__'
     | '/'
     | '/meownopoly/$code'
     | '/meowstermind/play'
+    | '/mewdo/$code'
+    | '/mewdo/play'
     | '/meownopoly/'
     | '/meowstermind/'
+    | '/mewdo/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MeownopolyCodeRoute: typeof MeownopolyCodeRoute
   MeowstermindPlayRoute: typeof MeowstermindPlayRoute
+  MewdoCodeRoute: typeof MewdoCodeRoute
+  MewdoPlayRoute: typeof MewdoPlayRoute
   MeownopolyIndexRoute: typeof MeownopolyIndexRoute
   MeowstermindIndexRoute: typeof MeowstermindIndexRoute
+  MewdoIndexRoute: typeof MewdoIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +171,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeowstermindPlayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mewdo/': {
+      id: '/mewdo/'
+      path: '/mewdo'
+      fullPath: '/mewdo/'
+      preLoaderRoute: typeof MewdoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mewdo/$code': {
+      id: '/mewdo/$code'
+      path: '/mewdo/$code'
+      fullPath: '/mewdo/$code'
+      preLoaderRoute: typeof MewdoCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mewdo/play': {
+      id: '/mewdo/play'
+      path: '/mewdo/play'
+      fullPath: '/mewdo/play'
+      preLoaderRoute: typeof MewdoPlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -139,8 +199,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MeownopolyCodeRoute: MeownopolyCodeRoute,
   MeowstermindPlayRoute: MeowstermindPlayRoute,
+  MewdoCodeRoute: MewdoCodeRoute,
+  MewdoPlayRoute: MewdoPlayRoute,
   MeownopolyIndexRoute: MeownopolyIndexRoute,
   MeowstermindIndexRoute: MeowstermindIndexRoute,
+  MewdoIndexRoute: MewdoIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

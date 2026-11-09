@@ -520,12 +520,20 @@ export function refresh<S, M, R>(
 		}
 	}
 
-	// A host who has wandered off hands the room to someone who's here.
+	// A host who has wandered off hands the room to someone who's here. Once
+	// the game is over anyone here will do, even a cat who finished or was out
+	// (in some games every player ends up "out" once their place is decided).
 	const host = seatById(state, state.hostId);
-	if (!host || (!host.connected && host.away) || isOut(def, state, host.id)) {
-		const heir = state.seats.find(
-			(x) => x.connected && !isOut(def, state, x.id),
-		);
+	const here = state.seats.filter((x) => x.connected);
+	const heir =
+		here.find((x) => !isOut(def, state, x.id)) ??
+		(state.phase === "finished" ? here[0] : undefined);
+	const hostOut =
+		!!host &&
+		isOut(def, state, host.id) &&
+		!!heir &&
+		!isOut(def, state, heir.id);
+	if (!host || (!host.connected && host.away) || hostOut) {
 		if (heir && heir.id !== state.hostId) {
 			state.hostId = heir.id;
 			changed = true;

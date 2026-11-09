@@ -37,13 +37,20 @@ const PIPS: Record<number, [number, number][]> = {
 	],
 };
 
-function Die({ value }: { value: number }) {
+/** One die face, a sticker like everything else. Mewdo uses it on its own. */
+export function Die({
+	value,
+	className = "size-10",
+}: {
+	value: number;
+	className?: string;
+}) {
 	return (
 		<svg
 			viewBox="0 0 100 100"
 			role="img"
 			aria-label={`${value}`}
-			className="size-10 drop-shadow-sticker"
+			className={cn(className, "drop-shadow-sticker")}
 		>
 			<rect x="4" y="4" width="92" height="92" rx="22" fill={STICKER} />
 			{PIPS[value]?.map(([cx, cy]) => (
