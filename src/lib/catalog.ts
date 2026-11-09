@@ -1,5 +1,10 @@
 import { GAME_NAME } from "#/lib/meownopoly/board";
 import { MAX_PLAYERS, MIN_PLAYERS } from "#/lib/meownopoly/types";
+import { GAME_NAME as MEWDO_NAME } from "#/lib/mewdo/board";
+import {
+	MAX_PLAYERS as MEWDO_MAX,
+	MIN_PLAYERS as MEWDO_MIN,
+} from "#/lib/mewdo/types";
 
 /**
  * Every game on cat.log, in one place: the landing tiles, each game's intro
@@ -8,7 +13,7 @@ import { MAX_PLAYERS, MIN_PLAYERS } from "#/lib/meownopoly/types";
  * public/sitemap.xml.
  */
 export interface CatalogGame {
-	path: "/meowstermind" | "/meownopoly";
+	path: "/meowstermind" | "/meownopoly" | "/mewdo";
 	title: string;
 	/** The title split for the two-tone heading: plain, then highlighted. */
 	titleParts: [string, string];
@@ -50,4 +55,21 @@ export const MEOWNOPOLY: CatalogGame = {
 	genre: ["Board game", "Trading", "Strategy"],
 };
 
-export const GAMES: CatalogGame[] = [MEOWSTERMIND, MEOWNOPOLY];
+export const MEWDO: CatalogGame = {
+	path: "/mewdo",
+	title: MEWDO_NAME,
+	titleParts: ["Mew", "do"],
+	pageTitle: `${MEWDO_NAME}: a cozy cat race board game for ${MEWDO_MIN} to ${MEWDO_MAX} · cat.log`,
+	description: `${MEWDO_NAME} is a free cat take on the classic race game for ${MEWDO_MIN} to ${MEWDO_MAX} players. Roll a 6 to let a kitten out of its basket, boop other kittens home, and race all four to the food bowl. Pass one screen around or play online.`,
+	blurb:
+		"Roll, hop and boop: race all four kittens from the basket to the food bowl.",
+	tags: [
+		`${MEWDO_MIN}–${MEWDO_MAX} players`,
+		"Pass & play or online",
+		"~30 min",
+	],
+	players: { min: MEWDO_MIN, max: MEWDO_MAX },
+	genre: ["Board game", "Race", "Family"],
+};
+
+export const GAMES: CatalogGame[] = [MEOWSTERMIND, MEOWNOPOLY, MEWDO];

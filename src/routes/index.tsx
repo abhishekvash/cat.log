@@ -8,6 +8,7 @@ import { Pin } from "#/components/mastermind/pins";
 import { BuildingIcons, groupStyle } from "#/components/meownopoly/bits";
 import { Fur } from "#/components/meownopoly/fur";
 import { FishIcon } from "#/components/meownopoly/tile-art";
+import { tintOf } from "#/components/mewdo/palette";
 import { Badge } from "#/components/ui/badge";
 import { Card } from "#/components/ui/card";
 import { type CatalogGame, GAMES } from "#/lib/catalog";
@@ -17,7 +18,7 @@ import type { GroupId } from "#/lib/meownopoly/board";
 import { jsonLd, SITE_NAME, SITE_URL, seo } from "#/lib/seo";
 
 const DESCRIPTION =
-	"cat.log is a little catalog of cozy cat games to play together, free in your browser. Pass one iPad around in Meowstermind, or play Meownopoly with up to six cats, each on their own device.";
+	"cat.log is a little catalog of cozy cat games to play together, free in your browser. Pass one iPad around in Meowstermind, race kittens home in Mewdo, or play Meownopoly with up to six cats, each on their own device.";
 
 export const Route = createFileRoute("/")({
 	head: () => ({
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/")({
 const PREVIEWS: Record<CatalogGame["path"], ReactNode> = {
 	"/meowstermind": <MeowstermindPreview />,
 	"/meownopoly": <MeownopolyPreview />,
+	"/mewdo": <MewdoPreview />,
 };
 
 function Catalog() {
@@ -199,6 +201,40 @@ function MeownopolyPreview() {
 					<CatHead key={cat} cat={cat} size="1.6rem" />
 				))}
 			</div>
+		</div>
+	);
+}
+
+const RACE: ({ cat: Cat; corner: 0 | 1 | 2 | 3 } | null)[] = [
+	{ cat: "ginger", corner: 0 },
+	null,
+	null,
+	{ cat: "black", corner: 2 },
+	null,
+	{ cat: "siamese", corner: 1 },
+	null,
+];
+
+/** A strip of the loop with a few kittens racing along it. */
+function MewdoPreview() {
+	return (
+		<div className="flex gap-1">
+			{RACE.map((kitten, i) => (
+				<div
+					// biome-ignore lint/suspicious/noArrayIndexKey: fixed decorative row
+					key={i}
+					className="flex size-10 items-center justify-center rounded-md border bg-muted"
+				>
+					{kitten && (
+						<span
+							className="rounded-full p-0.5"
+							style={{ background: tintOf(kitten.corner) }}
+						>
+							<CatHead cat={kitten.cat} size="1.6rem" />
+						</span>
+					)}
+				</div>
+			))}
 		</div>
 	);
 }

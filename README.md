@@ -1,6 +1,6 @@
 # cat.log
 
-**cat.log** is a catalog of small, cozy, cat-themed games to play together. **Meowstermind** is a two-player Mastermind with cats as code pins and paw prints as clues, played on one shared screen (usually an iPad). **Meownopoly** is an online property game for 2 to 6 players in private rooms, each on their own tablet or computer.
+**cat.log** is a catalog of small, cozy, cat-themed games to play together. **Meowstermind** is a two-player Mastermind with cats as code pins and paw prints as clues, played on one shared screen (usually an iPad). **Meownopoly** is an online property game for 2 to 6 players in private rooms, each on their own tablet or computer. **Mewdo** is a cat take on the classic race game for 2 to 4 players, on one shared screen or online.
 
 Built with TanStack Start (file-based routes), Tailwind v4, shadcn/ui and dnd-kit. It deploys to Cloudflare Workers.
 
@@ -53,6 +53,7 @@ pnpm check       # biome: lint and format
 - `src/server/multiplayer/room-server.ts`: `createRoomServer(definition)`, the Durable Object shell that stores and broadcasts a room.
 - `src/components/multiplayer/`: `RoomGate`, `RoomLobby`, `SeatList`, the room connection and context.
 - Meownopoly: its rules in `src/lib/meownopoly/` (`definition.ts` plugs them into the rooms), its screens in `src/components/meownopoly/`.
+- Mewdo: its rules in `src/lib/mewdo/`, shared by both ways to play: `definition.ts` for online rooms, `local.ts` for one shared screen (`/mewdo/play`, saved to localStorage). Its board, motion and table in `src/components/mewdo/`.
 
 ### Adding an online game
 
