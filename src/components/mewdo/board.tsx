@@ -7,9 +7,9 @@ import {
 	HOME,
 	isSafe,
 	LAST_TRACK,
+	ordinal,
 	TRACK,
 } from "#/lib/mewdo/board";
-import { ordinal } from "#/lib/mewdo/engine";
 import type { Corner, GameState, Player, Progress } from "#/lib/mewdo/types";
 import type { SeatId } from "#/lib/multiplayer/types";
 import { cn } from "#/lib/utils";
@@ -21,7 +21,7 @@ import {
 	type Point,
 } from "./geometry";
 import { tintOf } from "./palette";
-import type { Motion } from "./use-motion";
+import { kittenKey, type Motion } from "./use-motion";
 
 const SQUARE = "oklch(0.31 0.045 305)";
 const SEAM = "oklch(0.36 0.05 310)";
@@ -293,7 +293,7 @@ function YardLabel({
 			<span
 				className={cn(
 					"max-w-full truncate rounded-full px-1.5 font-display text-[clamp(0.6rem,1.6cqw,0.85rem)] leading-tight font-semibold",
-					current ? "bg-sticker text-[#2a1f26]" : "text-foreground/85",
+					current ? "bg-sticker text-primary-foreground" : "text-foreground/85",
 					player.gone && "line-through opacity-60",
 				)}
 			>
@@ -350,14 +350,9 @@ function Kittens({
 				(b) => b.playerId === player.id && b.kitten === kitten,
 			);
 			if (booped) point = kittenPoint(player.corner, booped.from, kitten, view);
-			else if (
-				state.lastMove?.booped.some(
-					(b) => b.playerId === player.id && b.kitten === kitten,
-				)
-			)
-				move = "boop";
+			else if (motion.booping.has(kittenKey(player.id, kitten))) move = "boop";
 			placed.push({
-				key: `${player.id}:${kitten}`,
+				key: kittenKey(player.id, kitten),
 				player,
 				kitten,
 				point,
@@ -380,8 +375,8 @@ function Kittens({
 		group.forEach((k, i) => {
 			const angle = (i / group.length) * Math.PI * 2 - Math.PI / 4;
 			offsets.set(k.key, {
-				dx: Math.cos(angle) * 0.2,
-				dy: Math.sin(angle) * 0.2,
+				dx: Math.cos(angle) * 0.24,
+				dy: Math.sin(angle) * 0.24,
 				scale: 0.68,
 			});
 		});
@@ -429,9 +424,12 @@ function Kittens({
 						aria-label={`Move ${k.player.name}'s kitten ${where} by ${pick.roll}`}
 						onClick={() => pick.onPick(k.kitten)}
 					>
-						{/* A touch bigger than the kitten for fingers, but never reaching
-						    over a kitten on the next square. */}
-						<span className="absolute -inset-[6%] rounded-full" />
+						{/* A finger-sized target however small the kitten is drawn
+						    (huddled kittens shrink), without reaching the next square. */}
+						<span
+							className="absolute rounded-full"
+							style={{ inset: hitInset(size) }}
+						/>
 						{face}
 					</button>
 				) : (
@@ -453,6 +451,13 @@ function Kittens({
 		</>
 	);
 }
+
+/** Tap targets are at least this many squares across, whatever the kitten's size. */
+const HIT = 0.92;
+
+/** How far a tap target reaches past a kitten drawn `size` squares wide. */
+const hitInset = (size: number) =>
+	`${(-Math.max(0, (HIT - size) / 2) / size) * 100}%`;
 
 /** Tapping where a kitten would land moves it, too. */
 function LandingTargets({

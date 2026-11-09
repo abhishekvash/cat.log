@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GameState, Progress } from "#/lib/mewdo/types";
 import type { SeatId } from "#/lib/multiplayer/types";
 import { prefersReducedMotion } from "#/lib/utils";
@@ -8,6 +8,8 @@ import { hopPath, type Point } from "./geometry";
 export const ROLL_MS = 600;
 /** One square of a kitten's walk. */
 export const HOP_MS = 190;
+/** A booped kitten's tumble back to its basket. */
+export const BOOP_MS = 620;
 
 export interface Hop {
 	playerId: SeatId;
@@ -21,67 +23,123 @@ export interface Hop {
 }
 
 export interface Motion {
+	/** The game as it should look right now: behind the latest while moves play out. */
+	state: GameState;
 	/** A fresh roll is still tumbling. */
 	rolling: boolean;
 	hop: Hop | null;
+	/** Kittens (`playerId:kitten`) tumbling back to their basket after a boop. */
+	booping: ReadonlySet<string>;
 	/** Something is still playing out: hold the next move until it's done. */
 	busy: boolean;
 }
 
+export const kittenKey = (playerId: SeatId, kitten: number) =>
+	`${playerId}:${kitten}`;
+
+const NONE: ReadonlySet<string> = new Set();
+
 /**
- * Plays the latest roll and move: the die tumbles, then the kitten hops square
- * by square. Whatever was on the board when this mounted shows still, so a
- * reload or reconnect doesn't replay it. Skipped under reduced motion.
+ * Plays each new game state in turn: the die tumbles, the kitten hops square
+ * by square, anyone booped tumbles home, and only then does the next state
+ * (an opponent's quick follow-up, say) start. Whatever was on the board when
+ * this mounted shows still, so a reload or reconnect doesn't replay it.
+ * Under reduced motion every state shows at once.
  */
-export function useMotion(state: GameState, view: number): Motion {
-	const loaded = useRef({
-		roll: state.lastRoll?.id,
-		move: state.lastMove?.id,
-	});
-	const rollStarted = useRef(0);
+export function useMotion(latest: GameState, view: number): Motion {
+	const [shown, setShown] = useState(latest);
 	const [rolling, setRolling] = useState(false);
 	const [hop, setHop] = useState<Hop | null>(null);
+	const [booping, setBooping] = useState<ReadonlySet<string>>(NONE);
+	const [cue, setCue] = useState(0);
+	const queue = useRef<GameState[]>([]);
+	const playing = useRef(false);
+	const shownRef = useRef(latest);
+	const timers = useRef<number[]>([]);
+	const viewRef = useRef(view);
+	viewRef.current = view;
 
-	const rollId = state.lastRoll?.id;
-	useLayoutEffect(() => {
-		if (rollId === undefined || rollId === loaded.current.roll) return;
-		if (prefersReducedMotion()) return;
-		rollStarted.current = performance.now();
-		setRolling(true);
-		const done = window.setTimeout(() => setRolling(false), ROLL_MS);
-		return () => {
-			window.clearTimeout(done);
-			setRolling(false);
-		};
-	}, [rollId]);
+	// Timers outlive re-renders (new states queue up mid-hop); only unmounting stops them.
+	useEffect(
+		() => () => {
+			for (const t of timers.current) window.clearTimeout(t);
+		},
+		[],
+	);
 
-	const move = state.lastMove;
-	const moveId = move?.id;
-	// biome-ignore lint/correctness/useExhaustiveDependencies: only a new move starts a hop
-	useLayoutEffect(() => {
-		if (!move || move.id === loaded.current.move) return;
-		if (prefersReducedMotion()) return;
-		const mover = state.players.find((p) => p.id === move.playerId);
-		if (!mover) return;
-		const path = hopPath(mover.corner, move.from, move.to, move.kitten, view);
-		const base: Hop = { ...move, path, step: -1 };
-		setHop(base);
-		// Let the die land first if this move came straight off a roll.
-		const wait = Math.max(
-			0,
-			ROLL_MS - 120 - (performance.now() - rollStarted.current),
-		);
-		const timers = path.map((_, step) =>
-			window.setTimeout(() => setHop({ ...base, step }), wait + step * HOP_MS),
-		);
-		timers.push(
-			window.setTimeout(() => setHop(null), wait + path.length * HOP_MS),
-		);
-		return () => {
-			for (const t of timers) window.clearTimeout(t);
-			setHop(null);
-		};
-	}, [moveId]);
+	useEffect(() => {
+		if (latest === shownRef.current) return;
+		if (prefersReducedMotion()) {
+			queue.current = [];
+			shownRef.current = latest;
+			setShown(latest);
+			return;
+		}
+		queue.current.push(latest);
+		setCue((c) => c + 1);
+	}, [latest]);
 
-	return { rolling, hop, busy: rolling || hop !== null };
+	// biome-ignore lint/correctness/useExhaustiveDependencies: `cue` is the trigger to play the next queued state
+	useEffect(() => {
+		if (playing.current) return;
+		const next = queue.current.shift();
+		if (!next) return;
+		const prev = shownRef.current;
+		playing.current = true;
+		shownRef.current = next;
+		setShown(next);
+		const later = (ms: number, fn: () => void) =>
+			timers.current.push(window.setTimeout(fn, ms));
+
+		let at = 0;
+		if (next.lastRoll && next.lastRoll.id !== prev.lastRoll?.id) {
+			setRolling(true);
+			later(ROLL_MS, () => setRolling(false));
+			at = ROLL_MS;
+		}
+		const move = next.lastMove;
+		const mover = next.players.find((p) => p.id === move?.playerId);
+		if (move && mover && move.id !== prev.lastMove?.id) {
+			// Let the die all but land before the kitten sets off.
+			at = Math.max(0, at - 120);
+			const path = hopPath(
+				mover.corner,
+				move.from,
+				move.to,
+				move.kitten,
+				viewRef.current,
+			);
+			const base: Hop = { ...move, path, step: -1 };
+			setHop(base);
+			path.forEach((_, step) => {
+				later(at + step * HOP_MS, () => setHop({ ...base, step }));
+			});
+			at += path.length * HOP_MS;
+			// Landing and the boop start together, in one render, so a booped
+			// kitten goes straight from its square into the tumble.
+			const keys = new Set(
+				move.booped.map((b) => kittenKey(b.playerId, b.kitten)),
+			);
+			later(at, () => {
+				setHop(null);
+				if (keys.size > 0) setBooping(keys);
+			});
+			if (keys.size > 0) {
+				at += BOOP_MS;
+				later(at, () => setBooping(NONE));
+			}
+		}
+		later(at, () => {
+			playing.current = false;
+			setCue((c) => c + 1);
+		});
+	}, [cue]);
+
+	return {
+		state: shown,
+		rolling,
+		hop,
+		booping,
+		busy: rolling || hop !== null || shown !== latest,
+	};
 }

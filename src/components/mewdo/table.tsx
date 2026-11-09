@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { CatHead } from "#/components/cats/cat-face";
 import { Die } from "#/components/meownopoly/dice";
 import { Button } from "#/components/ui/button";
-import { BASKET, HOME } from "#/lib/mewdo/board";
-import { ordinal } from "#/lib/mewdo/engine";
+import { BASKET, HOME, ordinal } from "#/lib/mewdo/board";
 import type { GameState, Move, Player } from "#/lib/mewdo/types";
 import type { SeatId } from "#/lib/multiplayer/types";
 import { cn } from "#/lib/utils";
@@ -44,11 +43,25 @@ export function MewdoTable({
 	results: ReactNode;
 }) {
 	const motion = useMotion(state, view);
-	const turn = state.turn;
+	// What's on screen can lag `state` while moves play out; act only once settled.
+	const shown = motion.state;
+	const turn = shown.turn;
 	const actor = controls === "anyone" ? (turn?.playerId ?? null) : controls;
 	const mine = !!turn && actor === turn.playerId;
-	const ready = mine && live && !motion.busy;
-	const current = state.players.find((p) => p.id === turn?.playerId);
+	// A move sent but not yet answered: no second tap until the reply arrives
+	// (or a while passes, in case it was turned down).
+	const [sent, setSent] = useState<GameState | null>(null);
+	useEffect(() => {
+		if (!sent) return;
+		const clear = window.setTimeout(() => setSent(null), SENT_TIMEOUT_MS);
+		return () => window.clearTimeout(clear);
+	}, [sent]);
+	const ready = mine && live && !motion.busy && sent !== state;
+	const send = (seat: SeatId, move: Move) => {
+		setSent(state);
+		onMove(seat, move);
+	};
+	const current = shown.players.find((p) => p.id === turn?.playerId);
 	const pick =
 		ready && turn?.phase === "move" && turn.roll !== null && current
 			? {
@@ -56,17 +69,17 @@ export function MewdoTable({
 					kittens: new Set(turn.movable),
 					roll: turn.roll,
 					onPick: (kitten: number) =>
-						onMove(current.id, { type: "move", kitten }),
+						send(current.id, { type: "move", kitten }),
 				}
 			: null;
-	const finished = state.phase === "finished" && !motion.busy;
-	const shownId = shownTurn(state, motion);
+	const finished = shown.phase === "finished" && !motion.busy;
+	const shownId = shownTurn(motion);
 
 	return (
 		<main className="flex min-h-dvh flex-col items-center gap-3 p-3 md:landscape:h-dvh md:landscape:flex-row md:landscape:items-stretch md:landscape:justify-center md:landscape:overflow-hidden">
 			<div className="mewdo-board shrink-0 self-center">
 				<Board
-					state={state}
+					state={shown}
 					view={view}
 					motion={motion}
 					pick={pick}
@@ -79,58 +92,60 @@ export function MewdoTable({
 					results
 				) : (
 					<TurnCard
-						state={state}
 						motion={motion}
 						ready={ready}
-						mine={mine}
-						shared={controls === "anyone"}
-						onRoll={() => turn && onMove(turn.playerId, { type: "roll" })}
+						controls={controls}
+						onRoll={() => turn && send(turn.playerId, { type: "roll" })}
 					/>
 				)}
 				{players(shownId)}
-				<Activity log={state.log} />
+				<Activity log={shown.log} />
 				{extras}
 			</aside>
 		</main>
 	);
 }
 
+/** How long a sent move holds the controls if no reply comes back. */
+const SENT_TIMEOUT_MS = 4000;
+
 /** Whose turn it looks like: the cat who rolled, until the roll has played out. */
-function shownTurn(state: GameState, motion: Motion) {
+function shownTurn(motion: Motion) {
+	const { state } = motion;
 	return motion.busy && state.lastRoll
 		? state.lastRoll.playerId
 		: state.turn?.playerId;
 }
 
 function TurnCard({
-	state,
 	motion,
 	ready,
-	mine,
-	shared,
+	controls,
 	onRoll,
 }: {
-	state: GameState;
 	motion: Motion;
 	ready: boolean;
-	mine: boolean;
-	shared: boolean;
+	controls: Controls;
 	onRoll: () => void;
 }) {
+	const { state } = motion;
 	const turn = state.turn;
 	// Until the roll has played out, keep showing the cat who rolled it.
-	const shownId = shownTurn(state, motion);
-	const shown = state.players.find((p) => p.id === shownId);
+	const shown = state.players.find((p) => p.id === shownTurn(motion));
 	if (!turn || !shown) return null;
 	const roll = state.lastRoll;
 	const settled = !motion.busy;
-	const name = shared || !mine ? `${shown.name}'s turn` : "Your turn";
+	// Everything here is about the cat shown, so the heading never says
+	// "Your turn" over someone else's cat.
+	const yours = controls === "anyone" || controls === shown.id;
+	const name = controls === shown.id ? "Your turn" : `${shown.name}'s turn`;
+	const phase = shown.id === turn.playerId ? turn.phase : "roll";
 
 	let hint: ReactNode;
 	if (!settled) hint = motion.rolling ? "Rolling…" : "Hop, hop…";
-	else if (!mine)
-		hint = `Waiting for ${shown.name} to ${turn.phase === "roll" ? "roll" : "pick a kitten"}.`;
-	else if (turn.phase === "roll") {
+	else if (!yours)
+		hint = `Waiting for ${shown.name} to ${phase === "roll" ? "roll" : "pick a kitten"}.`;
+	else if (phase === "roll") {
 		// Still their roll after rolling: a 6 or a boop earned another.
 		const again = roll?.playerId === shown.id;
 		const booped =
@@ -167,7 +182,7 @@ function TurnCard({
 				<p className="text-sm text-muted-foreground" aria-live="polite">
 					{hint}
 				</p>
-				{mine && turn.phase === "roll" && (
+				{yours && phase === "roll" && (
 					<Button
 						size="lg"
 						className="w-full"

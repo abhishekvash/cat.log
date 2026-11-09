@@ -30,7 +30,6 @@ export const CORNERS_FOR: Record<number, Corner[]> = {
 };
 
 export const onTrack = (p: Progress) => p >= 0 && p <= LAST_TRACK;
-export const inHomeLane = (p: Progress) => p > LAST_TRACK && p < HOME;
 
 /** The shared-track square (0–51) a kitten stands on, or null off the track. */
 export function trackSquare(corner: Corner, p: Progress): number | null {
@@ -48,4 +47,9 @@ export function advance(p: Progress, roll: number): Progress | null {
 	if (p === HOME) return null;
 	const to = p + roll;
 	return to <= HOME ? to : null;
+}
+
+/** 1st, 2nd, 3rd, 4th: Mewdo has at most four places. */
+export function ordinal(n: number) {
+	return `${n}${["th", "st", "nd", "rd"][n] ?? "th"}`;
 }

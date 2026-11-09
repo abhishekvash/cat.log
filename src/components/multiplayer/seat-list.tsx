@@ -22,13 +22,17 @@ export function SeatList({
 	badges,
 	extra,
 	outLabel,
+	current: shownCurrent,
 }: {
 	badges?: (seat: Seat) => ReactNode;
 	outLabel?: (seat: Seat) => ReactNode;
+	/** Whose turn to highlight, when the game shows it lagging behind (mid-move). */
+	current?: SeatId | null;
 	extra?: (seat: Seat) => ReactNode;
 }) {
 	const { game, room, seat: me, isHost, issueRejoin } = useRoom();
-	const current = room.game !== null ? game.currentPlayer(room.game) : null;
+	const liveCurrent = room.game !== null ? game.currentPlayer(room.game) : null;
+	const current = shownCurrent === undefined ? liveCurrent : shownCurrent;
 	const isOut = (id: SeatId) => room.game !== null && game.isOut(room.game, id);
 	const status = (seat: Seat, out: boolean) => {
 		if (out) return outLabel?.(seat) ?? "Out";

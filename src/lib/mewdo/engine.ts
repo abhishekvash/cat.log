@@ -14,6 +14,7 @@ import {
 	HOME,
 	isSafe,
 	LEAVE_ROLL,
+	ordinal,
 	trackSquare,
 } from "./board";
 import {
@@ -274,10 +275,6 @@ const freshTurn = (playerId: SeatId): Turn => ({
 
 const placesTaken = (s: GameState) =>
 	s.players.filter((p) => p.place !== null).length;
-
-export function ordinal(n: number) {
-	return `${n}${["th", "st", "nd", "rd"][n] ?? "th"}`;
-}
 
 function player(s: GameState, id: SeatId) {
 	const p = s.players.find((x) => x.id === id);

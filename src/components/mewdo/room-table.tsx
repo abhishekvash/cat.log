@@ -9,7 +9,7 @@ import { SeatList } from "#/components/multiplayer/seat-list";
 import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert";
 import { Button } from "#/components/ui/button";
 import { MEWDO } from "#/lib/catalog";
-import { ordinal } from "#/lib/mewdo/engine";
+import { ordinal } from "#/lib/mewdo/board";
 import type { GameState, HouseRules, Move, Player } from "#/lib/mewdo/types";
 import { seatById } from "#/lib/multiplayer/room";
 import { viewTurns } from "./geometry";
@@ -57,8 +57,9 @@ export function MewdoRoomTable() {
 					</span>
 				</div>
 			}
-			players={() => (
+			players={(shownTurn) => (
 				<SeatList
+					current={shownTurn ?? null}
 					badges={(s) => {
 						const p = playerOf(s.id);
 						return (
